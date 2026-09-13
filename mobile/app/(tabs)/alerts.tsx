@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { api, usingMockData } from '../../src/api/client';
@@ -15,7 +16,18 @@ Notifications.setNotificationHandler({
   }),
 });
 
-type Status = 'idle' | 'working' | 'registered' | 'denied' | 'unsupported' | 'error';
+type Status = 'idle' | 'working' | 'registered' | 'denied' | 'unsupported' | 'expo-go' | 'error';
+
+/**
+ * Expo Go cannot receive remote push notifications -- the capability was removed.
+ * A development build from EAS Build is required. Detecting this here turns a
+ * confusing runtime failure into a sentence that says what to do.
+ */
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+/** EAS project id, written into app.json by `eas init`. Required by getExpoPushTokenAsync. */
+const projectId =
+  Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? undefined;
 
 export default function AlertsScreen() {
   const [status, setStatus] = useState<Status>('idle');
@@ -32,9 +44,22 @@ export default function AlertsScreen() {
     setStatus('working');
     setDetail(null);
     try {
+      if (isExpoGo) {
+        setStatus('expo-go');
+        setDetail(
+          'Expo Go cannot receive push notifications. Run `eas build --profile development` ' +
+          'and install that build to test them.',
+        );
+        return;
+      }
       if (!Device.isDevice) {
         setStatus('unsupported');
         setDetail('Push notifications need a physical device. Simulators cannot receive them.');
+        return;
+      }
+      if (!projectId) {
+        setStatus('error');
+        setDetail('No EAS project id found. Run `eas init` in mobile/ first.');
         return;
       }
       if (Platform.OS === 'android') {
@@ -51,7 +76,7 @@ export default function AlertsScreen() {
         setStatus('denied');
         return;
       }
-      const t = await Notifications.getExpoPushTokenAsync();
+      const t = await Notifications.getExpoPushTokenAsync({ projectId });
       setToken(t.data);
       await api.registerPushToken(t.data);
       setStatus('registered');
@@ -83,7 +108,7 @@ export default function AlertsScreen() {
 
         {detail ? <Muted>{'\n'}{detail}</Muted> : null}
 
-        {status !== 'registered' ? (
+        {status !== 'registered' && status !== 'expo-go' ? (
           <Pressable onPress={enable} style={s.button} disabled={status === 'working'}>
             <Text style={s.buttonText}>
               {status === 'working' ? 'Working…' : 'Enable notifications'}
@@ -113,13 +138,15 @@ const statusLabel = (s: Status) => ({
   working: 'Requesting permission…',
   registered: 'Enabled — backend has this device',
   denied: 'Permission denied in system settings',
-  unsupported: 'Not available here',
+  unsupported: 'Needs a physical device',
+  'expo-go': 'Not available in Expo Go',
   error: 'Something went wrong',
 }[s]);
 
 const dotColor = (s: Status) =>
   s === 'registered' ? theme.color.good
   : s === 'denied' || s === 'error' ? theme.color.bad
+  : s === 'expo-go' || s === 'unsupported' ? theme.color.warn
   : theme.color.textMuted;
 
 const s = StyleSheet.create({
