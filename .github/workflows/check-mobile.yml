@@ -1,0 +1,24 @@
+name: Check mobile
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/check-mobile.yml']
+  pull_request:
+    paths: ['mobile/**']
+  workflow_dispatch:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: mobile
+        run: npm install
+      - name: Typecheck
+        working-directory: mobile
+        run: npm run typecheck
