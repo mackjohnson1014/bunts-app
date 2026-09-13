@@ -1,70 +1,92 @@
-# Getting push notifications onto the iPhone
+# Push notifications
 
-Expo Go cannot receive remote push notifications — the capability was removed.
-A development build from EAS Build is required, and on iOS that means Apple
-Push Notification service, which is gated behind a paid membership.
+Bunts delivers its scratch alerts as **Web Push to an installed PWA**. No Apple
+Developer membership, no App Store, no build pipeline.
 
-The app itself runs fine in Expo Go today. Only push needs this.
+## What iOS requires
 
-## Cost and time
-
-| | |
+| Requirement | Why it bites |
 |---|---|
-| Apple Developer Program | **$99/year**, no free tier for APNs |
-| Expo account | Free |
-| Enrollment wait | Usually hours, sometimes 24–48h (Apple verifies identity) |
-| Build time after that | ~15–20 min for the first iOS build |
+| iOS 16.4 or later | Earlier versions have no web push at all |
+| **Added to the Home Screen** | The same URL in a Safari tab gets no push, ever |
+| Opened from the **icon** | Launching from Safari puts you back in tab context |
+| Permission from a tap | A prompt on page load is ignored by the OS |
+| HTTPS | Service workers only run on secure origins |
 
-## Order of operations
+The home-screen rule is the one that catches people. The Alerts screen detects
+it and tells you what to do rather than failing silently.
 
-Steps marked **you** need your credentials or your money. I cannot and will not
-do those — sign-ins and payments stay with you.
+## Getting it running
 
-1. **you** — Enroll at [developer.apple.com/programs](https://developer.apple.com/programs/).
-   Individual membership is fine for a personal app. Wait for the approval email.
+### 1. Deploy the app
 
-2. **you** — Create a free account at [expo.dev](https://expo.dev).
+```sh
+cd web
+npm install
+npx wrangler login          # opens a browser; your Cloudflare account
+npm run deploy              # builds and pushes to Cloudflare Pages
+```
 
-3. **you** — `cd mobile && npx eas-cli login`
+Wrangler prints a URL like `https://bunts.pages.dev`. That's the app.
 
-4. **me or you** — `npx eas-cli init`
-   Writes `extra.eas.projectId` into `app.json`. The Alerts screen reads it;
-   without it, `getExpoPushTokenAsync` cannot issue a token.
+### 2. Install it on the iPhone
 
-5. **you** — `npx eas-cli device:create`
-   Registers your iPhone's UDID. Follow the link on the phone and install the
-   profile. A device not registered before the build cannot install it.
+1. Open the URL in **Safari** (not Chrome — iOS only installs PWAs from Safari)
+2. Share button → **Add to Home Screen**
+3. Open Bunts from the new icon on your home screen
 
-6. **you** — `npx eas-cli build --profile development --platform ios`
-   EAS asks for your Apple ID, then offers to create the APNs key and
-   provisioning profile for you. Say yes to all of it — hand-managing
-   certificates is a bad time.
+### 3. Subscribe
 
-7. **you** — Install the build from the link EAS prints, then run
-   `npx expo start --dev-client` and open the app from your home screen (not
-   Expo Go).
+Alerts tab → **Enable alerts** → accept the permission prompt.
 
-8. **you → me** — Open the Alerts tab, tap Enable notifications, accept the
-   permission prompt. The Expo push token appears on screen. Paste it to me.
+With no backend deployed yet, the screen shows the push subscription and a
+Copy button. Paste it into the chat and a test notification gets sent straight
+to the phone:
 
-9. **me** — `./push-test.sh 'ExponentPushToken[...]'`
-   Sends a real scratch alert straight through Expo's service, no backend
-   needed. If it lands on your lock screen, the notification path is proven.
+```sh
+cd tools && npm install
+node send-test-push.js '<subscription JSON>'
+```
 
-10. **then** — Deploy the Worker and the app registers its token automatically,
-    so alerts start coming from the lineup poller instead of by hand.
+If it lands on your lock screen, the path is proven end to end.
 
-## If the test push does not arrive
+### 4. Point the app at the backend
 
-- Check the token starts with `ExponentPushToken[` — a `dev-` prefix means the
-  dev client issued a local token and the EAS project is not linked.
-- `push-test.sh` prints Expo's response. A `DeviceNotRegistered` ticket means
-  the build's credentials do not match the registered device.
-- Notification permission can be granted and then muted by a Focus mode.
-  Check Settings → Notifications → Bunts.
+Once the Worker is deployed, put its URL in `web/.env.local`:
 
-## What the $99 also buys
+```
+VITE_BUNTS_API=https://bunts-backend.<subdomain>.workers.dev
+VITE_BUNTS_SECRET=<the APP_SECRET you set with wrangler secret put>
+```
 
-TestFlight distribution, and the ability to install the app on your phone
-without a 7-day expiry. With a free Apple account, dev builds expire weekly and
-need reinstalling — worth knowing if you ever reconsider.
+Redeploy. Subscriptions then register with the Worker automatically and alerts
+come from the lineup poller instead of by hand.
+
+## VAPID keys
+
+Generated already and stored in the repo-root `.env`, which is gitignored:
+
+- `VAPID_PUBLIC_KEY` — safe to ship in the client; the browser needs it to subscribe
+- `VAPID_PRIVATE_KEY` — **secret**. Goes into the Worker via `wrangler secret put VAPID_PRIVATE_KEY`, never into the repo
+- `VAPID_SUBJECT` — a mailto: that push services can contact
+
+Rotating these invalidates every existing subscription, so don't, unless the
+private key leaks.
+
+## When a notification doesn't arrive
+
+- **Nothing happens and there's no error** — you're in a Safari tab. Open from
+  the home-screen icon.
+- **410 or 404 from the push service** — the subscription expired. Re-enable
+  alerts in the app to get a fresh one.
+- **Permission granted but silent** — check a Focus mode isn't filtering it, and
+  Settings → Notifications → Bunts.
+- **Works on desktop, not iPhone** — almost always the home-screen rule again.
+
+## If web push disappoints
+
+The Expo project is still in `mobile/` and shares the types and backend. Going
+native is a UI port, not a restart. It costs $99/year for the Apple Developer
+Program, needs an EAS development build with APNs credentials, and device
+registration before the first build — but push is more reliable and the app
+runs standalone without the home-screen dance.

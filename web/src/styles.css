@@ -1,0 +1,243 @@
+/* Bunts -- scoreboard at night.
+   The app commits to one visual world rather than following the OS theme:
+   bulb amber on a dark board, chalk type, clay for trouble. */
+
+:root {
+  --board: #101A13;
+  --board-2: #17231A;
+  --board-3: #1E2C21;
+  --rule: #294032;
+  --chalk: #EDEFE6;
+  --chalk-dim: #8FA292;
+  --amber: #E8A33D;
+  --grass: #6FB06B;
+  --clay: #D2603F;
+
+  --tabbar-h: 58px;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--board);
+  color: var(--chalk);
+  font-family: 'Barlow', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+button { font: inherit; color: inherit; }
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ---------- scrolling screen ---------- */
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom));
+  padding-top: calc(10px + env(safe-area-inset-top));
+}
+
+.screen-head {
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 16px;
+}
+.screen-title {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 32px; font-weight: 700; line-height: 1; margin: 0;
+  text-transform: uppercase; letter-spacing: .01em;
+}
+.screen-sub { margin: 6px 0 0; font-size: 13px; color: var(--chalk-dim); }
+
+.sect {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--chalk-dim);
+  margin: 22px 0 8px;
+}
+.sect:first-child { margin-top: 0; }
+
+/* ---------- slate strip ---------- */
+.slate {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule); border-radius: 8px;
+  overflow: hidden; margin-bottom: 18px;
+}
+.slate > div { padding: 10px 4px; text-align: center; border-right: 1px solid var(--rule); }
+.slate > div:last-child { border-right: 0; }
+.slate .n {
+  display: block;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 23px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.slate .k {
+  display: block;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--chalk-dim); margin-top: 4px;
+}
+
+/* ---------- actionable items ---------- */
+.item {
+  border: 1px solid var(--rule); border-left-width: 3px;
+  border-radius: 7px; background: var(--board-2);
+  padding: 11px 12px; margin-bottom: 8px;
+}
+.item.critical { border-left-color: var(--clay); }
+.item.pending  { border-left-color: var(--amber); }
+.item.ok       { border-left-color: var(--grass); }
+.item.plain    { border-left-color: var(--rule); }
+
+.item-top { display: flex; align-items: baseline; gap: 8px; }
+.pname { font-weight: 600; font-size: 15px; }
+.pmeta {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 13px; color: var(--chalk-dim); letter-spacing: .03em;
+  margin-left: auto; white-space: nowrap;
+}
+.verdict { margin: 5px 0 0; font-size: 13.5px; }
+.verdict em { color: var(--chalk-dim); font-style: normal; }
+
+.fix {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 9px; padding-top: 9px;
+  border-top: 1px dashed var(--rule); font-size: 13px;
+}
+.fix .arrow { color: var(--grass); font-weight: 700; }
+
+.chip {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase;
+  border: 1px solid currentColor; border-radius: 3px;
+  padding: 1px 5px; line-height: 1.4;
+}
+.chip.out { color: var(--clay); }
+.chip.unk, .chip.dtd { color: var(--amber); }
+.chip.in  { color: var(--grass); }
+
+/* ---------- roster: ruled lineup card ---------- */
+.row {
+  display: grid; grid-template-columns: 36px 1fr auto;
+  gap: 10px; align-items: center;
+  padding: 10px 2px; border-bottom: 1px solid var(--rule);
+}
+.slot {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-align: center; color: var(--chalk-dim);
+  background: var(--board-3); border-radius: 4px; padding: 3px 0;
+}
+.row .sub, .keep .sub {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; color: var(--chalk-dim); letter-spacing: .03em;
+}
+.statline {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12.5px; color: var(--chalk-dim);
+  font-variant-numeric: tabular-nums; letter-spacing: .04em;
+}
+.statline b { color: var(--chalk); font-weight: 600; }
+.state { text-align: center; width: 32px; }
+.state .dot { width: 7px; height: 7px; border-radius: 50%; margin: 0 auto 3px; }
+.state .lbl {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+}
+
+/* ---------- keepers ---------- */
+.keep { padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.keep-top { display: flex; align-items: baseline; gap: 10px; }
+.keep-rank {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 18px; font-weight: 700; color: var(--chalk-dim);
+  width: 18px; font-variant-numeric: tabular-nums;
+}
+.keep.in .keep-rank { color: var(--amber); }
+.keep-score {
+  margin-left: auto;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.track { height: 3px; background: var(--board-3); border-radius: 2px; margin: 9px 0 6px; overflow: hidden; }
+.fill { height: 3px; background: var(--rule); }
+.keep.in .fill { background: var(--amber); }
+.keep-note { font-size: 12.5px; color: var(--chalk-dim); margin: 0; }
+.cutline {
+  display: flex; align-items: center; gap: 9px; margin: 14px 0 4px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--amber);
+}
+.cutline::before, .cutline::after {
+  content: ""; height: 1px; background: var(--amber); opacity: .45; flex: 1;
+}
+
+/* ---------- alerts ---------- */
+.stack { border: 1px solid var(--rule); border-radius: 8px; background: var(--board-2); padding: 12px; }
+.status-row { display: flex; align-items: center; gap: 9px; }
+.status-row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.muted { color: var(--chalk-dim); font-size: 13px; }
+.btn {
+  display: block; width: 100%; margin-top: 14px;
+  background: var(--amber); color: #10170F; border: 0; border-radius: 8px;
+  padding: 13px; font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer;
+}
+.btn[disabled] { opacity: .55; cursor: default; }
+.btn.ghost { background: none; border: 1px solid var(--rule); color: var(--chalk); }
+.steps { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; color: var(--chalk-dim); }
+.steps li { margin-bottom: 5px; }
+.steps b { color: var(--chalk); font-weight: 600; }
+.endpoint {
+  font-family: ui-monospace, Menlo, monospace; font-size: 11px;
+  color: var(--chalk-dim); word-break: break-all; margin-top: 8px;
+}
+
+.attribution {
+  margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--rule);
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+/* ---------- tab bar ---------- */
+.tabs {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--rule); background: var(--board-2);
+  padding-bottom: env(safe-area-inset-bottom);
+  flex: none;
+}
+.tab {
+  appearance: none; background: none; border: 0; cursor: pointer;
+  padding: 11px 2px 13px; color: var(--chalk-dim);
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  border-top: 2px solid transparent; margin-top: -1px;
+  min-height: var(--tabbar-h);
+}
+.tab[aria-selected="true"] { color: var(--amber); border-top-color: var(--amber); }
+.tab:focus-visible { outline: 2px solid var(--amber); outline-offset: -3px; }
+.tab .badge {
+  display: inline-block; min-width: 15px; margin-left: 4px;
+  background: var(--clay); color: #fff; border-radius: 999px;
+  font-size: 10px; line-height: 15px; text-align: center; letter-spacing: 0;
+}
+
+.center { padding: 64px 0; text-align: center; color: var(--chalk-dim); }
