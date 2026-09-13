@@ -7,7 +7,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name bunts --branch main"
+    "deploy": "npm run build && wrangler pages deploy dist --project-name bunts-mackjohnson1014 --branch main"
   },
   "dependencies": {
     "react": "^19.3.0",
