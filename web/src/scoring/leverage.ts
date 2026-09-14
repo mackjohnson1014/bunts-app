@@ -1,5 +1,6 @@
 import type { Matchup, MatchupCategory, Player } from '../types';
 import { metaFor, orient } from './categories';
+import { isPitcher } from './roster';
 
 /**
  * How much a category is still worth caring about this week.
@@ -36,10 +37,9 @@ function estimateSwing(key: string, players: Player[], daysRemaining: number): n
   // at-bats shifts a weekly average by a few points at most.
   if (meta.rate) return key === 'AVG' ? 0.04 : 0.6;
 
-  const relevant = players.filter((p) => {
-    const pitcher = p.positions.some((x) => x === 'SP' || x === 'RP' || x === 'P');
-    return meta.side === 'pitching' ? pitcher : !pitcher;
-  });
+  const relevant = players.filter((p) =>
+    meta.side === 'pitching' ? isPitcher(p) : !isPitcher(p),
+  );
 
   const perGame = relevant.reduce((sum, p) => {
     const games = p.seasonStats.G ?? 0;

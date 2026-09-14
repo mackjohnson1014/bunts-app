@@ -22,6 +22,7 @@ export const RELEASES: Release[] = [
       'Start/sit now only cares about categories still in play — no more advice to chase steals you have already won.',
       'Keepers ranks all 23 players against your ten categories with the cut line at 12, and says what each one actually carries.',
       'A starting pitcher on his off day is no longer treated as scratched.',
+      'Knows your real roster: C, 1B, 2B, SS, 3B, three OF, two UTIL, three SP, two RP, three P, seven bench and three IL.',
     ],
   },
   {

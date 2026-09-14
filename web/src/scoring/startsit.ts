@@ -2,6 +2,7 @@ import type { LineupCall, Matchup, Player, Roster } from '../types';
 import { STARTING_SLOTS } from '../types';
 import { metaFor } from './categories';
 import { categoryStates, liveCategories, type CategoryState } from './leverage';
+import { eligible, isPitcher } from './roster';
 
 /**
  * Start/sit for head-to-head categories.
@@ -21,8 +22,6 @@ import { categoryStates, liveCategories, type CategoryState } from './leverage';
  *     recommendation for a 2% edge is noise, and noise trains you to ignore
  *     the alerts that matter.
  */
-
-const isPitcher = (p: Player) => p.positions.some((x) => x === 'SP' || x === 'RP' || x === 'P');
 
 /**
  * "Starting today" means three different things depending on the player, and
@@ -115,9 +114,10 @@ export function startSit(roster: Roster, matchup: Matchup | null): EngineResult 
   for (const starter of active) {
     const startedValue = weeklyValue(starter, states);
 
-    // Only a bench player eligible at the starter's slot can replace him.
+    // Eligibility, not a literal slot match: UTIL takes any hitter and P takes
+    // any pitcher.
     const options = bench
-      .filter((b) => !claimed.has(b.playerKey) && b.positions.includes(starter.slot))
+      .filter((b) => !claimed.has(b.playerKey) && eligible(b, starter.slot))
       .map((b) => ({ player: b, value: weeklyValue(b, states) }))
       .sort((a, b) => b.value - a.value);
 

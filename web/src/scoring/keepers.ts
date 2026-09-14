@@ -1,5 +1,6 @@
 import type { KeeperCandidate, Player, Roster } from '../types';
 import { metaFor } from './categories';
+import { isPitcher } from './roster';
 
 /**
  * Keeper value for a league that keeps a fixed number of players at no cost.
@@ -14,8 +15,6 @@ import { metaFor } from './categories';
  * and say nothing about whether any of them is worth keeping over a waiver
  * pickup. That is a real gap, not a rounding error, and the UI says so.
  */
-
-const isPitcher = (p: Player) => p.positions.some((x) => x === 'SP' || x === 'RP' || x === 'P');
 
 /**
  * Scarcity is a BONUS, not a multiplier.
