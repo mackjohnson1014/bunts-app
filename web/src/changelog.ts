@@ -14,6 +14,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '0.9',
+    date: '2026-09-14',
+    title: 'Two owners',
+    notes: [
+      'Bunts now knows who you are — sign-in is handled before the app even loads.',
+      'Open any player and send your co-owner a call: start, sit, or keep an eye, with a note.',
+      'Their phone buzzes; yours does not. Suggestions land on Today with your name on them.',
+      'New suggestions are marked until you have seen them.',
+    ],
+  },
+  {
     version: '0.8',
     date: '2026-09-14',
     title: 'Stays current on its own',

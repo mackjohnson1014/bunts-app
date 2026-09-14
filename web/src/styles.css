@@ -494,3 +494,20 @@ button { font: inherit; color: inherit; }
   cursor: pointer; text-align: center;
 }
 .update-pill:focus-visible { outline: 2px solid var(--chalk); outline-offset: 2px; }
+
+/* ---------- suggestions ---------- */
+.item.unread { box-shadow: inset 3px 0 0 var(--amber); }
+.note-input {
+  width: 100%; margin-top: 8px; padding: 9px 10px;
+  background: var(--board-2); color: var(--chalk);
+  border: 1px solid var(--rule); border-radius: 7px;
+  font-family: 'Barlow', system-ui, sans-serif; font-size: 14px;
+  resize: vertical;
+}
+.note-input::placeholder { color: var(--chalk-dim); }
+.note-input:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
+.whoami {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13.5px; color: var(--chalk-dim);
+}
+.whoami strong { color: var(--chalk); font-weight: 600; }

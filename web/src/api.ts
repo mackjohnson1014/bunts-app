@@ -1,10 +1,15 @@
-import type { KeeperCandidate, LineupCall, Roster } from './types';
+import type { KeeperCandidate, LineupCall, Roster, Suggestion, SuggestionInput, User } from './types';
 import { mockKeepers, mockLineupCalls, mockRoster } from './mock';
 
-const BASE = import.meta.env.VITE_BUNTS_API ?? '';
-const SECRET = import.meta.env.VITE_BUNTS_SECRET ?? '';
+/**
+ * The API is served from this same origin, behind Cloudflare Access. The
+ * browser's Access cookie is the credential and it names the user, so there is
+ * no secret to ship in the bundle and no CORS to configure.
+ */
+const BASE = '/api';
 
-export const usingMockData = BASE === '';
+/** Only true when running `vite dev` with no Functions behind it. */
+export const usingMockData = import.meta.env.VITE_USE_MOCKS === '1';
 
 export class ApiError extends Error {
   constructor(message: string, readonly code?: string, readonly status?: number) {
@@ -16,14 +21,15 @@ export class ApiError extends Error {
 export const isWaitingOnYahoo = (e: unknown): boolean =>
   e instanceof ApiError && (e.code === 'yahoo_not_connected' || e.code === 'yahoo_not_provisioned');
 
+/** The Access session lapsed. Only a full page load can start a new one. */
+export const isSignedOut = (e: unknown): boolean =>
+  e instanceof ApiError && (e.code === 'unauthenticated' || e.status === 401);
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(SECRET ? { Authorization: `Bearer ${SECRET}` } : {}),
-      ...(init?.headers ?? {}),
-    },
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
   if (!res.ok) {
     // The backend reports failures as {error, code?}. Surface the message, not
@@ -75,13 +81,30 @@ export const api = {
       : req('/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
   sendTestPush: (): Promise<{ sent: number; dropped: number }> =>
     usingMockData ? settle({ sent: 0, dropped: 0 }) : req('/push/test', { method: 'POST' }),
-  /**
-   * The backend publishes this once deployed. VITE_VAPID_PUBLIC_KEY lets the
-   * app subscribe before that exists, which is how push gets tested first.
-   */
   vapidPublicKey: (): Promise<{ key: string }> => {
     const baked = import.meta.env.VITE_VAPID_PUBLIC_KEY;
     if (baked) return settle({ key: baked });
     return usingMockData ? settle({ key: '' }) : req('/push/key');
   },
+
+  /** Who Cloudflare Access says you are. */
+  me: (): Promise<User> =>
+    usingMockData ? settle({ email: 'you@example.com', name: 'You' }) : req('/me'),
+
+  getSuggestions: (): Promise<Suggestion[]> =>
+    usingMockData ? settle([]) : req('/suggestions'),
+
+  addSuggestion: (input: SuggestionInput): Promise<{ suggestion: Suggestion; notified: number }> =>
+    usingMockData
+      ? settle({
+          suggestion: {
+            ...input, id: 'local', authorEmail: 'you@example.com', authorName: 'You',
+            createdAt: new Date().toISOString(), seenBy: [], mine: true, unread: false,
+          },
+          notified: 0,
+        })
+      : req('/suggestions', { method: 'POST', body: JSON.stringify(input) }),
+
+  markSuggestionsSeen: (): Promise<{ ok: true }> =>
+    usingMockData ? settle({ ok: true as const }) : req('/suggestions/seen', { method: 'POST' }),
 };

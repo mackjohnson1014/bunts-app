@@ -1,0 +1,16 @@
+# Cloudflare Pages configuration for the app and its /api Functions.
+name = "bunts"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-01"
+
+[[kv_namespaces]]
+binding = "BUNTS"
+id = "45b7f915a8d94bbdb29b2ae6ef495401"
+
+[vars]
+# Cloudflare Access identity. The team domain is visible on the Access login
+# page; the AUD tag is on the Access application's Overview tab.
+ACCESS_TEAM_DOMAIN = "round-brook-679d.cloudflareaccess.com"
+ACCESS_AUD = ""            # <- paste the Application Audience (AUD) Tag here
+LEAGUE_KEY = ""
+TEAM_KEY = ""

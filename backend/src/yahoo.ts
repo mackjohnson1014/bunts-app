@@ -13,7 +13,6 @@ export interface Env {
   YAHOO_CLIENT_SECRET: string;
   /** Seed value; after the first refresh the live one lives in KV. */
   YAHOO_REFRESH_TOKEN: string;
-  APP_SECRET: string;
   LEAGUE_KEY: string;
   TEAM_KEY: string;
   /** Web Push (VAPID). Public key is served to the app; private key signs. */

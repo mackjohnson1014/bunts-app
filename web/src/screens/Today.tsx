@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import type { Suggestion } from '../types';
 import { FormStrip, LineupState, Screen } from '../components';
 import { PlayerSheet } from '../PlayerSheet';
 import type { LineupCall, Player } from '../types';
@@ -9,7 +10,16 @@ import { useAsync } from '../useAsync';
 export default function Today() {
   const roster = useAsync(() => api.getRoster());
   const calls = useAsync(() => api.getLineupCalls());
+  const suggestions = useAsync(() => api.getSuggestions());
   const [selected, setSelected] = useState<Player | null>(null);
+
+  const fromOthers = (suggestions.data ?? []).filter((s) => !s.mine);
+  const unread = fromOthers.filter((s) => s.unread).length;
+
+  // Once they have been on screen, they are no longer new.
+  useEffect(() => {
+    if (unread > 0) void api.markSuggestionsSeen().catch(() => {});
+  }, [unread]);
 
   const players = roster.data?.players ?? [];
   const byKey = new Map(players.map((p) => [p.playerKey, p]));
@@ -35,7 +45,7 @@ export default function Today() {
         updatedAt={roster.data?.fetchedAt ?? null}
         loading={roster.loading || calls.loading}
         error={roster.error ?? calls.error}
-        onReload={() => { roster.reload(); calls.reload(); }}
+        onReload={() => { roster.reload(); calls.reload(); suggestions.reload(); }}
       >
         <div className="slate">
           <Cell n={counts.active} k="Active" />
@@ -56,6 +66,15 @@ export default function Today() {
           </div>
         ) : null}
 
+        {fromOthers.length > 0 ? (
+          <>
+            <p className="sect">From your co-owner{unread > 0 ? ` · ${unread} new` : ''}</p>
+            {fromOthers.slice(0, 5).map((s) => (
+              <SuggestionCard key={s.id} suggestion={s} />
+            ))}
+          </>
+        ) : null}
+
         {actionable.length > 0 ? <p className="sect">Needs a decision</p> : null}
         {actionable.map((c) => (
           <Call key={c.playerKey} call={c} player={byKey.get(c.playerKey)} onOpen={setSelected} />
@@ -67,7 +86,11 @@ export default function Today() {
         ))}
       </Screen>
 
-      <PlayerSheet player={selected} onClose={() => setSelected(null)} />
+      <PlayerSheet
+        player={selected}
+        onClose={() => setSelected(null)}
+        onSuggested={() => suggestions.reload()}
+      />
     </>
   );
 }
@@ -154,4 +177,36 @@ function Call({
       {inner}
     </button>
   );
+}
+
+function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
+  const tone =
+    suggestion.recommendation === 'sit' ? 'critical'
+    : suggestion.recommendation === 'start' ? 'ok'
+    : 'pending';
+  const word =
+    suggestion.recommendation === 'sit' ? 'Sit'
+    : suggestion.recommendation === 'start' ? 'Start'
+    : 'Watch';
+
+  return (
+    <div className={`item ${tone}${suggestion.unread ? ' unread' : ''}`}>
+      <div className="item-top">
+        <span className="pname">{suggestion.playerName}</span>
+        <span className={`chip ${suggestion.recommendation === 'sit' ? 'out' : suggestion.recommendation === 'start' ? 'in' : 'unk'}`}>
+          {word}
+        </span>
+        <span className="pmeta">{suggestion.authorName} · {when(suggestion.createdAt)}</span>
+      </div>
+      {suggestion.note ? <p className="verdict">{suggestion.note}</p> : null}
+    </div>
+  );
+}
+
+function when(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m`;
+  if (mins < 60 * 24) return `${Math.round(mins / 60)}h`;
+  return `${Math.round(mins / 1440)}d`;
 }

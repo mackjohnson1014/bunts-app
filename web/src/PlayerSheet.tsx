@@ -1,12 +1,19 @@
-import { useEffect } from 'react';
-import type { GameLine, Player } from './types';
+import { useEffect, useState } from 'react';
+import { api } from './api';
+import type { GameLine, Player, SuggestionInput } from './types';
 
 /**
  * Full detail for one player, as a bottom sheet. A roster row can only carry a
  * name, a slot and five numbers; everything that explains *why* a player is
  * worth starting or keeping lives here.
  */
-export function PlayerSheet({ player, onClose }: { player: Player | null; onClose: () => void }) {
+export function PlayerSheet({
+  player, onClose, onSuggested,
+}: {
+  player: Player | null;
+  onClose: () => void;
+  onSuggested?: () => void;
+}) {
   useEffect(() => {
     if (!player) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -134,9 +141,77 @@ export function PlayerSheet({ player, onClose }: { player: Player | null; onClos
               </ul>
             </>
           )}
+
+          <Compose player={player} onSent={() => { onSuggested?.(); onClose(); }} />
         </div>
       </div>
     </div>
+  );
+}
+
+const RECS: { id: SuggestionInput['recommendation']; label: string }[] = [
+  { id: 'start', label: 'Start him' },
+  { id: 'sit', label: 'Sit him' },
+  { id: 'watch', label: 'Keep an eye' },
+];
+
+/** Send a call to the co-owner. Their phone buzzes; yours does not. */
+function Compose({ player, onSent }: { player: Player; onSent: () => void }) {
+  const [rec, setRec] = useState<SuggestionInput['recommendation']>('start');
+  const [note, setNote] = useState('');
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function send() {
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await api.addSuggestion({
+        playerKey: player.playerKey,
+        playerName: player.name,
+        recommendation: rec,
+        note: note.trim(),
+      });
+      setResult(res.notified > 0 ? 'Sent — their phone just buzzed.' : 'Sent. They have no device registered yet.');
+      setNote('');
+      setTimeout(onSent, 900);
+    } catch (e) {
+      setResult(e instanceof Error ? e.message : String(e));
+    }
+    setSending(false);
+  }
+
+  return (
+    <>
+      <p className="sect">Tell your co-owner</p>
+      <div className="segmented" role="radiogroup" aria-label="Recommendation">
+        {RECS.map((r) => (
+          <button
+            key={r.id}
+            role="radio"
+            aria-checked={rec === r.id}
+            aria-selected={rec === r.id}
+            className="seg"
+            onClick={() => setRec(r.id)}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        id="suggestion-note"
+        className="note-input"
+        placeholder={`Why ${player.name.split(' ')[0]}? (optional)`}
+        value={note}
+        maxLength={280}
+        rows={2}
+        onChange={(e) => setNote(e.target.value)}
+      />
+      <button className="btn" onClick={send} disabled={sending}>
+        {sending ? 'Sending…' : 'Send suggestion'}
+      </button>
+      {result ? <p className="muted" style={{ marginTop: 8 }}>{result}</p> : null}
+    </>
   );
 }
 

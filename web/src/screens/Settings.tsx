@@ -3,11 +3,14 @@ import { Screen } from '../components';
 import { api, usingMockData } from '../api';
 import { APP_VERSION, RELEASES, formatDate } from '../changelog';
 import { useInstall } from '../install';
+import { useAsync } from '../useAsync';
 import { currentSubscription, isIOS, isStandalone, subscribe, supportLevel, type PushState } from '../push';
 
 export default function Settings() {
   return (
     <Screen title="Settings" subtitle={`Bunts ${APP_VERSION}`}>
+      <SignedInAs />
+
       <InstallSection />
 
       <p className="sect">Notifications</p>
@@ -49,6 +52,23 @@ export default function Settings() {
         <dt>Scope</dt><dd>One team, one league, one person.</dd>
       </dl>
     </Screen>
+  );
+}
+
+function SignedInAs() {
+  const { data } = useAsync(() => api.me());
+  if (!data) return null;
+  return (
+    <>
+      <p className="sect">Signed in</p>
+      <div className="stack">
+        <p className="whoami" style={{ margin: 0 }}>
+          <span className="dot" style={{ background: 'var(--grass)' }} />
+          <span>Suggestions you send are signed <strong>{data.name}</strong></span>
+        </p>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>{data.email}</p>
+      </div>
+    </>
   );
 }
 

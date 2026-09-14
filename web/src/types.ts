@@ -102,3 +102,26 @@ export interface KeeperCandidate {
   /** What is driving the score, in one line. */
   note: string;
 }
+
+export interface User {
+  email: string;
+  name: string;
+}
+
+export interface SuggestionInput {
+  playerKey: string;
+  playerName: string;
+  recommendation: 'start' | 'sit' | 'watch';
+  note: string;
+}
+
+export interface Suggestion extends SuggestionInput {
+  id: string;
+  authorEmail: string;
+  authorName: string;
+  createdAt: string;
+  seenBy: string[];
+  /** Added per-request by the API, relative to whoever is asking. */
+  mine?: boolean;
+  unread?: boolean;
+}
