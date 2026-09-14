@@ -11,6 +11,6 @@ id = "45b7f915a8d94bbdb29b2ae6ef495401"
 # Cloudflare Access identity. The team domain is visible on the Access login
 # page; the AUD tag is on the Access application's Overview tab.
 ACCESS_TEAM_DOMAIN = "round-brook-679d.cloudflareaccess.com"
-ACCESS_AUD = ""            # <- paste the Application Audience (AUD) Tag here
+ACCESS_AUD = "3330deaedab74fa64e598bbf0683a6d48886d27b942b16cb4aa0b08d6aa00b07"
 LEAGUE_KEY = ""
 TEAM_KEY = ""
