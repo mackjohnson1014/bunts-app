@@ -5,14 +5,16 @@ import { api, usingMockData } from './api';
 import { useAsync } from './useAsync';
 import { useUpdateAvailable } from './useRefresh';
 import Today from './screens/Today';
+import MatchupScreen from './screens/Matchup';
 import RosterScreen from './screens/Roster';
 import Keepers from './screens/Keepers';
 import Settings from './screens/Settings';
 
-type Tab = 'today' | 'roster' | 'keepers' | 'settings';
+type Tab = 'today' | 'week' | 'roster' | 'keepers' | 'settings';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
+  { id: 'week', label: 'Week' },
   { id: 'roster', label: 'Roster' },
   { id: 'keepers', label: 'Keepers' },
   { id: 'settings', label: 'Settings' },
@@ -73,6 +75,7 @@ export default function App() {
       <InstallBanner />
 
       {tab === 'today' && <Today key={pushNonce} />}
+      {tab === 'week' && <MatchupScreen />}
       {tab === 'roster' && <RosterScreen />}
       {tab === 'keepers' && <Keepers />}
       {tab === 'settings' && (

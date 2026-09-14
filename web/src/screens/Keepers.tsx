@@ -47,8 +47,10 @@ export default function Keepers() {
       })}
 
       <p className="keep-note" style={{ marginTop: 14 }}>
-        Scores accumulate all season. A hot September moves the cut line, so this
-        is a tally, not a verdict.
+        Ranked on season production across your ten categories, per game, with a
+        bump for scarce positions. Scores are relative to <em>this roster</em> —
+        they rank your own players against each other and say nothing about
+        whether someone is worth keeping over a waiver pickup.
       </p>
     </Screen>
   );

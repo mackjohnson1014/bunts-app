@@ -637,3 +637,42 @@ select.note-input {
   font-size: 11.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
   text-align: center;
 }
+
+/* ---------- matchup ---------- */
+.catrow {
+  padding: 11px 0; border-bottom: 1px solid var(--rule);
+  border-left: 3px solid transparent; padding-left: 10px; margin-left: -10px;
+}
+.catrow.live, .catrow.tied { border-left-color: var(--amber); }
+.catrow.won { border-left-color: var(--grass); }
+.catrow.lost { border-left-color: var(--clay); }
+.catrow-top { display: flex; align-items: baseline; gap: 8px; }
+.cat-key {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .08em;
+  color: var(--chalk-dim); min-width: 34px;
+}
+.cat-name { font-size: 14.5px; font-weight: 600; flex: 1; }
+.cat-values {
+  display: flex; align-items: baseline; gap: 8px; margin-top: 5px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.cat-values .mine { font-size: 20px; font-weight: 700; }
+.cat-values .mine.ahead { color: var(--grass); }
+.cat-values .theirs { font-size: 20px; font-weight: 600; color: var(--chalk-dim); }
+.cat-sep {
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+.lev { display: flex; align-items: center; gap: 9px; margin-top: 7px; }
+.lev-track {
+  flex: 1; height: 3px; border-radius: 2px;
+  background: var(--board-3); overflow: hidden;
+}
+.lev-fill { height: 3px; background: var(--amber); border-radius: 2px; }
+.lev .muted { font-size: 11.5px; white-space: nowrap; }
+
+/* five tabs need tighter labels */
+.tabs { grid-template-columns: repeat(5, 1fr); }
+.tab { font-size: 11px; letter-spacing: .06em; }

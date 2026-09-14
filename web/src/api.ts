@@ -1,7 +1,9 @@
 import type {
-  KeeperCandidate, LineupCall, Profile, ProfileInput, Roster, Suggestion, SuggestionInput, User,
+  KeeperCandidate, LineupCall, Matchup, Profile, ProfileInput, Roster, Suggestion, SuggestionInput, User,
 } from './types';
-import { mockKeepers, mockLineupCalls, mockRoster } from './mock';
+import { mockMatchup, mockRoster } from './mock';
+import { keeperTally } from './scoring/keepers';
+import { startSit } from './scoring/startsit';
 
 /**
  * The API is served from this same origin, behind Cloudflare Access. The
@@ -84,10 +86,22 @@ async function withSampleFallback<T>(fetcher: () => Promise<T>, sample: T): Prom
 export const api = {
   getRoster: (): Promise<Roster> =>
     usingMockData ? settle(mockRoster) : withSampleFallback(() => req<Roster>('/roster'), mockRoster),
-  getLineupCalls: (): Promise<LineupCall[]> =>
-    usingMockData ? settle(mockLineupCalls) : withSampleFallback(() => req<LineupCall[]>('/lineup'), mockLineupCalls),
-  getKeepers: (): Promise<KeeperCandidate[]> =>
-    usingMockData ? settle(mockKeepers) : withSampleFallback(() => req<KeeperCandidate[]>('/keepers'), mockKeepers),
+
+  getMatchup: (): Promise<Matchup> =>
+    usingMockData ? settle(mockMatchup) : withSampleFallback(() => req<Matchup>('/matchup'), mockMatchup),
+
+  /**
+   * Start/sit and keeper value are computed on the device from the roster and
+   * the matchup rather than on the server. The inputs are already here, the
+   * maths is cheap, and keeping one implementation means the recommendation
+   * and the explanation behind it can never disagree.
+   */
+  getLineupCalls: async (): Promise<LineupCall[]> => {
+    const [roster, matchup] = await Promise.all([api.getRoster(), api.getMatchup()]);
+    return startSit(roster, matchup).calls;
+  },
+
+  getKeepers: async (): Promise<KeeperCandidate[]> => keeperTally(await api.getRoster()),
   saveSubscription: (sub: PushSubscriptionJSON): Promise<{ ok: true }> =>
     usingMockData
       ? settle({ ok: true as const })

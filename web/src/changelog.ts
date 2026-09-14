@@ -14,6 +14,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.2',
+    date: '2026-09-14',
+    title: 'It knows what week it is',
+    notes: [
+      'New Week tab: your matchup category by category, showing what you have won, lost, and can still take.',
+      'Start/sit now only cares about categories still in play — no more advice to chase steals you have already won.',
+      'Keepers ranks all 23 players against your ten categories with the cut line at 12, and says what each one actually carries.',
+      'A starting pitcher on his off day is no longer treated as scratched.',
+    ],
+  },
+  {
     version: '1.1',
     date: '2026-09-14',
     title: 'Setup that fits the screen',

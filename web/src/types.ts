@@ -153,3 +153,20 @@ export interface Suggestion extends SuggestionInput {
   mine?: boolean;
   unread?: boolean;
 }
+
+/** One category in this week's head-to-head matchup. */
+export interface MatchupCategory {
+  key: string;
+  mine: number;
+  theirs: number;
+}
+
+export interface Matchup {
+  week: number;
+  opponentName: string;
+  categories: MatchupCategory[];
+  /** Scoring days left in the week, including today. */
+  daysRemaining: number;
+  /** When the matchup ends, ISO. */
+  endsAt: string;
+}

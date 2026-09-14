@@ -1,4 +1,4 @@
-import type { KeeperCandidate, LineupCall, Roster } from './types';
+import type { KeeperCandidate, LineupCall, Matchup, Roster } from './types';
 
 // Stand-in data until Yahoo provisions API access. Shaped as the normalized
 // domain model, not as Yahoo JSON -- see src/types.ts for why.
@@ -28,7 +28,7 @@ export const mockRoster: Roster = {
     leagueKey: '458.l.000000',
     name: 'Mock League',
     scoringCategories: ['R', 'HR', 'RBI', 'SB', 'AVG', 'W', 'SV', 'K', 'ERA', 'WHIP'],
-    keeperSlots: 3,
+    keeperSlots: 12,
     currentWeek: 23,
   },
   players: [
@@ -234,6 +234,166 @@ export const mockRoster: Roster = {
       recentGames: [],
       note: "On the 15-day IL since Sept 2. No rehab assignment yet.",
     },
+    {
+      playerKey: 'p.14', name: 'Hector Salas', mlbTeam: 'SF',
+      positions: ['OF'], slot: 'OF', status: null,
+      startingToday: true, opponent: '@ AZ', opposingPitcher: 'D. Webb',
+      seasonStats: { G: 134, R: 74, HR: 24, RBI: 79, SB: 9, AVG: 0.276 },
+      last14Stats: { G: 13, R: 8, HR: 3, RBI: 11, SB: 1, AVG: 0.295 },
+      percentOwned: 94,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ AZ', summary: '2-4, HR, 3 RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs LAD', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-10', opponent: 'vs LAD', summary: '2-5, 2B', quality: 'good' },
+        { date: '2026-09-09', opponent: '@ COL', summary: '0-4, 2 K', quality: 'bad' },
+        { date: '2026-09-08', opponent: '@ COL', summary: '1-3, BB', quality: 'neutral' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.15', name: 'Nate Kowalski', mlbTeam: 'MIL',
+      positions: ['UTIL', '1B'], slot: 'UTIL', status: null,
+      startingToday: true, opponent: '@ CHC', opposingPitcher: 'A. Reed',
+      seasonStats: { G: 128, R: 61, HR: 28, RBI: 85, SB: 1, AVG: 0.241 },
+      last14Stats: { G: 12, R: 5, HR: 4, RBI: 10, SB: 0, AVG: 0.250 },
+      percentOwned: 81,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ CHC', summary: '1-4, HR, 2 RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs STL', summary: '0-4', quality: 'bad' },
+        { date: '2026-09-10', opponent: 'vs STL', summary: '2-4, HR', quality: 'good' },
+        { date: '2026-09-09', opponent: '@ PIT', summary: '0-3, K', quality: 'bad' },
+        { date: '2026-09-08', opponent: '@ PIT', summary: '1-4, RBI', quality: 'neutral' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.16', name: 'Diego Ferrer', mlbTeam: 'NYY',
+      positions: ['SP'], slot: 'SP', status: null,
+      startingToday: false, opponent: null, opposingPitcher: null,
+      seasonStats: { G: 29, W: 14, SV: 0, K: 201, ERA: 2.88, WHIP: 1.02 },
+      last14Stats: { G: 3, W: 2, SV: 0, K: 24, ERA: 2.10, WHIP: 0.92 },
+      percentOwned: 100,
+      recentGames: [
+        { date: '2026-09-11', opponent: 'vs BOS', summary: '7.0 IP, 1 ER, 10 K', quality: 'good' },
+        { date: '2026-09-06', opponent: '@ TOR', summary: '6.0 IP, 2 ER, 7 K', quality: 'good' },
+        { date: '2026-09-01', opponent: 'vs TB', summary: '7.0 IP, 2 ER, 7 K', quality: 'good' },
+        { date: '2026-08-27', opponent: '@ BAL', summary: '5.0 IP, 4 ER, 5 K', quality: 'bad' },
+        { date: '2026-08-22', opponent: 'vs DET', summary: '8.0 IP, 0 ER, 9 K', quality: 'good' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.17', name: 'Oscar Benitez', mlbTeam: 'SD',
+      positions: ['RP'], slot: 'RP', status: null,
+      startingToday: true, opponent: 'vs LAD', opposingPitcher: null,
+      seasonStats: { G: 61, W: 3, SV: 31, K: 74, ERA: 2.11, WHIP: 0.94 },
+      last14Stats: { G: 6, W: 0, SV: 4, K: 8, ERA: 1.50, WHIP: 0.83 },
+      percentOwned: 96,
+      recentGames: [
+        { date: '2026-09-12', opponent: 'vs LAD', summary: '1.0 IP, SV, 2 K', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs LAD', summary: '1.0 IP, SV', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ SF', summary: 'Did not pitch', quality: 'dnp' },
+        { date: '2026-09-09', opponent: '@ SF', summary: '1.0 IP, 1 H', quality: 'neutral' },
+        { date: '2026-09-08', opponent: 'vs COL', summary: '1.0 IP, SV, 1 K', quality: 'good' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.18', name: 'Grant Mosley', mlbTeam: 'KC',
+      positions: ['SP'], slot: 'BN', status: null,
+      startingToday: false, opponent: null, opposingPitcher: null,
+      seasonStats: { G: 26, W: 8, SV: 0, K: 142, ERA: 4.31, WHIP: 1.34 },
+      last14Stats: { G: 3, W: 1, SV: 0, K: 15, ERA: 3.60, WHIP: 1.20 },
+      percentOwned: 48,
+      recentGames: [
+        { date: '2026-09-10', opponent: '@ MIN', summary: '6.0 IP, 2 ER, 6 K', quality: 'good' },
+        { date: '2026-09-05', opponent: 'vs CLE', summary: '5.0 IP, 4 ER, 4 K', quality: 'bad' },
+        { date: '2026-08-31', opponent: '@ CWS', summary: '6.1 IP, 2 ER, 5 K', quality: 'neutral' },
+        { date: '2026-08-26', opponent: 'vs HOU', summary: '4.0 IP, 6 ER, 3 K', quality: 'bad' },
+        { date: '2026-08-21', opponent: '@ SEA', summary: '7.0 IP, 1 ER, 8 K', quality: 'good' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.19', name: 'Curtis Ballard', mlbTeam: 'TOR',
+      positions: ['OF', 'UTIL'], slot: 'BN', status: null,
+      startingToday: true, opponent: 'vs BAL', opposingPitcher: 'K. Nunez',
+      seasonStats: { G: 109, R: 52, HR: 8, RBI: 40, SB: 26, AVG: 0.259 },
+      last14Stats: { G: 12, R: 9, HR: 1, RBI: 5, SB: 5, AVG: 0.311 },
+      percentOwned: 44,
+      recentGames: [
+        { date: '2026-09-12', opponent: 'vs BAL', summary: '2-4, 2 SB', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs BAL', summary: '1-3, SB', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ NYY', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-09', opponent: '@ NYY', summary: '2-4, SB, RBI', quality: 'good' },
+        { date: '2026-09-08', opponent: 'vs TEX', summary: '0-3', quality: 'bad' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.20', name: 'Phil Ostrander', mlbTeam: 'DET',
+      positions: ['C'], slot: 'BN', status: null,
+      startingToday: null, opponent: 'vs CLE', opposingPitcher: null,
+      seasonStats: { G: 88, R: 31, HR: 11, RBI: 44, SB: 0, AVG: 0.228 },
+      last14Stats: { G: 8, R: 2, HR: 1, RBI: 4, SB: 0, AVG: 0.208 },
+      percentOwned: 19,
+      recentGames: [
+        { date: '2026-09-12', opponent: 'vs CLE', summary: '1-4, RBI', quality: 'neutral' },
+        { date: '2026-09-10', opponent: '@ MIN', summary: '0-3', quality: 'bad' },
+        { date: '2026-09-09', opponent: '@ MIN', summary: 'Did not play', quality: 'dnp' },
+        { date: '2026-09-08', opponent: 'vs CWS', summary: '1-3, HR, 2 RBI', quality: 'good' },
+        { date: '2026-09-07', opponent: 'vs CWS', summary: '0-4, 2 K', quality: 'bad' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.21', name: 'Wes Tanaka', mlbTeam: 'LAA',
+      positions: ['2B', 'SS'], slot: 'BN', status: null,
+      startingToday: true, opponent: '@ SEA', opposingPitcher: 'B. Hollis',
+      seasonStats: { G: 117, R: 58, HR: 14, RBI: 51, SB: 7, AVG: 0.264 },
+      last14Stats: { G: 12, R: 6, HR: 2, RBI: 8, SB: 1, AVG: 0.283 },
+      percentOwned: 37,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SEA', summary: '2-4, RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: '@ SEA', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-10', opponent: 'vs OAK', summary: '1-3, HR, 2 RBI', quality: 'good' },
+        { date: '2026-09-09', opponent: 'vs OAK', summary: '0-4', quality: 'bad' },
+        { date: '2026-09-08', opponent: '@ TEX', summary: '2-5, 2B', quality: 'good' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.22', name: 'Ray Lindquist', mlbTeam: 'PIT',
+      positions: ['RP'], slot: 'BN', status: null,
+      startingToday: null, opponent: 'vs CIN', opposingPitcher: null,
+      seasonStats: { G: 55, W: 2, SV: 6, K: 63, ERA: 3.62, WHIP: 1.22 },
+      last14Stats: { G: 5, W: 0, SV: 1, K: 7, ERA: 2.70, WHIP: 1.05 },
+      percentOwned: 12,
+      recentGames: [
+        { date: '2026-09-12', opponent: 'vs CIN', summary: '1.0 IP, 1 K', quality: 'neutral' },
+        { date: '2026-09-10', opponent: '@ MIL', summary: '1.0 IP, SV, 2 K', quality: 'good' },
+        { date: '2026-09-09', opponent: '@ MIL', summary: 'Did not pitch', quality: 'dnp' },
+        { date: '2026-09-08', opponent: 'vs CHC', summary: '0.2 IP, 2 ER', quality: 'bad' },
+        { date: '2026-09-07', opponent: 'vs CHC', summary: '1.0 IP, 1 K', quality: 'neutral' },
+      ],
+      note: null,
+    },
+    {
+      playerKey: 'p.23', name: 'Iker Domingo', mlbTeam: 'WSH',
+      positions: ['3B', 'UTIL'], slot: 'BN', status: 'DTD',
+      startingToday: null, opponent: '@ PHI', opposingPitcher: null,
+      seasonStats: { G: 101, R: 44, HR: 16, RBI: 58, SB: 3, AVG: 0.253 },
+      last14Stats: { G: 7, R: 2, HR: 0, RBI: 3, SB: 0, AVG: 0.192 },
+      percentOwned: 26,
+      recentGames: [
+        { date: '2026-09-11', opponent: '@ PHI', summary: '0-3', quality: 'bad' },
+        { date: '2026-09-10', opponent: 'vs ATL', summary: '1-4, RBI', quality: 'neutral' },
+        { date: '2026-09-09', opponent: 'vs ATL', summary: 'Did not play', quality: 'dnp' },
+        { date: '2026-09-08', opponent: '@ MIA', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-07', opponent: '@ MIA', summary: '0-4, 2 K', quality: 'bad' },
+      ],
+      note: 'Tweaked a hamstring running out a double; day-to-day.',
+    },
   ],
 };
 
@@ -267,3 +427,32 @@ export const mockKeepers: KeeperCandidate[] = [
   { playerKey: 'p.1', rank: 4, score: 61.2, note: 'Catcher scarcity inflates value more than the raw line suggests.' },
   { playerKey: 'p.11', rank: 5, score: 55.9, note: 'Speed at 33% ownership; the cheapest real contributor available.' },
 ];
+
+/**
+ * A deliberately awkward week: two categories already gone, two comfortably
+ * won, and four genuinely live. A matchup where everything is decided makes
+ * the start/sit engine look clever for no reason.
+ */
+export const mockMatchup: Matchup = {
+  week: 23,
+  opponentName: 'Dinger Machine',
+  daysRemaining: 3,
+  endsAt: (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    d.setHours(23, 59, 0, 0);
+    return d.toISOString();
+  })(),
+  categories: [
+    { key: 'R',    mine: 31,    theirs: 29 },      // close
+    { key: 'HR',   mine: 9,     theirs: 14 },      // losing, reachable
+    { key: 'RBI',  mine: 33,    theirs: 32 },      // close
+    { key: 'SB',   mine: 11,    theirs: 3 },       // comfortably won
+    { key: 'AVG',  mine: 0.271, theirs: 0.268 },   // close
+    { key: 'W',    mine: 4,     theirs: 4 },       // tied
+    { key: 'SV',   mine: 2,     theirs: 9 },       // gone
+    { key: 'K',    mine: 52,    theirs: 49 },      // close
+    { key: 'ERA',  mine: 3.44,  theirs: 4.90 },    // comfortably won
+    { key: 'WHIP', mine: 1.31,  theirs: 1.12 },    // losing, hard to move
+  ],
+};
