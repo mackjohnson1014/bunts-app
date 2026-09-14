@@ -27,7 +27,9 @@ put() {
 echo "Setting Worker secrets:"
 put YAHOO_CLIENT_ID     "$(value_from_env YAHOO_CLIENT_ID)"
 put YAHOO_CLIENT_SECRET "$(value_from_env YAHOO_CLIENT_SECRET)"
-put YAHOO_REFRESH_TOKEN "$(python3 -c "import json;print(json.load(open('$TOKENS'))['refresh_token'])")"
+# node, not python3 -- macOS ships no python3 and asking for it pops the
+# Xcode command line tools installer.
+put YAHOO_REFRESH_TOKEN "$(node -e "process.stdout.write(require('$PWD/../tokens.json').refresh_token)")"
 put APP_SECRET          "$(value_from_env APP_SECRET)"
 put VAPID_PUBLIC_KEY    "$(value_from_env VAPID_PUBLIC_KEY)"
 put VAPID_PRIVATE_KEY   "$(value_from_env VAPID_PRIVATE_KEY)"
