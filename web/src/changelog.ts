@@ -14,6 +14,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0',
+    date: '2026-09-14',
+    title: 'Introduce yourself',
+    notes: [
+      'First time in, Bunts asks your name instead of guessing it from your email address.',
+      'Each of you chooses which alerts reach your own phone — scratches, unposted lineups, suggestions.',
+      'Quiet hours: alerts inside the window are dropped rather than saved up for the morning.',
+      'Your name and settings follow you to any device you sign in on.',
+    ],
+  },
+  {
     version: '0.9',
     date: '2026-09-14',
     title: 'Two owners',

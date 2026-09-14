@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { InstallBanner } from './InstallBanner';
+import { Onboarding } from './Onboarding';
+import { api } from './api';
+import { useAsync } from './useAsync';
 import { useUpdateAvailable } from './useRefresh';
 import Today from './screens/Today';
 import RosterScreen from './screens/Roster';
@@ -19,6 +22,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [pushNonce, setPushNonce] = useState(0);
   const update = useUpdateAvailable();
+  const me = useAsync(() => api.me());
 
   // A push arriving while the app is open should refresh it, not leave it stale.
   useEffect(() => {
@@ -33,6 +37,13 @@ export default function App() {
     return () => navigator.serviceWorker.removeEventListener('message', onMessage);
   }, []);
 
+  // Hold the app back rather than flashing Today and then replacing it.
+  if (me.loading) return <div className="app" />;
+
+  if (me.data?.needsOnboarding) {
+    return <Onboarding user={me.data} onDone={me.reload} />;
+  }
+
   return (
     <div className="app">
       {update.available ? (
@@ -46,7 +57,7 @@ export default function App() {
       {tab === 'today' && <Today key={pushNonce} />}
       {tab === 'roster' && <RosterScreen />}
       {tab === 'keepers' && <Keepers />}
-      {tab === 'settings' && <Settings />}
+      {tab === 'settings' && <Settings user={me.data ?? null} onProfileChange={me.reload} />}
 
       <nav className="tabs" role="tablist" aria-label="Screens">
         {TABS.map((t) => (

@@ -1,5 +1,6 @@
 import { identify } from '../_shared/access';
 import { addSubscription, listSubscriptions, notify, type PushEnv } from '../_shared/push';
+import { displayName, getProfile, isProfileInput, saveProfile } from '../_shared/profiles';
 import {
   addSuggestion, isSuggestionInput, listSuggestions, markSeen, type Suggestion,
 } from '../_shared/suggestions';
@@ -52,8 +53,25 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
   try {
     switch (route) {
-      case 'GET /me':
-        return json(me);
+      case 'GET /me': {
+        const profile = await getProfile(env.BUNTS, me.email);
+        return json({
+          email: me.email,
+          // The profile name wins; the email-derived one is only a placeholder
+          // until they tell us what to call them.
+          name: profile ? displayName(profile) : me.name,
+          profile,
+          // Drives the one-time onboarding screen.
+          needsOnboarding: profile === null,
+        });
+      }
+
+      case 'PUT /profile': {
+        const body = await request.json();
+        if (!isProfileInput(body)) return json({ error: 'invalid profile' }, 400);
+        const profile = await saveProfile(env.BUNTS, me.email, body);
+        return json(profile);
+      }
 
       case 'GET /push/key':
         return json({ key: env.VAPID_PUBLIC_KEY ?? '' });
@@ -66,6 +84,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       }
 
       case 'POST /push/test':
+        // Deliberately not filtered by preference: a test you asked for should
+        // arrive even if you have the real alerts switched off.
         return json(await notify(
           env,
           { title: 'Bunts', body: 'Test notification — the pipeline works.', tag: 'test' },
@@ -80,18 +100,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       case 'POST /suggestions': {
         const body = await request.json();
         if (!isSuggestionInput(body)) return json({ error: 'invalid suggestion' }, 400);
-        const created = await addSuggestion(env.BUNTS, body, me);
+        const profile = await getProfile(env.BUNTS, me.email);
+        const author = { email: me.email, name: profile ? displayName(profile) : me.name };
+        const created = await addSuggestion(env.BUNTS, body, author);
         // Tell the other owner, never the author.
         const pushed = await notify(
           env,
           {
-            title: `${me.name}: ${verb(created)} ${created.playerName}`,
+            title: `${author.name}: ${verb(created)} ${created.playerName}`,
             body: created.note || 'No note',
             tag: `suggestion-${created.id}`,
             url: '/',
             data: { type: 'suggestion', id: created.id },
           },
-          { exceptEmail: me.email },
+          { exceptEmail: me.email, kind: 'suggestions' },
         );
         return json({ suggestion: created, notified: pushed.sent });
       }

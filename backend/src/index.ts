@@ -63,7 +63,7 @@ async function checkLineups(env: Env): Promise<void> {
     tag: 'scratched',
     url: '/',
     data: { type: 'scratched', players: names },
-  });
+  }, { kind: 'scratched' });
 }
 
 /**

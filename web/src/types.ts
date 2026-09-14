@@ -103,9 +103,37 @@ export interface KeeperCandidate {
   note: string;
 }
 
+export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions'] as const;
+export type AlertKind = (typeof ALERT_KINDS)[number];
+
+export interface Prefs {
+  scratched: boolean;
+  unposted: boolean;
+  suggestions: boolean;
+  quietFrom: number | null;
+  quietTo: number | null;
+}
+
+export interface Profile {
+  email: string;
+  firstName: string;
+  lastName: string;
+  prefs: Prefs;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   email: string;
   name: string;
+  profile: Profile | null;
+  needsOnboarding: boolean;
+}
+
+export interface ProfileInput {
+  firstName: string;
+  lastName: string;
+  prefs?: Partial<Prefs>;
 }
 
 export interface SuggestionInput {

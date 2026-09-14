@@ -511,3 +511,43 @@ button { font: inherit; color: inherit; }
   font-size: 13.5px; color: var(--chalk-dim);
 }
 .whoami strong { color: var(--chalk); font-weight: 600; }
+
+/* ---------- onboarding ---------- */
+.onboard {
+  min-height: 100%; overflow-y: auto;
+  padding: calc(28px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
+}
+.onboard-inner { max-width: 460px; margin: 0 auto; }
+.onboard-eyebrow {
+  margin: 0 0 10px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+.onboard-title {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 38px; font-weight: 700; line-height: 1; margin: 0 0 12px;
+  text-transform: uppercase; letter-spacing: .01em;
+}
+.onboard-lede { margin: 0; font-size: 15px; color: var(--chalk-dim); max-width: 44ch; }
+.onboard .btn { margin-top: 20px; }
+
+/* ---------- name / select fields ---------- */
+.name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field { display: block; min-width: 0; }
+.field > span {
+  display: block;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--chalk-dim); margin-bottom: 4px;
+}
+.field .note-input { margin-top: 0; }
+select.note-input {
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--chalk-dim) 50%),
+                    linear-gradient(135deg, var(--chalk-dim) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
+}

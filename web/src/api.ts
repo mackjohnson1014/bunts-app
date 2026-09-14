@@ -1,4 +1,6 @@
-import type { KeeperCandidate, LineupCall, Roster, Suggestion, SuggestionInput, User } from './types';
+import type {
+  KeeperCandidate, LineupCall, Profile, ProfileInput, Roster, Suggestion, SuggestionInput, User,
+} from './types';
 import { mockKeepers, mockLineupCalls, mockRoster } from './mock';
 
 /**
@@ -98,9 +100,20 @@ export const api = {
     return usingMockData ? settle({ key: '' }) : req('/push/key');
   },
 
-  /** Who Cloudflare Access says you are. */
+  /** Who Access says you are, plus the profile you filled in. */
   me: (): Promise<User> =>
-    usingMockData ? settle({ email: 'you@example.com', name: 'You' }) : req('/me'),
+    usingMockData
+      ? settle({ email: 'you@example.com', name: 'You', profile: null, needsOnboarding: false })
+      : req('/me'),
+
+  saveProfile: (input: ProfileInput): Promise<Profile> =>
+    usingMockData
+      ? settle({
+          email: 'you@example.com', ...input,
+          prefs: { scratched: true, unposted: true, suggestions: true, quietFrom: null, quietTo: null },
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+        } as Profile)
+      : req('/profile', { method: 'PUT', body: JSON.stringify(input) }),
 
   getSuggestions: (): Promise<Suggestion[]> =>
     usingMockData ? settle([]) : req('/suggestions'),

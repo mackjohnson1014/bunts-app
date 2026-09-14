@@ -1,3 +1,4 @@
+import { getProfile, wants, type AlertKind } from './profiles';
 import { sendWebPush, type PushSubscription, type VapidConfig } from './webpush';
 
 const KEY_SUBS = 'push:subscriptions';
@@ -54,15 +55,30 @@ export interface Notification {
 export async function notify(
   env: PushEnv,
   notification: Notification,
-  opts: { exceptEmail?: string; onlyEmail?: string } = {},
-): Promise<{ sent: number; dropped: number }> {
+  opts: { exceptEmail?: string; onlyEmail?: string; kind?: AlertKind } = {},
+): Promise<{ sent: number; dropped: number; skipped: number }> {
   const all = await listSubscriptions(env);
-  const targets = all.filter((s) => {
+  let candidates = all.filter((s) => {
     if (opts.onlyEmail && s.email !== opts.onlyEmail) return false;
     if (opts.exceptEmail && s.email === opts.exceptEmail) return false;
     return true;
   });
-  if (targets.length === 0) return { sent: 0, dropped: 0 };
+
+  // Each person's own preferences decide whether their devices ring.
+  let skipped = 0;
+  if (opts.kind) {
+    const allowed: typeof candidates = [];
+    const cache = new Map<string, Awaited<ReturnType<typeof getProfile>>>();
+    for (const sub of candidates) {
+      if (!cache.has(sub.email)) cache.set(sub.email, await getProfile(env.BUNTS, sub.email));
+      if (wants(cache.get(sub.email) ?? null, opts.kind)) allowed.push(sub);
+      else skipped++;
+    }
+    candidates = allowed;
+  }
+
+  const targets = candidates;
+  if (targets.length === 0) return { sent: 0, dropped: 0, skipped };
 
   const vapid = vapidFrom(env);
   const results = await Promise.all(
@@ -79,5 +95,5 @@ export async function notify(
     }
   }
 
-  return { sent: results.filter((r) => r.result.status < 400).length, dropped: goneEndpoints.size };
+  return { sent: results.filter((r) => r.result.status < 400).length, dropped: goneEndpoints.size, skipped };
 }
