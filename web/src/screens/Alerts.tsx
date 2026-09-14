@@ -1,25 +1,38 @@
 import { useEffect, useState } from 'react';
 import { Screen } from '../components';
-import { usingMockData } from '../api';
+import { api, usingMockData } from '../api';
 import { currentSubscription, isIOS, isStandalone, subscribe, supportLevel, type PushState } from '../push';
 
 export default function Alerts() {
   const [state, setState] = useState<PushState>('idle');
   const [detail, setDetail] = useState<string | null>(null);
-  const [endpoint, setEndpoint] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<PushSubscriptionJSON | null>(null);
+  const [registered, setRegistered] = useState(false);
   const [copied, setCopied] = useState(false);
   const [working, setWorking] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
+  /**
+   * A subscription living in the browser does not mean the backend knows about
+   * it -- the two can drift whenever the backend is deployed after the device
+   * subscribed. So re-send it on every load; /push/subscribe replaces by
+   * endpoint, so this is idempotent.
+   */
   useEffect(() => {
     setState(supportLevel());
-    void currentSubscription().then((sub) => {
-      if (sub) {
-        setState('ready');
-        setEndpoint(sub.endpoint);
-        setSubscription(sub.toJSON());
+    void (async () => {
+      const sub = await currentSubscription();
+      if (!sub) return;
+      setState('ready');
+      setSubscription(sub.toJSON());
+      if (usingMockData) return;
+      try {
+        await api.saveSubscription(sub.toJSON());
+        setRegistered(true);
+      } catch (e) {
+        setDetail(e instanceof Error ? e.message : String(e));
       }
-    });
+    })();
   }, []);
 
   async function enable() {
@@ -28,27 +41,57 @@ export default function Alerts() {
     const result = await subscribe();
     setState(result.state);
     setDetail(result.detail ?? null);
-    setEndpoint(result.endpoint ?? null);
     setSubscription(result.subscription ?? null);
+    setRegistered(result.state === 'ready' && !usingMockData);
     setWorking(false);
   }
+
+  async function sendTest() {
+    setWorking(true);
+    setTestResult(null);
+    try {
+      const res = await api.sendTestPush();
+      setTestResult(
+        res.sent > 0
+          ? `Sent to ${res.sent} device${res.sent === 1 ? '' : 's'}.`
+          : 'The backend has no devices registered.',
+      );
+    } catch (e) {
+      setTestResult(e instanceof Error ? e.message : String(e));
+    }
+    setWorking(false);
+  }
+
+  const showEnable = state !== 'ready' && state !== 'needs-install' && state !== 'unsupported' && state !== 'denied';
 
   return (
     <Screen title="Alerts" subtitle="Get told when a rostered player is scratched">
       <div className="stack">
         <div className="status-row">
-          <span className="dot" style={{ background: dotColor(state) }} />
-          <strong>{label(state)}</strong>
+          <span className="dot" style={{ background: dotColor(state, registered) }} />
+          <strong>{label(state, registered)}</strong>
         </div>
 
         {detail ? <p className="muted" style={{ marginBottom: 0 }}>{detail}</p> : null}
 
         {state === 'needs-install' ? <InstallSteps /> : null}
 
-        {state === 'idle' || state === 'error' || state === 'no-key' ? (
+        {showEnable ? (
           <button className="btn" onClick={enable} disabled={working}>
             {working ? 'Working…' : 'Enable alerts'}
           </button>
+        ) : null}
+
+        {state === 'ready' && !usingMockData ? (
+          <>
+            <button className="btn" onClick={sendTest} disabled={working}>
+              {working ? 'Sending…' : 'Send a test notification'}
+            </button>
+            <button className="btn ghost" onClick={enable} disabled={working}>
+              Re-register this device
+            </button>
+            {testResult ? <p className="muted" style={{ marginBottom: 0 }}>{testResult}</p> : null}
+          </>
         ) : null}
 
         {state === 'denied' ? (
@@ -57,18 +100,11 @@ export default function Alerts() {
           </p>
         ) : null}
 
-        {endpoint && !usingMockData ? (
-          <>
-            <p className="muted" style={{ marginTop: 12, marginBottom: 0 }}>Push endpoint</p>
-            <p className="endpoint">{endpoint}</p>
-          </>
-        ) : null}
-
         {subscription && usingMockData ? (
           <>
             <p className="muted" style={{ marginTop: 12, marginBottom: 0 }}>
-              No backend yet, so nothing received this. Copy it and paste it into
-              the chat to get a test notification sent here.
+              No backend configured, so nothing received this. Copy it if you need to
+              send a notification by hand.
             </p>
             <p className="endpoint">{JSON.stringify(subscription)}</p>
             <button
@@ -125,17 +161,20 @@ function InstallSteps() {
   );
 }
 
-const label = (s: PushState) => ({
-  ready: 'Alerts are on for this device',
-  idle: 'Not enabled yet',
-  'needs-install': 'Add to home screen first',
-  unsupported: 'This browser cannot receive push',
-  denied: 'Notifications are blocked',
-  'no-key': 'Backend not ready',
-  error: 'Something went wrong',
-}[s]);
+const label = (s: PushState, registered: boolean) => {
+  if (s === 'ready') return registered ? 'Alerts are on, backend has this device' : 'Subscribed on this device';
+  return {
+    idle: 'Not enabled yet',
+    'needs-install': 'Add to home screen first',
+    unsupported: 'This browser cannot receive push',
+    denied: 'Notifications are blocked',
+    'no-key': 'Backend not ready',
+    error: 'Something went wrong',
+    ready: '',
+  }[s];
+};
 
-const dotColor = (s: PushState) =>
-  s === 'ready' ? 'var(--grass)'
+const dotColor = (s: PushState, registered: boolean) =>
+  s === 'ready' && registered ? 'var(--grass)'
   : s === 'denied' || s === 'error' || s === 'unsupported' ? 'var(--clay)'
   : 'var(--amber)';

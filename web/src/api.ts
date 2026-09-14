@@ -6,6 +6,16 @@ const SECRET = import.meta.env.VITE_BUNTS_SECRET ?? '';
 
 export const usingMockData = BASE === '';
 
+export class ApiError extends Error {
+  constructor(message: string, readonly code?: string, readonly status?: number) {
+    super(message);
+  }
+}
+
+/** True when the backend is fine but Yahoo data is not available yet. */
+export const isWaitingOnYahoo = (e: unknown): boolean =>
+  e instanceof ApiError && (e.code === 'yahoo_not_connected' || e.code === 'yahoo_not_provisioned');
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
@@ -15,7 +25,21 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   });
-  if (!res.ok) throw new Error((await res.text().catch(() => '')).slice(0, 300) || res.statusText);
+  if (!res.ok) {
+    // The backend reports failures as {error, code?}. Surface the message, not
+    // the JSON -- a user should never be shown a serialized object.
+    const text = await res.text().catch(() => '');
+    let message = text.slice(0, 300) || res.statusText;
+    let code: string | undefined;
+    try {
+      const parsed = JSON.parse(text) as { error?: string; code?: string };
+      if (parsed.error) message = parsed.error;
+      code = parsed.code;
+    } catch {
+      /* not JSON; keep the raw text */
+    }
+    throw new ApiError(message, code, res.status);
+  }
   return res.json() as Promise<T>;
 }
 
@@ -30,6 +54,8 @@ export const api = {
     usingMockData
       ? settle({ ok: true as const })
       : req('/push/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
+  sendTestPush: (): Promise<{ sent: number; dropped: number }> =>
+    usingMockData ? settle({ sent: 0, dropped: 0 }) : req('/push/test', { method: 'POST' }),
   /**
    * The backend publishes this once deployed. VITE_VAPID_PUBLIC_KEY lets the
    * app subscribe before that exists, which is how push gets tested first.

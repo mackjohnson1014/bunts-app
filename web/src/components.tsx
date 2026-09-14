@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { isWaitingOnYahoo } from './api';
 import type { Player } from './types';
 
 export function Screen({
@@ -7,10 +8,12 @@ export function Screen({
   title: string;
   subtitle?: string;
   loading?: boolean;
-  error?: string | null;
+  error?: unknown;
   onReload?: () => void;
   children: ReactNode;
 }) {
+  const waiting = isWaitingOnYahoo(error);
+  const message = error instanceof Error ? error.message : error ? String(error) : null;
   return (
     <div className="screen">
       <div className="screen-head">
@@ -18,9 +21,20 @@ export function Screen({
         {subtitle ? <p className="screen-sub">{subtitle}</p> : null}
       </div>
 
-      {error ? (
+      {waiting ? (
+        <div className="item pending">
+          <div className="item-top"><span className="pname">Waiting on Yahoo</span></div>
+          <p className="verdict">
+            Yahoo approved API access but has not switched it on yet. Until it does,
+            there is no roster to show.
+          </p>
+          <p className="verdict" style={{ color: 'var(--chalk-dim)' }}>
+            Nothing is broken and there is nothing to do — alerts will start on their own.
+          </p>
+        </div>
+      ) : message ? (
         <div className="stack">
-          <p style={{ margin: 0, color: 'var(--clay)' }}>{error}</p>
+          <p style={{ margin: 0, color: 'var(--clay)' }}>{message}</p>
           {onReload ? (
             <button className="btn ghost" onClick={onReload}>Try again</button>
           ) : null}

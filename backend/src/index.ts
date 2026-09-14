@@ -77,7 +77,12 @@ export default {
           );
 
         case 'GET /roster':
-          if (!env.TEAM_KEY) throw new Error('TEAM_KEY is not configured in wrangler.toml');
+          if (!env.TEAM_KEY) {
+            // Not an error the user can act on -- Yahoo has not provisioned
+            // access yet, so there is no team key to configure. Give the app a
+            // code it can render as a waiting state rather than a failure.
+            return json({ error: 'Yahoo account is not connected yet', code: 'yahoo_not_connected' }, 503);
+          }
           return json(await yahooGet(env, `team/${env.TEAM_KEY}/roster/players/stats`));
 
         case 'GET /lineup':
@@ -97,7 +102,13 @@ export default {
           return json({ error: 'not found' }, 404);
       }
     } catch (e) {
-      return json({ error: e instanceof Error ? e.message : String(e) }, 502);
+      const message = e instanceof Error ? e.message : String(e);
+      // Yahoo approved the app but has not provisioned Fantasy access; that is
+      // a state to wait out, not a bug to report.
+      if (message.includes('not provisioned')) {
+        return json({ error: message, code: 'yahoo_not_provisioned' }, 503);
+      }
+      return json({ error: message }, 502);
     }
   },
 
