@@ -11,8 +11,8 @@ crons = ["*/10 15-23,0-2 * * *"]
 
 [[kv_namespaces]]
 binding = "BUNTS"
-id = "REPLACE_WITH_KV_ID"          # wrangler kv namespace create BUNTS
-preview_id = "REPLACE_WITH_KV_ID"
+id = "45b7f915a8d94bbdb29b2ae6ef495401"          # wrangler kv namespace create BUNTS
+preview_id = "45b7f915a8d94bbdb29b2ae6ef495401"
 
 [vars]
 # Non-secret config. Secrets go through `wrangler secret put`:
