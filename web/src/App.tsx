@@ -2,15 +2,15 @@ import { useEffect, useState } from 'react';
 import Today from './screens/Today';
 import RosterScreen from './screens/Roster';
 import Keepers from './screens/Keepers';
-import Alerts from './screens/Alerts';
+import Settings from './screens/Settings';
 
-type Tab = 'today' | 'roster' | 'keepers' | 'alerts';
+type Tab = 'today' | 'roster' | 'keepers' | 'settings';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
   { id: 'roster', label: 'Roster' },
   { id: 'keepers', label: 'Keepers' },
-  { id: 'alerts', label: 'Alerts' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export default function App() {
@@ -35,7 +35,7 @@ export default function App() {
       {tab === 'today' && <Today key={pushNonce} />}
       {tab === 'roster' && <RosterScreen />}
       {tab === 'keepers' && <Keepers />}
-      {tab === 'alerts' && <Alerts />}
+      {tab === 'settings' && <Settings />}
 
       <nav className="tabs" role="tablist" aria-label="Screens">
         {TABS.map((t) => (

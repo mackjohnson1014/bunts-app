@@ -241,3 +241,33 @@ button { font: inherit; color: inherit; }
 }
 
 .center { padding: 64px 0; text-align: center; color: var(--chalk-dim); }
+
+/* ---------- changelog ---------- */
+.release { padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.release:last-of-type { border-bottom: 0; }
+.release-head { display: flex; align-items: baseline; gap: 8px; }
+.release-version {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  color: var(--amber); border: 1px solid var(--amber);
+  border-radius: 3px; padding: 0 5px; line-height: 1.5;
+}
+.release.old .release-version { color: var(--chalk-dim); border-color: var(--rule); }
+.release-title { font-size: 15px; font-weight: 600; }
+.release-date {
+  margin-left: auto;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; color: var(--chalk-dim); white-space: nowrap;
+}
+.release ul { margin: 8px 0 0; padding-left: 18px; }
+.release li { font-size: 13.5px; color: var(--chalk-dim); margin-bottom: 4px; }
+.release li::marker { color: var(--rule); }
+
+/* ---------- about ---------- */
+.about { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13.5px; }
+.about dt {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--chalk-dim); align-self: baseline;
+}
+.about dd { margin: 0; word-break: break-word; }

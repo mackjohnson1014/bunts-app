@@ -60,6 +60,23 @@ appear in the product. It renders at the bottom of the roster screen.
 - Keeper scoring formula not designed. Needs the league's scoring settings
   and keeper rules.
 
+## Known tradeoffs — accepted, do not "fix" silently
+
+**`APP_SECRET` is readable in the deployed web bundle.** Vite inlines
+`VITE_*` variables at build time, so anyone who opens `bunts.pages.dev` can
+read it and call the Worker directly. There is nowhere in a browser to hide a
+secret; the URL is what limits access, not the secret.
+
+Accepted deliberately: the data is read-only fantasy baseball about one
+person's own team, and the realistic worst case is a stranger reading the
+roster or triggering a notification. If this ever needs fixing, the answer is
+Cloudflare Access in front of the Pages site, not a cleverer way to hide a
+string in JavaScript.
+
+**The app is public and meant to be shared.** The URL can be handed to anyone.
+A visitor sees Mack's team; there is no multi-user support and adding it would
+break single-user assumptions throughout.
+
 ## Secrets
 
 `.env` (Yahoo client id/secret) and `tokens.json` are gitignored. **The GitHub
