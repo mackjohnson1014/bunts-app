@@ -1,11 +1,9 @@
 name: Check mobile
 
+# The Expo app is parked while the PWA is the primary surface. Kept runnable by
+# hand so the option stays alive, but not run on every push.
+
 on:
-  push:
-    branches: [main]
-    paths: ['mobile/**', '.github/workflows/check-mobile.yml']
-  pull_request:
-    paths: ['mobile/**']
   workflow_dispatch:
 
 jobs:
