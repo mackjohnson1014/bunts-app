@@ -24,8 +24,16 @@ export function PlayerSheet({ player, onClose }: { player: Player | null; onClos
 
   const isPitcher = player.positions.some((p) => p === 'SP' || p === 'RP' || p === 'P');
   const keys = isPitcher ? ['W', 'SV', 'K', 'ERA', 'WHIP'] : ['R', 'HR', 'RBI', 'SB', 'AVG'];
-  // For rate stats a lower number is the better one; everything else is counting.
+
+  // Rate stats compare directly; counting stats do not. Comparing 79 runs in a
+  // season against 5 in a fortnight says nothing except that a fortnight is
+  // shorter. So counting stats are compared against the player's OWN season
+  // rate projected over the same number of games -- "is he beating himself".
+  const RATE = new Set(['AVG', 'ERA', 'WHIP']);
   const lowerIsBetter = new Set(['ERA', 'WHIP']);
+  const seasonG = player.seasonStats.G ?? 0;
+  const recentG = player.last14Stats.G ?? 0;
+  const canPace = seasonG > 0 && recentG > 0;
 
   return (
     <div className="sheet-backdrop" onClick={onClose} role="presentation">
@@ -72,26 +80,44 @@ export function PlayerSheet({ player, onClose }: { player: Player | null; onClos
             </div>
           ) : null}
 
-          <p className="sect">Season vs last 14 days</p>
+          <p className="sect">Last 14 days</p>
           <table className="compare">
             <thead>
-              <tr><th>Cat</th><th>Season</th><th>Last 14</th><th aria-label="Direction" /></tr>
+              <tr>
+                <th>Cat</th>
+                <th>Actual</th>
+                <th>{'Expected'}</th>
+                <th aria-label="Direction" />
+              </tr>
             </thead>
             <tbody>
               {keys.map((k) => {
                 const season = player.seasonStats[k];
                 const recent = player.last14Stats[k];
+                const isRate = RATE.has(k);
+
+                // Rate stats: the season figure is the fair benchmark.
+                // Counting stats: his own season rate over these many games.
+                const expected =
+                  isRate ? season
+                  : canPace && season !== undefined ? (season / seasonG) * recentG
+                  : undefined;
+
                 return (
                   <tr key={k}>
                     <td className="cat">{k}</td>
-                    <td>{fmt(season)}</td>
                     <td>{fmt(recent)}</td>
-                    <td>{arrow(season, recent, lowerIsBetter.has(k))}</td>
+                    <td className="expected">{expected === undefined ? '–' : fmt(round(expected))}</td>
+                    <td>{arrow(expected, recent, lowerIsBetter.has(k))}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          <p className="muted" style={{ marginTop: 6 }}>
+            Expected is his own season rate over the same {recentG || 0} games — so an
+            arrow means beating or trailing himself, not the league.
+          </p>
 
           <p className="sect">Last five games</p>
           {player.recentGames.length === 0 ? (
@@ -128,19 +154,26 @@ function GameRow({ game }: { game: GameLine }) {
   );
 }
 
+/** One decimal for a projected counting stat; whole numbers stay whole. */
+const round = (v: number) => (Number.isInteger(v) ? v : Math.round(v * 10) / 10);
+
 const fmt = (v: number | undefined) => {
   if (v === undefined) return '–';
   return v < 10 && !Number.isInteger(v) ? v.toFixed(3).replace(/^0/, '') : String(v);
 };
 
-/** Direction of travel, not a judgement of size. */
-function arrow(season?: number, recent?: number, lowerBetter = false) {
-  if (season === undefined || recent === undefined) return <span className="flat">·</span>;
-  const better = lowerBetter ? recent < season : recent > season;
-  const worse = lowerBetter ? recent > season : recent < season;
-  if (better) return <span className="up">▲</span>;
-  if (worse) return <span className="down">▼</span>;
-  return <span className="flat">·</span>;
+/**
+ * Direction against the benchmark. A 5% band counts as level -- otherwise
+ * every row gets an arrow and the arrows stop meaning anything.
+ */
+function arrow(expected?: number, actual?: number, lowerBetter = false) {
+  if (expected === undefined || actual === undefined || expected === 0) {
+    return <span className="flat">·</span>;
+  }
+  const delta = (actual - expected) / Math.abs(expected);
+  if (Math.abs(delta) < 0.05) return <span className="flat">·</span>;
+  const better = lowerBetter ? delta < 0 : delta > 0;
+  return better ? <span className="up">▲</span> : <span className="down">▼</span>;
 }
 
 const lineupWord = (s: boolean | null) => (s === true ? 'In the lineup' : s === false ? 'Not starting' : 'Not posted yet');

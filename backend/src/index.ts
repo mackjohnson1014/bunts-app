@@ -85,11 +85,16 @@ export default {
           }
           return json(await yahooGet(env, `team/${env.TEAM_KEY}/roster/players/stats`));
 
+        // These need Yahoo data too, so they report the same waiting state
+        // rather than an empty list. An empty list is a claim -- "nothing to
+        // change today" -- and making it while Yahoo is dark is a lie the app
+        // then renders next to a slate saying two players are out.
         case 'GET /lineup':
-          return json([]);   // start/sit logic lands here once real data exists
-
         case 'GET /keepers':
-          return json([]);   // keeper tally lands here once real data exists
+          if (!env.TEAM_KEY) {
+            return json({ error: 'Yahoo account is not connected yet', code: 'yahoo_not_connected' }, 503);
+          }
+          return json([]);   // real logic lands here once we have responses to build it from
 
         case 'GET /raw': {
           // Escape hatch for exploring Yahoo's shapes: /raw?path=team/KEY/roster

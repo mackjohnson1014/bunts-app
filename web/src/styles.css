@@ -462,3 +462,4 @@ button { font: inherit; color: inherit; }
 .gamelog li.bad .g-line { color: var(--clay); }
 .gamelog li.dnp .g-line { color: var(--chalk-dim); font-style: italic; }
 .sheet-body .form-strip { margin: 8px 0 2px; }
+.compare .expected { color: var(--chalk-dim); }

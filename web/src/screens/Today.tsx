@@ -45,8 +45,14 @@ export default function Today() {
         </div>
 
         {actionable.length === 0 && holds.length === 0 ? (
-          <div className="item plain">
-            <p className="verdict" style={{ marginTop: 0 }}>Nothing to change today.</p>
+          <div className={`item ${counts.out > 0 ? 'critical' : 'plain'}`}>
+            <p className="verdict" style={{ marginTop: 0 }}>
+              {counts.out > 0
+                ? `No suggestions yet, but ${counts.out} active ${counts.out === 1 ? 'player is' : 'players are'} out of tonight's lineups.`
+                : counts.unposted > 0
+                  ? `Nothing to change yet — ${counts.unposted} ${counts.unposted === 1 ? 'lineup has' : 'lineups have'} not been posted.`
+                  : 'Nothing to change today.'}
+            </p>
           </div>
         ) : null}
 
