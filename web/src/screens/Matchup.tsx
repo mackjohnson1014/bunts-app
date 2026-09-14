@@ -63,19 +63,43 @@ export default function MatchupScreen() {
   );
 }
 
+/**
+ * The gap is the information; the adjective is only a reading of it. Showing
+ * the bar alone made five categories look identical when the margins were 1, 2,
+ * 3, five thousandths and nineteen hundredths.
+ */
+function gapText(state: CategoryState): string {
+  if (Math.abs(state.margin) < 1e-9) return 'Level';
+  const size = formatStat(state.key, Math.abs(state.margin));
+  return `${state.margin > 0 ? '+' : '−'}${size}`;
+}
+
+/**
+ * Four buckets, weighted towards the top of the range: with days left, most
+ * categories genuinely are close, and a vocabulary where everything is a coin
+ * flip tells you nothing.
+ */
+function closeness(leverage: number): string {
+  if (leverage > 0.88) return 'coin flip';
+  if (leverage > 0.62) return 'close';
+  if (leverage > 0.3) return 'within reach';
+  return 'a stretch';
+}
+
 function CatRow({ state }: { state: CategoryState }) {
   const meta = metaFor(state.key);
   const ahead = state.margin > 0;
 
-  const tone =
-    state.status === 'won' ? 'good'
-    : state.status === 'lost' ? 'bad'
-    : ahead ? 'good' : 'bad';
+  const chipClass =
+    state.status === 'won' ? 'in'
+    : state.status === 'lost' ? 'out'
+    : state.status === 'tied' ? 'unk'      // level is not losing
+    : ahead ? 'in' : 'out';
 
   const label =
     state.status === 'won' ? 'Won'
     : state.status === 'lost' ? 'Lost'
-    : state.status === 'tied' ? 'Tied'
+    : state.status === 'tied' ? 'Level'
     : ahead ? 'Ahead' : 'Behind';
 
   return (
@@ -83,7 +107,7 @@ function CatRow({ state }: { state: CategoryState }) {
       <div className="catrow-top">
         <span className="cat-key">{state.key}</span>
         <span className="cat-name">{meta.label}</span>
-        <span className={`chip ${tone === 'good' ? 'in' : 'out'}`}>{label}</span>
+        <span className={`chip ${chipClass}`}>{label}</span>
       </div>
 
       <div className="cat-values">
@@ -98,7 +122,7 @@ function CatRow({ state }: { state: CategoryState }) {
             <div className="lev-fill" style={{ width: `${Math.round(state.leverage * 100)}%` }} />
           </div>
           <span className="muted">
-            {state.leverage > 0.66 ? 'Coin flip' : state.leverage > 0.33 ? 'Within reach' : 'A stretch'}
+            {gapText(state)} · {closeness(state.leverage)}
           </span>
         </div>
       ) : null}

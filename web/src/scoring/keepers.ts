@@ -101,10 +101,10 @@ function noteFor(s: Standardised): string {
   if (s.best.length === 0) {
     return scarce
       ? `Thin production, but the position is hard to fill.`
-      : `Below this roster's average in most categories.`;
+      : `Below your roster's average in most categories.`;
   }
   const cats = s.best.join(' and ');
   return scarce
     ? `Carries ${cats}, and ${s.player.positions[0]} is scarce.`
-    : `Carries ${cats} relative to the rest of the roster.`;
+    : `Carries ${cats}.`;
 }

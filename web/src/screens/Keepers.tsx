@@ -33,9 +33,10 @@ export default function Keepers() {
                   <div className="sub">
                     {player ? `${player.mlbTeam} · ${player.positions.join('/')}` : ''}
                     {player?.percentOwned != null ? ` · ${player.percentOwned}% rostered` : ''}
+                    {player?.slot === 'IL' ? ' · on IL' : ''}
                   </div>
                 </span>
-                <span className="keep-score">{k.score.toFixed(1)}</span>
+                <span className="keep-score">{Math.round(k.score)}</span>
               </div>
               <div className="track">
                 <div className="fill" style={{ width: `${Math.max(4, Math.round((k.score / top) * 100))}%` }} />
