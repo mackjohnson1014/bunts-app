@@ -46,10 +46,29 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 const settle = <T,>(value: T): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(value), 250));
 
+/**
+ * Yahoo has approved API access but not switched it on. Until it does, the
+ * backend answers with a code instead of data, and showing an empty app to
+ * everyone who opens the link serves nobody. So fall back to the sample
+ * dataset and mark it as such -- the moment Yahoo provisions, real data
+ * arrives on its own with no toggle to remember.
+ */
+async function withSampleFallback<T>(fetcher: () => Promise<T>, sample: T): Promise<T> {
+  try {
+    return await fetcher();
+  } catch (e) {
+    if (isWaitingOnYahoo(e)) return sample;
+    throw e;
+  }
+}
+
 export const api = {
-  getRoster: (): Promise<Roster> => (usingMockData ? settle(mockRoster) : req('/roster')),
-  getLineupCalls: (): Promise<LineupCall[]> => (usingMockData ? settle(mockLineupCalls) : req('/lineup')),
-  getKeepers: (): Promise<KeeperCandidate[]> => (usingMockData ? settle(mockKeepers) : req('/keepers')),
+  getRoster: (): Promise<Roster> =>
+    usingMockData ? settle(mockRoster) : withSampleFallback(() => req<Roster>('/roster'), mockRoster),
+  getLineupCalls: (): Promise<LineupCall[]> =>
+    usingMockData ? settle(mockLineupCalls) : withSampleFallback(() => req<LineupCall[]>('/lineup'), mockLineupCalls),
+  getKeepers: (): Promise<KeeperCandidate[]> =>
+    usingMockData ? settle(mockKeepers) : withSampleFallback(() => req<KeeperCandidate[]>('/keepers'), mockKeepers),
   saveSubscription: (sub: PushSubscriptionJSON): Promise<{ ok: true }> =>
     usingMockData
       ? settle({ ok: true as const })

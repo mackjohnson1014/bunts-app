@@ -15,6 +15,16 @@ export const STARTING_SLOTS: Slot[] = ['C', '1B', '2B', '3B', 'SS', 'OF', 'UTIL'
 /** Yahoo injury/availability status, or null when active. */
 export type PlayerStatus = 'DTD' | 'IL10' | 'IL15' | 'IL60' | 'NA' | 'SUSP' | null;
 
+/** One game already played, newest first in `recentGames`. */
+export interface GameLine {
+  date: string;          // ISO date
+  opponent: string;      // "@ SD"
+  /** Human-readable line: "2-4, HR, 2 RBI" or "6.0 IP, 1 ER, 8 K". */
+  summary: string;
+  /** Did this game help or hurt, roughly. Drives the form strip. */
+  quality: 'good' | 'neutral' | 'bad' | 'dnp';
+}
+
 export interface Player {
   playerKey: string;
   name: string;
@@ -37,6 +47,10 @@ export interface Player {
   seasonStats: Record<string, number>;
   last14Stats: Record<string, number>;
   percentOwned: number | null;
+  /** Newest first. Empty for a player who has not appeared recently. */
+  recentGames: GameLine[];
+  /** Injury or role note in plain language, when there is one. */
+  note: string | null;
 }
 
 export interface League {
@@ -63,6 +77,10 @@ export interface Roster {
   players: Player[];
   /** When this snapshot was taken, ISO 8601. */
   fetchedAt: string;
+  /** When today's lineups lock, ISO 8601. Null outside a game day. */
+  lockAt: string | null;
+  /** True when this is the stand-in dataset rather than the real league. */
+  sample?: boolean;
 }
 
 export type Recommendation = 'start' | 'sit' | 'hold';

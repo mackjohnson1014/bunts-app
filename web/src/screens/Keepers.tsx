@@ -14,6 +14,7 @@ export default function Keepers() {
     <Screen
       title="Keepers"
       subtitle={slots ? `Running tally · ${slots} slots next season` : 'Running tally'}
+      sample={roster.data?.sample}
       loading={roster.loading || keepers.loading}
       error={roster.error ?? keepers.error}
       onReload={() => { roster.reload(); keepers.reload(); }}

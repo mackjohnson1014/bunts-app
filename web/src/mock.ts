@@ -5,8 +5,18 @@ import type { KeeperCandidate, LineupCall, Roster } from './types';
 
 const today = new Date().toISOString();
 
+/** Tonight's first pitch, so the countdown on Today has something to count to. */
+const lockAt = (() => {
+  const d = new Date();
+  d.setHours(19, 5, 0, 0);
+  if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
+  return d.toISOString();
+})();
+
 export const mockRoster: Roster = {
   fetchedAt: today,
+  lockAt,
+  sample: true,
   team: {
     teamKey: '458.l.000000.t.1',
     name: 'Bunts',
@@ -29,6 +39,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 54, HR: 19, RBI: 63, SB: 2, AVG: 0.254 },
       last14Stats: { R: 6, HR: 3, RBI: 9, SB: 0, AVG: 0.298 },
       percentOwned: 88,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '2-4, HR, 2 RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '0-3, K', quality: 'bad' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '2-3, 2B, RBI', quality: 'good' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1-3, BB', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.2', name: 'Marcus Feld', mlbTeam: 'ATL',
@@ -37,6 +55,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 88, HR: 34, RBI: 101, SB: 4, AVG: 0.281 },
       last14Stats: { R: 9, HR: 4, RBI: 12, SB: 1, AVG: 0.310 },
       percentOwned: 99,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '3-5, HR, 3 RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '2-4, 2B', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '1-4, RBI', quality: 'neutral' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '2-4, HR', quality: 'good' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1-5', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.3', name: 'Devon Marsh', mlbTeam: 'CHC',
@@ -45,6 +71,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 71, HR: 12, RBI: 48, SB: 22, AVG: 0.267 },
       last14Stats: { R: 4, HR: 0, RBI: 3, SB: 2, AVG: 0.213 },
       percentOwned: 76,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '0-4, 2 K', quality: 'bad' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '1-4, SB', quality: 'neutral' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: 'Did not play', quality: 'dnp' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '0-3', quality: 'bad' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1-4', quality: 'neutral' },
+      ],
+      note: "Left game early Tuesday with tightness; listed day-to-day.",
     },
     {
       playerKey: 'p.4', name: 'Eli Vargas', mlbTeam: 'LAD',
@@ -53,6 +87,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 79, HR: 27, RBI: 84, SB: 7, AVG: 0.292 },
       last14Stats: { R: 5, HR: 1, RBI: 6, SB: 0, AVG: 0.245 },
       percentOwned: 97,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '1-4, RBI', quality: 'neutral' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '0-4, 2 K', quality: 'bad' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '2-4, HR', quality: 'good' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '1-3', quality: 'neutral' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '0-4', quality: 'bad' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.5', name: 'Tyler Nakamura', mlbTeam: 'BAL',
@@ -61,6 +103,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 95, HR: 21, RBI: 70, SB: 31, AVG: 0.301 },
       last14Stats: { R: 11, HR: 2, RBI: 8, SB: 4, AVG: 0.340 },
       percentOwned: 100,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '3-4, 2 SB', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '2-4, HR, 2 RBI', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '2-5, 2B', quality: 'good' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '1-4, BB', quality: 'neutral' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '2-3, SB', quality: 'good' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.6', name: 'Andre Whitfield', mlbTeam: 'TEX',
@@ -69,6 +119,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 66, HR: 15, RBI: 55, SB: 14, AVG: 0.248 },
       last14Stats: { R: 3, HR: 0, RBI: 2, SB: 1, AVG: 0.180 },
       percentOwned: 61,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '0-4', quality: 'bad' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '0-3, 2 K', quality: 'bad' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '0-4, K', quality: 'bad' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1-3, BB', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.7', name: 'Jonah Pike', mlbTeam: 'PHI',
@@ -77,6 +135,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 58, HR: 22, RBI: 67, SB: 3, AVG: 0.236 },
       last14Stats: { R: 7, HR: 3, RBI: 10, SB: 0, AVG: 0.286 },
       percentOwned: 54,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '2-4, HR, 3 RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '2-5, HR', quality: 'good' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '0-4', quality: 'bad' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1-4, RBI', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.8', name: 'Rafael Ortiz', mlbTeam: 'MIA',
@@ -85,6 +151,14 @@ export const mockRoster: Roster = {
       seasonStats: { W: 12, SV: 0, K: 187, ERA: 3.12, WHIP: 1.08 },
       last14Stats: { W: 1, SV: 0, K: 21, ERA: 2.45, WHIP: 0.96 },
       percentOwned: 92,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '7.0 IP, 1 ER, 9 K', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '6.2 IP, 2 ER, 7 K', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '5.1 IP, 3 ER, 5 K', quality: 'neutral' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '7.0 IP, 0 ER, 8 K', quality: 'good' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '6.0 IP, 3 ER, 6 K', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.9', name: 'Kenji Mori', mlbTeam: 'CLE',
@@ -93,6 +167,14 @@ export const mockRoster: Roster = {
       seasonStats: { W: 9, SV: 0, K: 154, ERA: 3.88, WHIP: 1.21 },
       last14Stats: { W: 0, SV: 0, K: 12, ERA: 5.14, WHIP: 1.48 },
       percentOwned: 71,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '4.1 IP, 6 ER, 3 K', quality: 'bad' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '5.0 IP, 5 ER, 4 K', quality: 'bad' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '6.0 IP, 3 ER, 5 K', quality: 'neutral' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '7.0 IP, 1 ER, 8 K', quality: 'good' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '5.2 IP, 3 ER, 6 K', quality: 'neutral' },
+      ],
+      note: "Two rough starts in a row; command has been off since the break.",
     },
     {
       playerKey: 'p.10', name: 'Brett Callahan', mlbTeam: 'MIN',
@@ -101,6 +183,14 @@ export const mockRoster: Roster = {
       seasonStats: { W: 4, SV: 28, K: 81, ERA: 2.44, WHIP: 0.98 },
       last14Stats: { W: 0, SV: 3, K: 9, ERA: 1.80, WHIP: 0.80 },
       percentOwned: 85,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '1.0 IP, SV, 2 K', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '1.0 IP, SV', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: 'Did not pitch', quality: 'dnp' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '1.0 IP, SV, 1 K', quality: 'good' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1.0 IP, 1 H', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.11', name: 'Sam Ruiz', mlbTeam: 'AZ',
@@ -109,6 +199,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 44, HR: 9, RBI: 38, SB: 18, AVG: 0.272 },
       last14Stats: { R: 8, HR: 2, RBI: 7, SB: 3, AVG: 0.325 },
       percentOwned: 33,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '2-4, SB, RBI', quality: 'good' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '3-5, 2B, SB', quality: 'good' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: '2-4, SB', quality: 'good' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '2-3, 2B', quality: 'good' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.12', name: 'Owen Brandt', mlbTeam: 'BOS',
@@ -117,6 +215,14 @@ export const mockRoster: Roster = {
       seasonStats: { R: 39, HR: 11, RBI: 41, SB: 1, AVG: 0.229 },
       last14Stats: { R: 2, HR: 0, RBI: 1, SB: 0, AVG: 0.167 },
       percentOwned: 22,
+      recentGames: [
+        { date: '2026-09-12', opponent: '@ SD', summary: '0-4, 2 K', quality: 'bad' },
+        { date: '2026-09-11', opponent: 'vs MIL', summary: '1-4', quality: 'neutral' },
+        { date: '2026-09-10', opponent: '@ ATL', summary: '0-3', quality: 'bad' },
+        { date: '2026-09-09', opponent: 'vs HOU', summary: 'Did not play', quality: 'dnp' },
+        { date: '2026-09-08', opponent: '@ NYM', summary: '1-4, RBI', quality: 'neutral' },
+      ],
+      note: null,
     },
     {
       playerKey: 'p.13', name: 'Luis Carrasco', mlbTeam: 'STL',
@@ -125,6 +231,8 @@ export const mockRoster: Roster = {
       seasonStats: { W: 7, SV: 2, K: 98, ERA: 4.02, WHIP: 1.30 },
       last14Stats: {},
       percentOwned: 40,
+      recentGames: [],
+      note: "On the 15-day IL since Sept 2. No rehab assignment yet.",
     },
   ],
 };

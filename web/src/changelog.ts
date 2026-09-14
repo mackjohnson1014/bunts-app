@@ -14,6 +14,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '0.7',
+    date: '2026-09-14',
+    title: 'Player detail and a live countdown',
+    notes: [
+      'Tap any player for a full card: tonight\u2019s status, season against the last two weeks, and the last five games.',
+      'Today counts down to first pitch and turns red inside half an hour.',
+      'Every player shows a five-game form strip, so streaks are visible without opening anything.',
+      'The roster sorts by lineup, name, or recent form.',
+      'While Yahoo access is still pending, the app shows a sample team rather than an empty screen.',
+    ],
+  },
+  {
     version: '0.6',
     date: '2026-09-14',
     title: 'Easier to install',
