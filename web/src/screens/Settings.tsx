@@ -55,18 +55,40 @@ export default function Settings() {
   );
 }
 
+/**
+ * Renders its failure rather than vanishing. A section that silently
+ * disappears when the call fails hides exactly the information needed to work
+ * out why -- which is how this one wasted a diagnosis cycle.
+ */
 function SignedInAs() {
-  const { data } = useAsync(() => api.me());
-  if (!data) return null;
+  const { data, error, loading, reload } = useAsync(() => api.me());
+
+  if (loading) return null;
+
   return (
     <>
       <p className="sect">Signed in</p>
       <div className="stack">
-        <p className="whoami" style={{ margin: 0 }}>
-          <span className="dot" style={{ background: 'var(--grass)' }} />
-          <span>Suggestions you send are signed <strong>{data.name}</strong></span>
-        </p>
-        <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>{data.email}</p>
+        {data ? (
+          <>
+            <p className="whoami" style={{ margin: 0 }}>
+              <span className="dot" style={{ background: 'var(--grass)' }} />
+              <span>Suggestions you send are signed <strong>{data.name}</strong></span>
+            </p>
+            <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>{data.email}</p>
+          </>
+        ) : (
+          <>
+            <p className="whoami" style={{ margin: 0 }}>
+              <span className="dot" style={{ background: 'var(--clay)' }} />
+              <span>Bunts cannot tell who you are</span>
+            </p>
+            <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>
+              {error instanceof Error ? error.message : String(error ?? 'Unknown error')}
+            </p>
+            <button className="btn ghost" onClick={reload}>Try again</button>
+          </>
+        )}
       </div>
     </>
   );

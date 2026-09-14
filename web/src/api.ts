@@ -46,6 +46,17 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(message, code, res.status);
   }
+
+  // A Pages SPA fallback answers /api/* with index.html when the Functions
+  // were not deployed. Saying so beats "Unexpected token '<'".
+  const type = res.headers.get('Content-Type') ?? '';
+  if (!type.includes('json')) {
+    throw new ApiError(
+      `Expected JSON from ${path} but got ${type || 'no content type'} — the API is probably not deployed.`,
+      'not_json',
+      res.status,
+    );
+  }
   return res.json() as Promise<T>;
 }
 
