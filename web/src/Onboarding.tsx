@@ -66,6 +66,7 @@ export function Onboarding({ user, onDone }: { user: User; onDone: () => void })
       </header>
 
       <div className="onboard-body">
+       <div className="onboard-step">
         {step === 0 ? (
           <>
             <h1 className="onboard-title">What should we call you?</h1>
@@ -123,25 +124,27 @@ export function Onboarding({ user, onDone }: { user: User; onDone: () => void })
         {step === 2 ? <DeviceStep onDone={onDone} /> : null}
 
         {error ? <p className="muted" style={{ color: 'var(--clay)', marginTop: 14 }}>{error}</p> : null}
+       </div>
       </div>
 
       {step < 2 ? (
         <footer className="onboard-foot">
-          {step > 0 ? (
-            <button className="btn ghost" onClick={() => setStep(step - 1)}>Back</button>
-          ) : null}
-          <button
-            className="btn"
-            disabled={(step === 0 && !nameReady) || saving}
-            onClick={() => (step === 0 ? setStep(1) : void saveProfile())}
-          >
-            {saving ? 'Saving…' : step === 0 ? 'Continue' : 'Save and continue'}
-          </button>
-          {step === 0 && !nameReady ? (
-            <p className="muted" style={{ margin: '8px 0 0', textAlign: 'center' }}>
-              A first name is enough.
-            </p>
-          ) : null}
+          {/* Rendered unconditionally so the buttons below never shift. */}
+          <p className="foot-hint">
+            {step === 0 && !nameReady ? 'A first name is enough.' : '\u00A0'}
+          </p>
+          <div className="foot-buttons">
+            {step > 0 ? (
+              <button className="btn ghost" onClick={() => setStep(step - 1)}>Back</button>
+            ) : null}
+            <button
+              className="btn"
+              disabled={(step === 0 && !nameReady) || saving}
+              onClick={() => (step === 0 ? setStep(1) : void saveProfile())}
+            >
+              {saving ? 'Saving…' : step === 0 ? 'Continue' : 'Save and continue'}
+            </button>
+          </div>
         </footer>
       ) : null}
     </div>
