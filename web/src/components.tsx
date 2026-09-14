@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { isWaitingOnYahoo } from './api';
 import type { GameLine, Player } from './types';
+import { useRefreshOnFocus } from './useRefresh';
 
 export function Screen({
   title, subtitle, loading, error, onReload, sample, updatedAt, children,
@@ -17,19 +18,29 @@ export function Screen({
   const waiting = isWaitingOnYahoo(error);
   const message = error instanceof Error ? error.message : error ? String(error) : null;
 
+  // Coming back to a suspended app should not show yesterday's roster.
+  useRefreshOnFocus(onReload ?? noop);
+
   return (
     <div className="screen">
       <div className="screen-head">
         <div className="screen-titlerow">
           <h1 className="screen-title">{title}</h1>
           {sample ? <span className="sample-tag">Sample data</span> : null}
+          {onReload ? (
+            <button
+              className={`refresh-btn${loading ? ' spinning' : ''}`}
+              onClick={onReload}
+              disabled={loading}
+              aria-label="Refresh"
+              title="Refresh"
+            >
+              ↻
+            </button>
+          ) : null}
         </div>
         {subtitle ? <p className="screen-sub">{subtitle}</p> : null}
-        {onReload && !loading ? (
-          <button className="refresh" onClick={onReload}>
-            {updatedAt ? `Updated ${ago(updatedAt)}` : 'Refresh'}
-          </button>
-        ) : null}
+        {updatedAt && !loading ? <p className="updated">Updated {ago(updatedAt)}</p> : null}
       </div>
 
       {waiting || message ? (
@@ -134,6 +145,8 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
     </button>
   );
 }
+
+const noop = () => {};
 
 function ago(iso: string): string {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));

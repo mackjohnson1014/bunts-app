@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { InstallBanner } from './InstallBanner';
+import { useUpdateAvailable } from './useRefresh';
 import Today from './screens/Today';
 import RosterScreen from './screens/Roster';
 import Keepers from './screens/Keepers';
@@ -17,6 +18,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [pushNonce, setPushNonce] = useState(0);
+  const update = useUpdateAvailable();
 
   // A push arriving while the app is open should refresh it, not leave it stale.
   useEffect(() => {
@@ -33,6 +35,12 @@ export default function App() {
 
   return (
     <div className="app">
+      {update.available ? (
+        <button className="update-pill" onClick={update.apply}>
+          New version available — tap to update
+        </button>
+      ) : null}
+
       <InstallBanner />
 
       {tab === 'today' && <Today key={pushNonce} />}

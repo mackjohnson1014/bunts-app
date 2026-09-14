@@ -14,6 +14,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '0.8',
+    date: '2026-09-14',
+    title: 'Stays current on its own',
+    notes: [
+      'Coming back to the app after a while refreshes it, instead of showing you what it fetched last time.',
+      'A refresh button now sits next to the title, where you can actually find it.',
+      'When a new version ships, a banner offers to update — no more closing and reopening.',
+      'Player comparisons measure you against your own pace, so the arrows mean something.',
+    ],
+  },
+  {
     version: '0.7',
     date: '2026-09-14',
     title: 'Player detail and a live countdown',
