@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { InstallBanner } from './InstallBanner';
 import { Onboarding } from './Onboarding';
-import { api } from './api';
+import { api, usingMockData } from './api';
 import { useAsync } from './useAsync';
 import { useUpdateAvailable } from './useRefresh';
 import Today from './screens/Today';
@@ -24,7 +24,12 @@ export default function App() {
   const update = useUpdateAvailable();
   const me = useAsync(() => api.me());
   // Lets the flow be re-viewed without wiping a profile to get back to it.
-  const [replayOnboarding, setReplayOnboarding] = useState(false);
+  // On the sample-data preview, ?onboarding=1 jumps straight there, so the
+  // flow can be reviewed without a real account. Gated on mocks so it can
+  // never be triggered against the live app.
+  const [replayOnboarding, setReplayOnboarding] = useState(
+    () => usingMockData && new URLSearchParams(location.search).has('onboarding'),
+  );
 
   // A push arriving while the app is open should refresh it, not leave it stale.
   useEffect(() => {
@@ -53,6 +58,12 @@ export default function App() {
 
   return (
     <div className="app">
+      {usingMockData ? (
+        <div className="preview-bar">
+          Preview build · sample data · not connected to your league
+        </div>
+      ) : null}
+
       {update.available ? (
         <button className="update-pill" onClick={update.apply}>
           New version available — tap to update

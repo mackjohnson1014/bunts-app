@@ -60,6 +60,24 @@ appear in the product. It renders at the bottom of the roster screen.
 - Keeper scoring formula not designed. Needs the league's scoring settings
   and keeper rules.
 
+## Preview builds — read before deploying one
+
+`npm run deploy:preview` publishes to `preview.bunts.pages.dev` for design
+review. **That hostname is NOT behind Cloudflare Access**, which is bound to
+`bunts.pages.dev` only. Preview deployments of the real app would therefore be
+public.
+
+That is why the preview script hardcodes `VITE_USE_MOCKS=1`. With mocks
+compiled in, Vite eliminates every API call path -- the built bundle contains
+no reference to `/api` at all -- so the preview renders the UI on sample data
+and cannot reach KV, Yahoo, or push. Verify with:
+
+    grep -c "/api/" dist/assets/*.js    # must be 0
+
+Never deploy a non-mock build to a preview branch, and never add an Access
+bypass to make one work. `?onboarding=1` jumps to the setup flow on the
+preview; it is gated on mocks so it cannot be triggered against the live app.
+
 ## Known tradeoffs — accepted, do not "fix" silently
 
 **`APP_SECRET` is readable in the deployed web bundle.** Vite inlines
