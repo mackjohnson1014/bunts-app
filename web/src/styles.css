@@ -41,6 +41,9 @@ button { font: inherit; color: inherit; }
   height: 100%;
   max-width: 520px;
   margin: 0 auto;
+  /* Claimed once here. Anything at the top of the app -- the install banner or
+     the screen itself -- would otherwise each add it and double the gap. */
+  padding-top: env(safe-area-inset-top);
 }
 
 /* ---------- scrolling screen ---------- */
@@ -48,8 +51,7 @@ button { font: inherit; color: inherit; }
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 0 16px calc(24px + env(safe-area-inset-bottom));
-  padding-top: calc(10px + env(safe-area-inset-top));
+  padding: 10px 16px calc(24px + env(safe-area-inset-bottom));
 }
 
 .screen-head {
@@ -271,3 +273,32 @@ button { font: inherit; color: inherit; }
   color: var(--chalk-dim); align-self: baseline;
 }
 .about dd { margin: 0; word-break: break-word; }
+
+/* ---------- install banner ---------- */
+.install {
+  flex: none;
+  margin: 8px 16px 0;
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  background: rgba(232, 163, 61, .08);
+  padding: 8px 10px;
+}
+.install-head { display: flex; align-items: center; gap: 8px; }
+.install-toggle {
+  flex: 1; display: flex; align-items: center; gap: 7px;
+  background: none; border: 0; padding: 2px 0; cursor: pointer;
+  text-align: left; color: var(--amber);
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 14px; font-weight: 600; letter-spacing: .04em;
+}
+.install-chevron { font-size: 11px; }
+.install-close {
+  background: none; border: 0; cursor: pointer; color: var(--chalk-dim);
+  font-size: 20px; line-height: 1; padding: 0 4px;
+}
+.install-toggle:focus-visible, .install-close:focus-visible {
+  outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 3px;
+}
+.install-why { margin: 8px 0 0; font-size: 13px; color: var(--chalk); }
+.install .steps { margin-top: 8px; }
+.install .btn { margin-top: 10px; }

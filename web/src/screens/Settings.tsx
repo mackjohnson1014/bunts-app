@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { Screen } from '../components';
 import { api, usingMockData } from '../api';
 import { APP_VERSION, RELEASES, formatDate } from '../changelog';
+import { useInstall } from '../install';
 import { currentSubscription, isIOS, isStandalone, subscribe, supportLevel, type PushState } from '../push';
 
 export default function Settings() {
   return (
     <Screen title="Settings" subtitle={`Bunts ${APP_VERSION}`}>
+      <InstallSection />
+
       <p className="sect">Notifications</p>
       <Notifications />
 
@@ -46,6 +49,38 @@ export default function Settings() {
         <dt>Scope</dt><dd>One team, one league, one person.</dd>
       </dl>
     </Screen>
+  );
+}
+
+/**
+ * The banner is dismissible, so Settings keeps a permanent copy -- dismissing
+ * the nudge should not cost someone the instructions.
+ */
+function InstallSection() {
+  const { installed, canPrompt, steps, platform, install, dismissed, restore } = useInstall();
+
+  if (installed) return null;
+
+  return (
+    <>
+      <p className="sect">Install</p>
+      <div className="stack">
+        <p style={{ margin: 0 }}>
+          Bunts is running in a browser tab. Installed to the home screen it opens
+          like an app{platform === 'ios' ? ' and can send notifications, which a tab cannot' : ''}.
+        </p>
+        {canPrompt ? (
+          <button className="btn" onClick={() => void install()}>Install Bunts</button>
+        ) : (
+          <ol className="steps">
+            {steps.map((s) => <li key={s}>{s}</li>)}
+          </ol>
+        )}
+        {dismissed ? (
+          <button className="btn ghost" onClick={restore}>Show the reminder again</button>
+        ) : null}
+      </div>
+    </>
   );
 }
 

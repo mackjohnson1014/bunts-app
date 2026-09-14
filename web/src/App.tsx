@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { InstallBanner } from './InstallBanner';
 import Today from './screens/Today';
 import RosterScreen from './screens/Roster';
 import Keepers from './screens/Keepers';
@@ -32,6 +33,8 @@ export default function App() {
 
   return (
     <div className="app">
+      <InstallBanner />
+
       {tab === 'today' && <Today key={pushNonce} />}
       {tab === 'roster' && <RosterScreen />}
       {tab === 'keepers' && <Keepers />}

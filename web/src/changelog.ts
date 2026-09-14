@@ -14,6 +14,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '0.6',
+    date: '2026-09-14',
+    title: 'Easier to install',
+    notes: [
+      'A one-time reminder shows how to add Bunts to your home screen, with the right steps for your phone.',
+      'On Android it offers a real install button instead of instructions.',
+      'Dismiss it and it stays gone; the instructions live on in Settings.',
+    ],
+  },
+  {
     version: '0.5',
     date: '2026-09-14',
     title: 'Settings and changelog',
