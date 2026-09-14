@@ -14,16 +14,19 @@ function authorized(req: Request, env: Env): boolean {
   return diff === 0;
 }
 
+// The PWA is served from a different origin than the Worker, and it sends
+// Authorization, so every request is preflighted.
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+};
+
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      // The PWA is served from a different origin than the Worker.
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    },
+    headers: { 'Content-Type': 'application/json', ...CORS },
   });
 
 function isPushSubscription(v: unknown): v is PushSubscription {
@@ -38,7 +41,9 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
 
-    if (req.method === 'OPTIONS') return json({}, 204);
+    // 204 is a null-body status: giving it a body throws, which surfaced as a
+    // 500 on every preflight and would have blocked the app's first call.
+    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
 
     if (url.pathname === '/health') {
       return json({
