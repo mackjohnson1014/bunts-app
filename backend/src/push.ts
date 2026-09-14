@@ -1,61 +1,63 @@
+import { sendWebPush, type PushSubscription, type VapidConfig } from './webpush';
 import type { Env } from './yahoo';
 
-const EXPO_PUSH = 'https://exp.host/--/api/v2/push/send';
-const KEY_DEVICES = 'push:devices';
+const KEY_SUBS = 'push:subscriptions';
 
-export interface Device {
-  token: string;
-  platform: string;
-  registeredAt: string;
-}
-
-export async function listDevices(env: Env): Promise<Device[]> {
-  const raw = await env.BUNTS.get(KEY_DEVICES);
-  return raw ? (JSON.parse(raw) as Device[]) : [];
-}
-
-export async function registerDevice(env: Env, token: string, platform: string): Promise<void> {
-  const devices = await listDevices(env);
-  const without = devices.filter((d) => d.token !== token);
-  without.push({ token, platform, registeredAt: new Date().toISOString() });
-  await env.BUNTS.put(KEY_DEVICES, JSON.stringify(without));
-}
-
-export async function sendPush(env: Env, title: string, body: string, data?: unknown): Promise<number> {
-  const devices = await listDevices(env);
-  if (devices.length === 0) return 0;
-
-  const messages = devices.map((d) => ({
-    to: d.token,
-    title,
-    body,
-    sound: 'default',
-    channelId: 'lineups',
-    data,
-  }));
-
-  const res = await fetch(EXPO_PUSH, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(messages),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Expo push failed: ${res.status} ${await res.text()}`);
+export function vapidFrom(env: Env): VapidConfig {
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+    throw new Error('VAPID keys are not configured. See PUSH_SETUP.md.');
   }
+  return {
+    subject: env.VAPID_SUBJECT || 'mailto:nobody@example.com',
+    publicKey: env.VAPID_PUBLIC_KEY,
+    privateKey: env.VAPID_PRIVATE_KEY,
+  };
+}
 
-  // Expo reports per-message errors in the body even on a 200. A DeviceNotRegistered
-  // ticket means that install is gone -- drop it so we stop paying for it every poll.
-  const out = (await res.json()) as { data?: Array<{ status: string; details?: { error?: string } }> };
-  const dead = new Set<string>();
-  out.data?.forEach((ticket, i) => {
-    if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
-      dead.add(devices[i].token);
+export async function listSubscriptions(env: Env): Promise<PushSubscription[]> {
+  const raw = await env.BUNTS.get(KEY_SUBS);
+  return raw ? (JSON.parse(raw) as PushSubscription[]) : [];
+}
+
+export async function addSubscription(env: Env, sub: PushSubscription): Promise<void> {
+  const subs = await listSubscriptions(env);
+  // Re-subscribing produces the same endpoint, so replace rather than duplicate.
+  const next = subs.filter((s) => s.endpoint !== sub.endpoint);
+  next.push(sub);
+  await env.BUNTS.put(KEY_SUBS, JSON.stringify(next));
+}
+
+export interface Notification {
+  title: string;
+  body: string;
+  tag?: string;
+  url?: string;
+  data?: unknown;
+}
+
+/**
+ * Deliver to every registered device, dropping the ones the push service says
+ * are permanently gone. A dead subscription otherwise gets retried on every
+ * poll forever.
+ */
+export async function notify(env: Env, notification: Notification): Promise<{ sent: number; dropped: number }> {
+  const subs = await listSubscriptions(env);
+  if (subs.length === 0) return { sent: 0, dropped: 0 };
+
+  const vapid = vapidFrom(env);
+  const results = await Promise.all(
+    subs.map(async (sub) => ({ sub, result: await sendWebPush(sub, notification, vapid) })),
+  );
+
+  const alive = results.filter((r) => !r.result.gone).map((r) => r.sub);
+  const dropped = results.length - alive.length;
+  if (dropped > 0) await env.BUNTS.put(KEY_SUBS, JSON.stringify(alive));
+
+  for (const r of results) {
+    if (!r.result.gone && r.result.status >= 400) {
+      console.error('push failed', r.result.status, r.result.error);
     }
-  });
-  if (dead.size > 0) {
-    await env.BUNTS.put(KEY_DEVICES, JSON.stringify(devices.filter((d) => !dead.has(d.token))));
   }
 
-  return messages.length - dead.size;
+  return { sent: results.filter((r) => r.result.status < 400).length, dropped };
 }

@@ -23,6 +23,9 @@ npx wrangler secret put YAHOO_CLIENT_ID
 npx wrangler secret put YAHOO_CLIENT_SECRET
 npx wrangler secret put YAHOO_REFRESH_TOKEN   # from ../tokens.json
 npx wrangler secret put APP_SECRET            # invent one; the app sends it as a bearer token
+npx wrangler secret put VAPID_PUBLIC_KEY      # from ../.env
+npx wrangler secret put VAPID_PRIVATE_KEY     # from ../.env -- never commit this
+npx wrangler secret put VAPID_SUBJECT         # mailto: address
 
 npm run deploy
 ```
@@ -39,10 +42,29 @@ Then fill `LEAGUE_KEY` and `TEAM_KEY` in `wrangler.toml` — both come out of
 | `GET /lineup` | Start/sit calls — not implemented yet |
 | `GET /keepers` | Keeper tally — not implemented yet |
 | `GET /raw?path=…` | Escape hatch for exploring Yahoo's response shapes |
-| `POST /push/register` | Register an Expo push token |
+| `GET /push/key` | VAPID public key the browser needs to subscribe |
+| `POST /push/subscribe` | Store a Web Push subscription |
 | `POST /push/test` | Send a test notification to every registered device |
 
 All except `/health` require `Authorization: Bearer $APP_SECRET`.
+
+## Web Push
+
+`src/webpush.ts` implements RFC 8291 (aes128gcm) and RFC 8292 (VAPID) directly
+on WebCrypto. The Node `web-push` package does not run on Workers, so there is
+no library to lean on here.
+
+Verified end to end against Apple's push service on 2026-09-13 via
+`wrangler dev --local`: subscribe, then `POST /push/test`, and the notification
+arrived on a real iPhone. Two details that are easy to get wrong:
+
+- `crypto.subtle.exportKey('raw', ...)` is typed as `ArrayBuffer | JsonWebKey`
+  in workers-types even though 'raw' always returns the former.
+- workers-types spells the ECDH peer key `$public`, but the runtime property is
+  `public`. Write what the runtime needs and cast the type, not the reverse.
+
+Dead subscriptions (404/410 from the push service) are dropped automatically,
+so a deleted install stops costing a request on every poll.
 
 ## What is deliberately unfinished
 

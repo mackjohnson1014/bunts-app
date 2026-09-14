@@ -16,6 +16,10 @@ export interface Env {
   APP_SECRET: string;
   LEAGUE_KEY: string;
   TEAM_KEY: string;
+  /** Web Push (VAPID). Public key is served to the app; private key signs. */
+  VAPID_PUBLIC_KEY: string;
+  VAPID_PRIVATE_KEY: string;
+  VAPID_SUBJECT: string;
 }
 
 const TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
