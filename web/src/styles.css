@@ -512,25 +512,50 @@ button { font: inherit; color: inherit; }
 }
 .whoami strong { color: var(--chalk); font-weight: 600; }
 
-/* ---------- onboarding ---------- */
+/* ---------- onboarding stepper ---------- */
 .onboard {
-  min-height: 100%; overflow-y: auto;
-  padding: calc(28px + env(safe-area-inset-top)) 20px calc(32px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column;
+  height: 100%; max-width: 480px; margin: 0 auto;
+  padding-top: env(safe-area-inset-top);
 }
-.onboard-inner { max-width: 460px; margin: 0 auto; }
+.onboard-top { flex: none; padding: 20px 20px 0; }
 .onboard-eyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   font-family: 'Barlow Condensed', system-ui, sans-serif;
   font-size: 11.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
   color: var(--chalk-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stepbar { display: grid; grid-auto-flow: column; gap: 5px; }
+.stepseg { height: 3px; border-radius: 2px; background: var(--board-3); }
+.stepseg.done { background: var(--amber); }
+.stepcount {
+  margin: 8px 0 0;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+
+.onboard-body {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 28px 20px 16px;
 }
 .onboard-title {
   font-family: 'Barlow Condensed', system-ui, sans-serif;
-  font-size: 38px; font-weight: 700; line-height: 1; margin: 0 0 12px;
-  text-transform: uppercase; letter-spacing: .01em;
+  font-size: clamp(30px, 8vw, 38px); font-weight: 700; line-height: 1.02;
+  margin: 0 0 12px; text-transform: uppercase; letter-spacing: .01em;
+  text-wrap: balance;
 }
-.onboard-lede { margin: 0; font-size: 15px; color: var(--chalk-dim); max-width: 44ch; }
-.onboard .btn { margin-top: 20px; }
+.onboard-lede { margin: 0; font-size: 15px; color: var(--chalk-dim); max-width: 42ch; }
+
+.onboard-foot {
+  flex: none; padding: 14px 20px calc(20px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule); background: var(--board-2);
+  display: grid; gap: 8px;
+}
+.onboard-foot .btn { margin-top: 0; }
+.onboard-actions { display: grid; gap: 8px; margin-top: 24px; }
+.onboard-actions .btn { margin-top: 0; }
 
 /* ---------- name / select fields ---------- */
 .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

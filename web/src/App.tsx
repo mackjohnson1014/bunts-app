@@ -23,6 +23,8 @@ export default function App() {
   const [pushNonce, setPushNonce] = useState(0);
   const update = useUpdateAvailable();
   const me = useAsync(() => api.me());
+  // Lets the flow be re-viewed without wiping a profile to get back to it.
+  const [replayOnboarding, setReplayOnboarding] = useState(false);
 
   // A push arriving while the app is open should refresh it, not leave it stale.
   useEffect(() => {
@@ -40,8 +42,13 @@ export default function App() {
   // Hold the app back rather than flashing Today and then replacing it.
   if (me.loading) return <div className="app" />;
 
-  if (me.data?.needsOnboarding) {
-    return <Onboarding user={me.data} onDone={me.reload} />;
+  if (me.data && (me.data.needsOnboarding || replayOnboarding)) {
+    return (
+      <Onboarding
+        user={me.data}
+        onDone={() => { setReplayOnboarding(false); me.reload(); }}
+      />
+    );
   }
 
   return (
@@ -57,7 +64,13 @@ export default function App() {
       {tab === 'today' && <Today key={pushNonce} />}
       {tab === 'roster' && <RosterScreen />}
       {tab === 'keepers' && <Keepers />}
-      {tab === 'settings' && <Settings user={me.data ?? null} onProfileChange={me.reload} />}
+      {tab === 'settings' && (
+        <Settings
+          user={me.data ?? null}
+          onProfileChange={me.reload}
+          onReplayOnboarding={() => setReplayOnboarding(true)}
+        />
+      )}
 
       <nav className="tabs" role="tablist" aria-label="Screens">
         {TABS.map((t) => (

@@ -7,10 +7,11 @@ import { ALERT_KINDS, type AlertKind, type Prefs, type User } from '../types';
 import { currentSubscription, isIOS, isStandalone, subscribe, supportLevel, type PushState } from '../push';
 
 export default function Settings({
-  user, onProfileChange,
+  user, onProfileChange, onReplayOnboarding,
 }: {
   user: User | null;
   onProfileChange: () => void;
+  onReplayOnboarding: () => void;
 }) {
   return (
     <Screen title="Settings" subtitle={`Bunts ${APP_VERSION}`}>
@@ -41,6 +42,11 @@ export default function Settings({
       ))}
 
       <p className="sect">About</p>
+      <div className="stack" style={{ marginBottom: 8 }}>
+        <button className="btn ghost" onClick={onReplayOnboarding}>
+          Run through setup again
+        </button>
+      </div>
       <dl className="about">
         <dt>Version</dt><dd>{APP_VERSION}</dd>
         <dt>Data</dt><dd>{usingMockData ? 'Stand-in fixtures' : 'Yahoo Fantasy Sports API (read-only)'}</dd>
