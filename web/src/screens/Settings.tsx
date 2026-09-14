@@ -28,7 +28,7 @@ export default function Settings({
       </p>
 
       <p className="sect">What's new</p>
-      {RELEASES.map((r, i) => (
+      {RELEASES.slice(0, 5).map((r, i) => (
         <div className={`release${i === 0 ? '' : ' old'}`} key={r.version}>
           <div className="release-head">
             <span className="release-version">{r.version}</span>
@@ -40,6 +40,11 @@ export default function Settings({
           </ul>
         </div>
       ))}
+      {RELEASES.length > 5 ? (
+        <p className="muted" style={{ marginTop: 10 }}>
+          Showing the five most recent of {RELEASES.length} releases.
+        </p>
+      ) : null}
 
       <p className="sect">About</p>
       <div className="stack" style={{ marginBottom: 8 }}>

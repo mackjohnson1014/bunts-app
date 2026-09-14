@@ -14,6 +14,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.1',
+    date: '2026-09-14',
+    title: 'Setup that fits the screen',
+    notes: [
+      'Setup is three steps now — your name, your alerts, then turning notifications on.',
+      'Fixed the text fields zooming the page on iPhone and pushing everything off the right edge.',
+      'Settings can run you back through setup any time.',
+    ],
+  },
+  {
     version: '1.0',
     date: '2026-09-14',
     title: 'Introduce yourself',

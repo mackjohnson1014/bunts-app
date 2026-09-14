@@ -21,6 +21,7 @@
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
+html, body { overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -498,10 +499,14 @@ button { font: inherit; color: inherit; }
 /* ---------- suggestions ---------- */
 .item.unread { box-shadow: inset 3px 0 0 var(--amber); }
 .note-input {
-  width: 100%; margin-top: 8px; padding: 9px 10px;
+  width: 100%; max-width: 100%; margin-top: 8px; padding: 10px;
   background: var(--board-2); color: var(--chalk);
   border: 1px solid var(--rule); border-radius: 7px;
-  font-family: 'Barlow', system-ui, sans-serif; font-size: 14px;
+  font-family: 'Barlow', system-ui, sans-serif;
+  /* 16px is not a style choice. Below it, iOS Safari zooms the whole page on
+     focus, which scales every other element past the viewport and looks like a
+     broken layout rather than a zoom. */
+  font-size: 16px;
   resize: vertical;
 }
 .note-input::placeholder { color: var(--chalk-dim); }
@@ -517,6 +522,8 @@ button { font: inherit; color: inherit; }
   display: flex; flex-direction: column;
   height: 100%; max-width: 480px; margin: 0 auto;
   padding-top: env(safe-area-inset-top);
+  /* Belt and braces: nothing here should ever scroll sideways. */
+  overflow-x: hidden;
 }
 .onboard-top { flex: none; padding: 20px 20px 0; }
 .onboard-eyebrow {
@@ -542,11 +549,14 @@ button { font: inherit; color: inherit; }
 }
 .onboard-title {
   font-family: 'Barlow Condensed', system-ui, sans-serif;
-  font-size: clamp(30px, 8vw, 38px); font-weight: 700; line-height: 1.02;
+  font-size: clamp(28px, 7.5vw, 36px); font-weight: 700; line-height: 1.02;
   margin: 0 0 12px; text-transform: uppercase; letter-spacing: .01em;
-  text-wrap: balance;
+  text-wrap: balance; overflow-wrap: break-word;
 }
-.onboard-lede { margin: 0; font-size: 15px; color: var(--chalk-dim); max-width: 42ch; }
+.onboard-lede {
+  margin: 0; font-size: 15px; color: var(--chalk-dim);
+  max-width: 42ch; overflow-wrap: break-word;
+}
 
 .onboard-foot {
   flex: none; padding: 14px 20px calc(20px + env(safe-area-inset-bottom));
