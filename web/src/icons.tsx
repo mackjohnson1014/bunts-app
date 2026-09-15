@@ -60,6 +60,15 @@ export function KeepersIcon({ className }: IconProps): ReactNode {
   );
 }
 
+export function TransactionsIcon({ className }: IconProps): ReactNode {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 7.6h9.4M13.4 7.6 10.6 4.8M13.4 7.6l-2.8 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 12.4H6.6M6.6 12.4l2.8-2.8M6.6 12.4l2.8 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function SettingsIcon({ className }: IconProps): ReactNode {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">

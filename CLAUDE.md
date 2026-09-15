@@ -78,6 +78,26 @@ Never deploy a non-mock build to a preview branch, and never add an Access
 bypass to make one work. `?onboarding=1` jumps to the setup flow on the
 preview; it is gated on mocks so it cannot be triggered against the live app.
 
+## Changelog vs. deploys — two different decisions, on purpose
+
+The "new version available" banner (`useRefresh.ts`) compares `__BUILD_ID__`
+against `/version.json`, not against `changelog.ts` -- it fires on every
+deploy regardless of the changelog, because it means "the code changed," not
+"here's what's new." That part needs nothing from you.
+
+`changelog.ts`'s `RELEASES` array, and the `APP_VERSION` it drives, are
+entirely hand-written and never bump on their own. That's deliberate: what's
+worth telling someone who opens the app is a product judgment, not something
+to infer from commit messages -- see the file's own header comment.
+
+**Convention:** as work ships, add a note to the running list in
+`claude/status.md`, written the way a changelog entry reads (what changed
+about using Bunts) rather than which files moved, so nothing has to be
+reconstructed from git log later. Only cut an actual version bump plus a
+`RELEASES` entry when you want to announce something -- pull it from the
+accumulated notes in status.md, then clear them out. A deploy on its own
+never requires either.
+
 ## Known tradeoffs — accepted, do not "fix" silently
 
 **`APP_SECRET` is readable in the deployed web bundle.** Vite inlines

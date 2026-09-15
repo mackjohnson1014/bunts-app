@@ -1,4 +1,4 @@
-import type { KeeperCandidate, LineupCall, Matchup, Roster } from './types';
+import type { KeeperCandidate, LeagueTransactions, LineupCall, Matchup, Roster } from './types';
 
 // Stand-in data until Yahoo provisions API access. Shaped as the normalized
 // domain model, not as Yahoo JSON -- see src/types.ts for why.
@@ -29,6 +29,7 @@ export const mockRoster: Roster = {
     name: 'Mock League',
     scoringCategories: ['R', 'HR', 'RBI', 'SB', 'AVG', 'W', 'SV', 'K', 'ERA', 'WHIP'],
     keeperSlots: 12,
+    weeklyAddLimit: 6,
     currentWeek: 23,
   },
   players: [
@@ -512,5 +513,109 @@ export const mockMatchup: Matchup = {
     { key: 'K',    mine: 52,    theirs: 49 },      // close
     { key: 'ERA',  mine: 3.44,  theirs: 4.90 },    // comfortably won
     { key: 'WHIP', mine: 1.31,  theirs: 1.12 },    // losing, hard to move
+  ],
+};
+
+/** Timestamps relative to "now" so the sample data always reads as recent. */
+const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
+
+export const mockTransactions: LeagueTransactions = {
+  fetchedAt: today,
+  sample: true,
+  opponent: {
+    teamKey: '458.l.000000.t.2',
+    teamName: 'Dinger Machine',
+    addsThisWeek: 4,
+    transactions: [
+      {
+        id: 'tx.9',
+        kind: 'add/drop',
+        teamKey: '458.l.000000.t.2',
+        teamName: 'Dinger Machine',
+        timestamp: hoursAgo(3),
+        players: [
+          { playerKey: 'p.201', name: 'Devon Ackley', move: 'add' },
+          { playerKey: 'p.144', name: 'Reid Colton', move: 'drop' },
+        ],
+      },
+      {
+        id: 'tx.7',
+        kind: 'add',
+        teamKey: '458.l.000000.t.2',
+        teamName: 'Dinger Machine',
+        timestamp: hoursAgo(26),
+        players: [{ playerKey: 'p.198', name: 'Yusniel Marte', move: 'add' }],
+      },
+      {
+        id: 'tx.4',
+        kind: 'add/drop',
+        teamKey: '458.l.000000.t.2',
+        teamName: 'Dinger Machine',
+        timestamp: hoursAgo(58),
+        players: [
+          { playerKey: 'p.176', name: 'Casey Nakamura', move: 'add' },
+          { playerKey: 'p.132', name: 'Owen Beswick', move: 'drop' },
+        ],
+      },
+      {
+        id: 'tx.2',
+        kind: 'add',
+        teamKey: '458.l.000000.t.2',
+        teamName: 'Dinger Machine',
+        timestamp: hoursAgo(80),
+        players: [{ playerKey: 'p.150', name: 'Trey Loman', move: 'add' }],
+      },
+    ],
+  },
+  league: [
+    {
+      id: 'tx.9',
+      kind: 'add/drop',
+      teamKey: '458.l.000000.t.2',
+      teamName: 'Dinger Machine',
+      timestamp: hoursAgo(3),
+      players: [
+        { playerKey: 'p.201', name: 'Devon Ackley', move: 'add' },
+        { playerKey: 'p.144', name: 'Reid Colton', move: 'drop' },
+      ],
+    },
+    {
+      id: 'tx.8',
+      kind: 'trade',
+      teamKey: '458.l.000000.t.5',
+      teamName: 'Groundskeepers',
+      timestamp: hoursAgo(11),
+      players: [
+        { playerKey: 'p.190', name: 'Julian Vance', move: 'add' },
+        { playerKey: 'p.121', name: 'Sam Iturbe', move: 'drop' },
+      ],
+    },
+    {
+      id: 'tx.7',
+      kind: 'add',
+      teamKey: '458.l.000000.t.2',
+      teamName: 'Dinger Machine',
+      timestamp: hoursAgo(26),
+      players: [{ playerKey: 'p.198', name: 'Yusniel Marte', move: 'add' }],
+    },
+    {
+      id: 'tx.6',
+      kind: 'drop',
+      teamKey: '458.l.000000.t.6',
+      teamName: 'Bullpen Mafia',
+      timestamp: hoursAgo(31),
+      players: [{ playerKey: 'p.110', name: 'Marco Diehl', move: 'drop' }],
+    },
+    {
+      id: 'tx.4',
+      kind: 'add/drop',
+      teamKey: '458.l.000000.t.2',
+      teamName: 'Dinger Machine',
+      timestamp: hoursAgo(58),
+      players: [
+        { playerKey: 'p.176', name: 'Casey Nakamura', move: 'add' },
+        { playerKey: 'p.132', name: 'Owen Beswick', move: 'drop' },
+      ],
+    },
   ],
 };

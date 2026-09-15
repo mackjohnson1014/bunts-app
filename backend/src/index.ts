@@ -20,6 +20,7 @@ export default {
 
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(checkLineups(env));
+    ctx.waitUntil(checkTransactions(env));
   },
 };
 
@@ -79,4 +80,42 @@ function extractStartingStatus(raw: unknown): Record<string, boolean | null> {
   if (found.length === 0) return {};
   console.log('starting_status sample:', JSON.stringify(found.slice(0, 3)));
   return {};
+}
+
+const KEY_TRANSACTIONS_SEEN = 'state:transactions-seen';
+
+/**
+ * Poll league transactions and notify when this week's opponent adds or
+ * drops a player -- prioritizing the opponent is the point of the feature
+ * (see the Transactions screen), not an afterthought filter on top of
+ * league-wide activity.
+ *
+ * TODO before this can do anything real. Two things never seen against a
+ * live response, same situation as extractStartingStatus above:
+ *   1. `league/{leagueKey}/transactions` -- shape unknown. First test once
+ *      Yahoo is live: `collect(raw, 'transaction_key')` against a real dump,
+ *      same technique used below.
+ *   2. Resolving *which* team is this week's opponent. `GET /matchup` is
+ *      itself still a stub (see functions/api/[[path]].ts) -- likely
+ *      `league/{leagueKey}/scoreboard;week=<current>`, but unconfirmed.
+ * Until both are known, a real diff-against-KEY_TRANSACTIONS_SEEN and a
+ * per-opponent notify() would be fiction. This only confirms the poll runs.
+ */
+async function checkTransactions(env: Env): Promise<void> {
+  if (!env.LEAGUE_KEY) return;
+
+  let raw: unknown;
+  try {
+    raw = await yahooGet(env, `league/${env.LEAGUE_KEY}/transactions`);
+  } catch (e) {
+    console.error('transaction poll failed:', e instanceof Error ? e.message : e);
+    return;
+  }
+
+  const found = collect(raw, 'transaction_key');
+  if (found.length === 0) return;
+  console.log('transaction sample:', JSON.stringify(found.slice(0, 3)));
+  // Diffing against KEY_TRANSACTIONS_SEEN, resolving the opponent's team key,
+  // and notify(env, ..., { kind: 'transactions' }) land here once the shape
+  // above is confirmed.
 }

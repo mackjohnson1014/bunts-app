@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Screen } from '../components';
-import { KeepersIcon, RosterIcon, SettingsIcon, TodayIcon, WeekIcon } from '../icons';
+import { KeepersIcon, RosterIcon, SettingsIcon, TodayIcon, TransactionsIcon, WeekIcon } from '../icons';
 import type { IconProps } from '../icons';
 import type { Tab } from '../App';
 
@@ -11,6 +11,7 @@ const SECTIONS: { id: Section; label: string; Icon: (props: IconProps) => ReactN
   { id: 'week', label: 'This Week', Icon: WeekIcon },
   { id: 'roster', label: 'Roster', Icon: RosterIcon },
   { id: 'keepers', label: 'Keepers', Icon: KeepersIcon },
+  { id: 'transactions', label: 'Transactions', Icon: TransactionsIcon },
   { id: 'settings', label: 'Settings', Icon: SettingsIcon },
 ];
 

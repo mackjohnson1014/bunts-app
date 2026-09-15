@@ -60,6 +60,8 @@ export interface League {
   scoringCategories: string[];
   /** How many players can be kept into next season. */
   keeperSlots: number;
+  /** League's weekly free-agent/waiver add cap, or null if the league has none. */
+  weeklyAddLimit: number | null;
   currentWeek: number | null;
 }
 
@@ -103,13 +105,14 @@ export interface KeeperCandidate {
   note: string;
 }
 
-export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions'] as const;
+export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'transactions'] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
 export interface Prefs {
   scratched: boolean;
   unposted: boolean;
   suggestions: boolean;
+  transactions: boolean;
   quietFrom: number | null;
   quietTo: number | null;
 }
@@ -169,4 +172,45 @@ export interface Matchup {
   daysRemaining: number;
   /** When the matchup ends, ISO. */
   endsAt: string;
+}
+
+export type TransactionMove = 'add' | 'drop';
+
+export interface TransactionPlayer {
+  playerKey: string;
+  name: string;
+  move: TransactionMove;
+}
+
+export type TransactionKind = 'add' | 'drop' | 'add/drop' | 'trade';
+
+export interface Transaction {
+  id: string;
+  kind: TransactionKind;
+  teamKey: string;
+  teamName: string;
+  players: TransactionPlayer[];
+  /** ISO 8601. */
+  timestamp: string;
+}
+
+/** This week's opponent's activity, prioritized -- the whole point of the screen. */
+export interface OpponentActivity {
+  teamKey: string;
+  teamName: string;
+  /** Adds so far this week that count toward the league's weekly cap. */
+  addsThisWeek: number;
+  /** This team's transactions this week, newest first. */
+  transactions: Transaction[];
+}
+
+export interface LeagueTransactions {
+  /** Null outside a head-to-head week, or before the opponent is resolvable. */
+  opponent: OpponentActivity | null;
+  /** Recent activity across the whole league, newest first. */
+  league: Transaction[];
+  /** When this snapshot was taken, ISO 8601. */
+  fetchedAt: string;
+  /** True when this is the stand-in dataset rather than the real league. */
+  sample?: boolean;
 }

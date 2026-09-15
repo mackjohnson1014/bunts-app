@@ -18,6 +18,10 @@ const ALERT_COPY: Record<AlertKind, { title: string; detail: string }> = {
     title: 'Suggestions from your co-owner',
     detail: 'They flag a player and tell you why.',
   },
+  transactions: {
+    title: "Opponent's transactions",
+    detail: 'Your weekly opponent adds or drops a player.',
+  },
 };
 
 const STEPS = ['Name', 'Alerts', 'This device'] as const;
@@ -36,7 +40,7 @@ export function Onboarding({ user, onDone }: { user: User; onDone: () => void })
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [prefs, setPrefs] = useState<Pick<Prefs, AlertKind>>({
-    scratched: true, unposted: true, suggestions: true,
+    scratched: true, unposted: true, suggestions: true, transactions: true,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

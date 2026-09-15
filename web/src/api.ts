@@ -1,7 +1,8 @@
 import type {
-  KeeperCandidate, LineupCall, Matchup, Profile, ProfileInput, Roster, Suggestion, SuggestionInput, User,
+  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, Profile, ProfileInput, Roster, Suggestion,
+  SuggestionInput, User,
 } from './types';
-import { mockMatchup, mockRoster } from './mock';
+import { mockMatchup, mockRoster, mockTransactions } from './mock';
 import { keeperTally } from './scoring/keepers';
 import { startSit } from './scoring/startsit';
 
@@ -89,6 +90,11 @@ export const api = {
 
   getMatchup: (): Promise<Matchup> =>
     usingMockData ? settle(mockMatchup) : withSampleFallback(() => req<Matchup>('/matchup'), mockMatchup),
+
+  getTransactions: (): Promise<LeagueTransactions> =>
+    usingMockData
+      ? settle(mockTransactions)
+      : withSampleFallback(() => req<LeagueTransactions>('/transactions'), mockTransactions),
 
   /**
    * Start/sit and keeper value are computed on the device from the roster and
