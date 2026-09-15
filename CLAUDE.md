@@ -127,3 +127,12 @@ into a chat or an issue.
 - Run `npm install` in the project directories, not in a mounted/synced path.
 - Poll Yahoo on a minutes scale. Rate limits are unpublished but throttling is
   reserved for bursty usage.
+- **Claude commits directly with `git commit` against this mounted repo, not by
+  drafting a message for Mack to paste into GitHub Desktop.** `user.name`/
+  `user.email` are already configured locally, so a commit made this way is
+  attributed correctly -- that's how every commit in this repo's history with
+  a `Co-Authored-By: Claude` trailer got made. Split into separate commits per
+  logical change, the way this repo's own history does. Claude still cannot
+  `push` (no GitHub credentials in this sandboxed session) -- Mack pushes from
+  Desktop afterward. See `claude/status.md`'s Hard-won lessons for the stale
+  git-lock quirk this mount has and how to clear it between commands.
