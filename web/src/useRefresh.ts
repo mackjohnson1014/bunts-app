@@ -15,6 +15,22 @@ declare const __BUILD_ID__: string;
 
 const STALE_AFTER_MS = 60_000;
 
+/**
+ * `visibilitychange` is the right event for this everywhere except the one
+ * place it matters most: iOS does not reliably fire it when a standalone
+ * home-screen app is brought back from the background. `pageshow` with
+ * `persisted: true` is what actually fires there -- it means the page was
+ * frozen and is now being resumed, so treat it as "away long enough to act on"
+ * without needing the timestamp heuristic below.
+ */
+function onResumeFromFreeze(handler: () => void): () => void {
+  const onPageShow = (event: PageTransitionEvent) => {
+    if (event.persisted) handler();
+  };
+  window.addEventListener('pageshow', onPageShow);
+  return () => window.removeEventListener('pageshow', onPageShow);
+}
+
 /** Fires whenever the app comes back to the foreground after being away a while. */
 export function useRefreshOnFocus(reload: () => void) {
   useEffect(() => {
@@ -30,7 +46,11 @@ export function useRefreshOnFocus(reload: () => void) {
     };
 
     document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
+    const stopResume = onResumeFromFreeze(reload);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      stopResume();
+    };
   }, [reload]);
 }
 
@@ -53,9 +73,11 @@ export function useUpdateAvailable(): { available: boolean; apply: () => void } 
     void check();
     const onVisible = () => { if (document.visibilityState === 'visible') void check(); };
     document.addEventListener('visibilitychange', onVisible);
+    const stopResume = onResumeFromFreeze(() => void check());
     const id = setInterval(() => void check(), 10 * 60_000);
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
+      stopResume();
       clearInterval(id);
     };
   }, [check]);
