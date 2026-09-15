@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { isWaitingOnYahoo } from './api';
-import type { GameLine, Player } from './types';
+import { STARTING_SLOTS } from './types';
+import type { GameLine, Player, Slot } from './types';
 import { useRefreshOnFocus } from './useRefresh';
 
 export function Screen({
@@ -91,6 +92,26 @@ export function LineupState({ starting }: { starting: boolean | null }) {
   );
 }
 
+/**
+ * Whether the player currently sits in one of the fantasy team's starting
+ * slots, vs the bench or IL/NA. This is read straight from the roster slot
+ * Yahoo reports, so it is only ever as current as the last roster fetch --
+ * Bunts has no write access, so there is nothing separate to keep "in sync":
+ * set the lineup in the Yahoo app and this follows on the next refresh.
+ */
+export function LineupLight({ slot }: { slot: Slot }) {
+  const active = STARTING_SLOTS.includes(slot);
+  const color = active ? 'var(--grass)' : 'var(--clay)';
+  const label = active ? 'LU' : slot === 'BN' ? 'BN' : slot;
+
+  return (
+    <div className="state">
+      <div className="dot" style={{ background: color }} />
+      <div className="lbl" style={{ color }}>{label}</div>
+    </div>
+  );
+}
+
 /** Five games at a glance. Oldest on the left, so it reads as a trend. */
 export function FormStrip({ games }: { games: GameLine[] }) {
   if (games.length === 0) return null;
@@ -118,22 +139,29 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
     <>
       <div className="slot">{player.slot}</div>
       <div className="row-main">
-        <div className="pname">
-          {player.name}
-          {player.status ? <> <span className="chip dtd">{player.status}</span></> : null}
+        <div className="row-top">
+          <div className="pname">
+            {player.name}
+            {player.status ? <> <span className="chip dtd">{player.status}</span></> : null}
+          </div>
+          <div className="statline">
+            {keys.filter((k) => player.seasonStats[k] !== undefined).map((k) => (
+              <span key={k}><b>{fmt(player.seasonStats[k])}</b> {k}</span>
+            ))}
+          </div>
         </div>
-        <div className="sub">
-          {player.mlbTeam} · {player.positions.join('/')}
-          {player.opponent ? ` · ${player.opponent}` : ''}
-        </div>
-        <div className="statline">
-          {keys.filter((k) => player.seasonStats[k] !== undefined).map((k) => (
-            <span key={k}><b>{fmt(player.seasonStats[k])}</b> {k}</span>
-          ))}
+        <div className="row-bottom">
+          <div className="sub">
+            {player.mlbTeam} · {player.positions.join('/')}
+            {player.opponent ? ` · ${player.opponent}` : ''}
+          </div>
           <FormStrip games={player.recentGames} />
         </div>
       </div>
-      <LineupState starting={player.startingToday} />
+      <div className="lights">
+        <LineupLight slot={player.slot} />
+        <LineupState starting={player.startingToday} />
+      </div>
     </>
   );
 
