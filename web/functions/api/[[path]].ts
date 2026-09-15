@@ -128,6 +128,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
       case 'GET /roster':
       case 'GET /lineup':
       case 'GET /keepers':
+      case 'GET /matchup':
         if (!env.TEAM_KEY) return notConnected();
         return notConnected();   // real Yahoo reads land here once access is provisioned
 
