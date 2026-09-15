@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { api } from './api';
+import { APP_VERSION } from './changelog';
+import { Logo } from './Logo';
 import { isIOS, isStandalone, subscribe, supportLevel, type PushState } from './push';
 import { ALERT_KINDS, type AlertKind, type Prefs, type User } from './types';
 
@@ -30,7 +32,7 @@ const STEPS = ['Name', 'Alerts', 'This device'] as const;
  * endure rather than three quick answers.
  */
 export function Onboarding({ user, onDone }: { user: User; onDone: () => void }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1);   // -1 is the welcome landing
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [prefs, setPrefs] = useState<Pick<Prefs, AlertKind>>({
@@ -51,6 +53,10 @@ export function Onboarding({ user, onDone }: { user: User; onDone: () => void })
       setError(e instanceof Error ? e.message : String(e));
     }
     setSaving(false);
+  }
+
+  if (step === -1) {
+    return <Welcome onStart={() => setStep(0)} />;
   }
 
   return (
@@ -155,6 +161,33 @@ export function Onboarding({ user, onDone }: { user: User; onDone: () => void })
  * The permission itself, which is the step most likely to be skipped and the
  * one that makes every earlier answer matter.
  */
+/**
+ * First thing anyone sees. No navigation, because there is nothing to navigate
+ * to until they have set the app up.
+ */
+function Welcome({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="welcome">
+      <div className="welcome-mark">
+        <Logo size={104} />
+        <h1 className="welcome-title">
+          Unruly Bunts
+          <span>Companion app</span>
+        </h1>
+      </div>
+
+      <div className="welcome-actions">
+        <button className="btn" onClick={onStart}>Get started</button>
+      </div>
+
+      <footer className="welcome-foot">
+        <p className="welcome-attr">Fantasy data provided by Yahoo Fantasy</p>
+        <p className="welcome-version">Version {APP_VERSION}</p>
+      </footer>
+    </div>
+  );
+}
+
 function DeviceStep({ onDone }: { onDone: () => void }) {
   const [state, setState] = useState<PushState>(supportLevel);
   const [working, setWorking] = useState(false);

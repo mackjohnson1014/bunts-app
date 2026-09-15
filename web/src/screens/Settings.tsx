@@ -14,7 +14,7 @@ export default function Settings({
   onReplayOnboarding: () => void;
 }) {
   return (
-    <Screen title="Settings" subtitle={`Bunts ${APP_VERSION}`}>
+    <Screen title="Settings" subtitle={`Unruly Bunts ${APP_VERSION}`}>
       <YouSection user={user} onChange={onProfileChange} />
 
       <InstallSection />

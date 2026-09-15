@@ -14,6 +14,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.3',
+    date: '2026-09-15',
+    title: 'A proper front door',
+    notes: [
+      'Opening the app for the first time now shows a welcome screen rather than dropping you into a form.',
+      'The app is called Unruly Bunts.',
+      'Version number and the Yahoo attribution sit at the foot of the welcome screen.',
+    ],
+  },
+  {
     version: '1.2',
     date: '2026-09-14',
     title: 'It knows what week it is',
