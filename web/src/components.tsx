@@ -5,13 +5,15 @@ import type { GameLine, Player, Slot } from './types';
 import { useRefreshOnFocus } from './useRefresh';
 
 export function Screen({
-  title, subtitle, loading, error, onReload, sample, updatedAt, children,
+  title, subtitle, loading, error, onReload, onBack, sample, updatedAt, children,
 }: {
   title: string;
   subtitle?: ReactNode;
   loading?: boolean;
   error?: unknown;
   onReload?: () => void;
+  /** Renders a back link before the title, for a screen pushed from a list (e.g. a Settings section). */
+  onBack?: () => void;
   sample?: boolean;
   updatedAt?: string | null;
   children: ReactNode;
@@ -26,6 +28,11 @@ export function Screen({
     <div className="screen">
       <div className="screen-head">
         <div className="screen-titlerow">
+          {onBack ? (
+            <button className="back-btn" onClick={onBack} aria-label="Back">
+              <span className="back-chevron" aria-hidden="true">‹</span>Back
+            </button>
+          ) : null}
           <h1 className="screen-title">{title}</h1>
           {sample ? <span className="sample-tag">Sample data</span> : null}
           {onReload ? (
