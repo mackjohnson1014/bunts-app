@@ -64,7 +64,9 @@ export function Screen({
         children
       )}
 
-      <p className="attribution">Fantasy data provided by Yahoo Fantasy</p>
+      <p className="attribution">
+        {sample ? 'Player data from MLB Stats API' : 'Fantasy data provided by Yahoo Fantasy'}
+      </p>
     </div>
   );
 }

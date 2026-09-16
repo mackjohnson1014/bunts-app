@@ -5,6 +5,7 @@ import {
   addSuggestion, isSuggestionInput, listSuggestions, markSeen, type Suggestion,
 } from '../_shared/suggestions';
 import type { PushSubscription } from '../_shared/webpush';
+import { buildSampleRoster } from '../_shared/sampleRoster';
 
 /**
  * The whole API, served from the same origin as the app so Cloudflare Access
@@ -126,11 +127,24 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
         return json({ ok: true, you: me.email, devices: (await listSubscriptions(env)).length });
 
       case 'GET /roster':
-      case 'GET /lineup':
+      case 'GET /lineup': {
+        if (env.TEAM_KEY) return notConnected();   // real Yahoo reads land here once access is provisioned
+        // No fantasy roster to read yet, so show a roster of real MLB
+        // players with live stats/status instead of an empty screen or
+        // hand-typed fiction -- see _shared/sampleRoster.ts.
+        try {
+          return json(await buildSampleRoster(env));
+        } catch {
+          // MLB Stats API hiccup isn't Yahoo's fault, but the client's
+          // fallback behavior (isWaitingOnYahoo) is what we want here too:
+          // fall back to the app's local static sample rather than error.
+          return notConnected();
+        }
+      }
+
       case 'GET /keepers':
       case 'GET /matchup':
       case 'GET /transactions':
-        if (!env.TEAM_KEY) return notConnected();
         return notConnected();   // real Yahoo reads land here once access is provisioned
 
       default:
