@@ -14,13 +14,23 @@ import { useAsync } from '../useAsync';
 const rosterRank = (p: Player) => (STARTING_SLOTS.includes(p.slot) ? 0 : p.slot === 'BN' ? 1 : 2);
 const byRosterOrder = (list: Player[]) => [...list].sort((a, b) => rosterRank(a) - rosterRank(b));
 
+type PosFilter = 'all' | 'hitters' | 'pitchers';
+const FILTERS: { id: PosFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'hitters', label: 'Hitters' },
+  { id: 'pitchers', label: 'Pitchers' },
+];
+
 export default function RosterScreen() {
   const { data, error, loading, reload } = useAsync(() => api.getRoster());
   const [selected, setSelected] = useState<Player | null>(null);
+  const [filter, setFilter] = useState<PosFilter>('all');
 
   const players = data?.players ?? [];
   const hitters = byRosterOrder(players.filter((p) => !isPitcher(p)));
   const pitchers = byRosterOrder(players.filter((p) => isPitcher(p)));
+  const showHitters = filter !== 'pitchers';
+  const showPitchers = filter !== 'hitters';
 
   return (
     <>
@@ -37,11 +47,30 @@ export default function RosterScreen() {
         error={error}
         onReload={reload}
       >
-        {hitters.length > 0 ? <p className="sect">Hitters</p> : null}
-        {hitters.map((p) => <PlayerRow key={p.playerKey} player={p} onOpen={setSelected} />)}
+        {players.length > 0 ? (
+          <div className="segmented" role="radiogroup" aria-label="Filter by position">
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                role="radio"
+                aria-checked={filter === f.id}
+                aria-selected={filter === f.id}
+                className="seg"
+                onClick={() => setFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
-        {pitchers.length > 0 ? <p className="sect">Pitchers</p> : null}
-        {pitchers.map((p) => <PlayerRow key={p.playerKey} player={p} onOpen={setSelected} />)}
+        {/* Section headers only make sense when both groups are showing --
+            with the filter narrowed to one, the segmented control already says so. */}
+        {filter === 'all' && hitters.length > 0 ? <p className="sect">Hitters</p> : null}
+        {showHitters && hitters.map((p) => <PlayerRow key={p.playerKey} player={p} onOpen={setSelected} />)}
+
+        {filter === 'all' && pitchers.length > 0 ? <p className="sect">Pitchers</p> : null}
+        {showPitchers && pitchers.map((p) => <PlayerRow key={p.playerKey} player={p} onOpen={setSelected} />)}
       </Screen>
 
       <PlayerSheet player={selected} onClose={() => setSelected(null)} />

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { isWaitingOnYahoo } from './api';
 import { STARTING_SLOTS } from './types';
-import type { GameLine, Player, Slot } from './types';
+import type { GameLine, Player } from './types';
 import { useRefreshOnFocus } from './useRefresh';
 
 export function Screen({
@@ -101,26 +101,6 @@ export function LineupState({ starting }: { starting: boolean | null }) {
   );
 }
 
-/**
- * Whether the player currently sits in one of the fantasy team's starting
- * slots, vs the bench or IL/NA. This is read straight from the roster slot
- * Yahoo reports, so it is only ever as current as the last roster fetch --
- * Bunts has no write access, so there is nothing separate to keep "in sync":
- * set the lineup in the Yahoo app and this follows on the next refresh.
- */
-export function LineupLight({ slot }: { slot: Slot }) {
-  const active = STARTING_SLOTS.includes(slot);
-  const color = active ? 'var(--grass)' : 'var(--clay)';
-  const label = active ? 'LU' : slot === 'BN' ? 'BN' : slot;
-
-  return (
-    <div className="state">
-      <div className="dot" style={{ background: color }} />
-      <div className="lbl" style={{ color }}>{label}</div>
-    </div>
-  );
-}
-
 /** Five games at a glance. Oldest on the left, so it reads as a trend. */
 export function FormStrip({ games }: { games: GameLine[] }) {
   if (games.length === 0) return null;
@@ -141,12 +121,23 @@ export const fmt = (v: number | undefined) => {
   return v < 10 && !Number.isInteger(v) ? v.toFixed(3).replace(/^0/, '') : String(v);
 };
 
+/**
+ * Fantasy-lineup status (starting slot / bench / IL) is read straight off
+ * `player.slot` -- as current as the last roster fetch, since Bunts has no
+ * write access: set the lineup in the Yahoo app and this follows on the
+ * next refresh. Rather than a second "LU/BN" light next to the slot text,
+ * the slot chip itself carries the color, so each row states this once.
+ */
+const slotTone = (slot: Player['slot']) =>
+  STARTING_SLOTS.includes(slot) ? 'active' : slot === 'BN' ? 'bench' : 'inactive';
+
 export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Player) => void }) {
   const keys = isPitcher(player) ? PITCHER_KEYS : HITTER_KEYS;
+  const stats = keys.filter((k) => player.seasonStats[k] !== undefined);
 
   const body = (
     <>
-      <div className="slot">{player.slot}</div>
+      <div className={`slot slot-${slotTone(player.slot)}`}>{player.slot}</div>
       {player.headshotUrl ? (
         <img
           className="row-avatar"
@@ -160,29 +151,31 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
         <div className="row-avatar" aria-hidden="true" />
       )}
       <div className="row-main">
+        {/* identity: who, and any injury/role flag */}
         <div className="row-top">
           <div className="pname">
             {player.name}
             {player.status ? <> <span className="chip dtd">{player.status}</span></> : null}
           </div>
-          <div className="statline">
-            {keys.filter((k) => player.seasonStats[k] !== undefined).map((k) => (
-              <span key={k}><b>{fmt(player.seasonStats[k])}</b> {k}</span>
-            ))}
-          </div>
         </div>
-        <div className="row-bottom">
-          <div className="sub">
-            {player.mlbTeam} · {player.positions.join('/')}
-            {player.opponent ? ` · ${player.opponent}` : ''}
-          </div>
-          <FormStrip games={player.recentGames} />
+        {/* context: team, eligible positions, tonight's matchup */}
+        <div className="sub">
+          {player.mlbTeam} · {player.positions.join('/')}
+          {player.opponent ? ` · ${player.opponent}` : ''}
         </div>
+        {/* performance: season line, then five-game trend */}
+        {stats.length > 0 || player.recentGames.length > 0 ? (
+          <div className="row-bottom">
+            <div className="statline">
+              {stats.map((k) => (
+                <span key={k}><b>{fmt(player.seasonStats[k])}</b> {k}</span>
+              ))}
+            </div>
+            <FormStrip games={player.recentGames} />
+          </div>
+        ) : null}
       </div>
-      <div className="lights">
-        <LineupLight slot={player.slot} />
-        <LineupState starting={player.startingToday} />
-      </div>
+      <LineupState starting={player.startingToday} />
     </>
   );
 
