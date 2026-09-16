@@ -12,10 +12,43 @@
   --amber: #E8A33D;
   --grass: #6FB06B;
   --clay: #D2603F;
+  --ink: #10170F;                          /* type on an amber fill */
+  --amber-wash: rgba(232, 163, 61, .08);    /* install banner wash */
+  --amber-wash-strong: rgba(232, 163, 61, .25); /* switch track, on */
+  --scrim: rgba(0, 0, 0, .55);              /* sheet backdrop */
 
   --tabbar-h: 58px;
 
   color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------------
+   Light theme -- from the exported design system (tokens/colors.css). Same
+   world by daylight rather than a different palette: board becomes paper,
+   chalk becomes night-green ink, and every status colour is darkened until
+   it clears 4.5:1 on paper. Bulb amber (#E8A33D) fails on a light ground, so
+   amber darkens to #A96C10 and --ink flips to white so type on an amber fill
+   stays legible. No component changes needed -- only these values move.
+   Set by useTheme.ts (data-theme on <html>), defaulting to light; the
+   inline bootstrap script in index.html applies the same default before
+   first paint so there is no flash of the other theme.
+   --------------------------------------------------------------------------- */
+:root[data-theme="light"] {
+  --board: #F5F4ED;
+  --board-2: #FFFFFF;
+  --board-3: #EAE9DE;
+  --rule: #D4D3C4;
+  --chalk: #16211A;
+  --chalk-dim: #5C6A5E;
+  --amber: #A96C10;
+  --grass: #3E7F3C;
+  --clay: #B4482A;
+  --ink: #FFFFFF;
+  --amber-wash: rgba(169, 108, 16, .08);
+  --amber-wash-strong: rgba(169, 108, 16, .18);
+  --scrim: rgba(22, 33, 26, .45);
+
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -211,7 +244,7 @@ button { font: inherit; color: inherit; }
 .muted { color: var(--chalk-dim); font-size: 13px; }
 .btn {
   display: block; width: 100%; margin-top: 14px;
-  background: var(--amber); color: #10170F; border: 0; border-radius: 8px;
+  background: var(--amber); color: var(--ink); border: 0; border-radius: 8px;
   padding: 13px; font-family: 'Barlow Condensed', system-ui, sans-serif;
   font-size: 16px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   cursor: pointer;
@@ -242,7 +275,7 @@ button { font: inherit; color: inherit; }
   background: var(--chalk-dim);
   transition: transform .15s ease, background .15s ease;
 }
-.sw[aria-pressed="true"] { background: rgba(232,163,61,.25); border-color: var(--amber); }
+.sw[aria-pressed="true"] { background: var(--amber-wash-strong); border-color: var(--amber); }
 .sw[aria-pressed="true"]::after { transform: translateX(19px); background: var(--amber); }
 .sw:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .sw, .sw::after { transition: none; } }
@@ -351,7 +384,7 @@ button { font: inherit; color: inherit; }
   margin: 8px 16px 0;
   border: 1px solid var(--amber);
   border-radius: 8px;
-  background: rgba(232, 163, 61, .08);
+  background: var(--amber-wash);
   padding: 8px 10px;
 }
 .install-head { display: flex; align-items: center; gap: 8px; }
@@ -443,7 +476,7 @@ button { font: inherit; color: inherit; }
 /* ---------- player sheet ---------- */
 .sheet-backdrop {
   position: fixed; inset: 0; z-index: 40;
-  background: rgba(0, 0, 0, .55);
+  background: var(--scrim);
   display: flex; align-items: flex-end; justify-content: center;
   animation: fade .18s ease-out;
 }
@@ -558,7 +591,7 @@ button { font: inherit; color: inherit; }
 
 .update-pill {
   flex: none; margin: 8px 16px 0; padding: 9px 12px;
-  background: var(--amber); color: #10170F; border: 0; border-radius: 8px;
+  background: var(--amber); color: var(--ink); border: 0; border-radius: 8px;
   font-family: 'Barlow Condensed', system-ui, sans-serif;
   font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
   cursor: pointer; text-align: center;
