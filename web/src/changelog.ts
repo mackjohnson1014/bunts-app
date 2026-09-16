@@ -14,6 +14,48 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.7',
+    date: '2026-09-16',
+    title: 'Live MLB data instead of made-up sample stats',
+    notes: [
+      'While waiting on Yahoo, Roster used to show a sample team with hand-typed, fictional stats. It now shows your real 27-man roster instead, matched to your actual players, with real, live stats, tonight\u2019s game status, and injury info pulled straight from MLB.',
+      'Injury/IL status now comes from an actual MLB source instead of guesswork, and updates on its own as things change \u2014 no more stale \u201cDTD\u201d tags.',
+      'The attribution line at the bottom of Roster now correctly credits MLB Stats API for this data instead of Yahoo, since none of it is coming from Yahoo yet.',
+    ],
+  },
+  {
+    version: '1.6',
+    date: '2026-09-16',
+    title: 'Light mode',
+    notes: [
+      'Bunts now opens in light mode by default \u2014 a paper-and-ink look instead of the dark scoreboard.',
+      'Flip back to dark mode any time from Settings \u2192 Appearance.',
+    ],
+  },
+  {
+    version: '1.5',
+    date: '2026-09-15',
+    title: 'A home screen and a place for waivers',
+    notes: [
+      'New Home tab, and it\u2019s where the app opens now: a grid of shortcuts to Today, Week, Roster, Keepers, Transactions and Settings.',
+      'Settings is no longer one long scroll \u2014 four clear links (Account, Alerts, Changelog, About) that each open their own screen and remember where you left off.',
+      'New Transactions tab: leads with your current opponent\u2019s activity and how many adds they\u2019ve used against the league\u2019s weekly cap, then the rest of the league below.',
+      'A new alert toggle in Settings lets you get a push the moment your opponent makes a move.',
+    ],
+  },
+  {
+    version: '1.4',
+    date: '2026-09-15',
+    title: 'Roster that reads faster',
+    notes: [
+      'Roster now splits into Hitters and Pitchers, so you\u2019re not scrolling past starters to find the one player you\u2019re checking on.',
+      'Every player shows two lights: whether they\u2019re in your Yahoo lineup, and whether they\u2019re actually starting tonight \u2014 the two can disagree, and now you can see it.',
+      'Stats sit right next to the name instead of behind a separate sort button.',
+      'Fixed Week showing a broken-page error instead of the same \u201cwaiting on Yahoo\u201d message you see everywhere else.',
+      'Coming back to the app after your phone was asleep now reliably picks up where you left off, instead of sometimes freezing on old data.',
+    ],
+  },
+  {
     version: '1.3',
     date: '2026-09-15',
     title: 'A proper front door',
