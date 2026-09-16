@@ -9,7 +9,27 @@
 
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#101A13" />
+    <meta name="theme-color" content="#F5F4ED" />
+
+    <!--
+      Sets data-theme (and the theme-color above) before the stylesheet
+      paints, so a returning dark-mode reader never sees a flash of light.
+      Must stay in sync with the default and storage key in src/useTheme.ts.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('bunts-theme');
+          var theme = stored === 'dark' ? 'dark' : 'light';
+          document.documentElement.dataset.theme = theme;
+          if (theme === 'dark') {
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#101A13');
+          }
+        } catch (e) {
+          // localStorage unavailable -- light default from the meta tag above stands.
+        }
+      })();
+    </script>
 
     <!-- iOS reads these when the page is added to the home screen. -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
