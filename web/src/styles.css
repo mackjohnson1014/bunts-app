@@ -170,9 +170,13 @@ button { font: inherit; color: inherit; }
 
 /* ---------- roster: ruled lineup card ---------- */
 .row {
-  display: grid; grid-template-columns: 36px 1fr auto;
+  display: grid; grid-template-columns: 36px 32px 1fr auto;
   gap: 10px; align-items: center;
   padding: 10px 2px; border-bottom: 1px solid var(--rule);
+}
+.row-avatar {
+  width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+  background: var(--board-3); border: 1px solid var(--rule);
 }
 .slot {
   font-family: 'Barlow Condensed', system-ui, sans-serif;

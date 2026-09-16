@@ -147,6 +147,18 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
   const body = (
     <>
       <div className="slot">{player.slot}</div>
+      {player.headshotUrl ? (
+        <img
+          className="row-avatar"
+          src={player.headshotUrl}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+        />
+      ) : (
+        <div className="row-avatar" aria-hidden="true" />
+      )}
       <div className="row-main">
         <div className="row-top">
           <div className="pname">
