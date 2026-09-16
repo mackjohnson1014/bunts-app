@@ -32,9 +32,14 @@ async function fetchMlb<T>(path: string): Promise<T> {
  * just an <img> tag.
  */
 export function headshotUrl(personId: number): string {
+  // The source photos are 180x270 (2:3) portraits, not square -- letting a
+  // circular avatar's object-fit: cover crop that itself ends up chopping
+  // off the top of the cap and the chin, looking badly zoomed in. Asking
+  // Cloudinary for a face-aware square crop (g_face,c_fill,ar_1:1) up front
+  // gives a properly framed square headshot instead.
   return (
     'https://img.mlbstatic.com/mlb-photos/image/upload/' +
-    'd_people:generic:headshot:67:current.png,q_auto:best,f_auto,w_180/' +
+    'd_people:generic:headshot:67:current.png,q_auto:best,f_auto,g_face,c_fill,ar_1:1,w_180/' +
     `v1/people/${personId}/headshot/67/current`
   );
 }
