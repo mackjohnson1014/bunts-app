@@ -1,17 +1,25 @@
 /**
- * The sample roster shown while Yahoo is not connected.
+ * Mack's real fantasy roster -- Yahoo can't tell us this yet (still not
+ * provisioned, see claude/status.md), so Mack gave it to us directly by
+ * pasting a screenshot of his Yahoo team on 2026-09-16. This is genuinely
+ * his 27-man roster, not a stand-in -- every playerKey below was matched to
+ * a real MLB person id via the live MLB Stats API active-player list (not
+ * typed from memory), cross-checked against the team each player was shown
+ * on in the screenshot to disambiguate common surnames.
  *
- * Yahoo is the only source that could tell us which players are actually on
- * Mack's fantasy team -- that's still blocked (see claude/status.md). Until
- * then this pins a fixed list of real, well-known MLB players so the app has
- * something honest to show: not Mack's real team, but real players with real,
- * live stats and status pulled from the MLB Stats API every time the roster
- * loads (see `mlb.ts`), instead of the hand-typed fictional numbers this
- * replaced. `sample: true` still marks it as a stand-in -- see components.tsx.
+ * What's still a placeholder: the STARTING SLOT for each hitter/pitcher
+ * (which 9 hitters are in the C/1B/2B/3B/SS/OF/OF/OF/UTIL slots vs. bench,
+ * which pitchers are SP/RP/P/bench) -- the screenshot showed positional
+ * eligibility and today's real-game status, not Yahoo's actual lineup-slot
+ * assignment, so the slots below are a reasonable default built from each
+ * player's eligibility (one clean starter per position first, then the
+ * fuller picture fills UTIL/bench). Ask Mack to correct any that are wrong.
+ * League name, scoring categories, keeper slots, and team rank are still
+ * unknown and stay placeholder until Yahoo is connected.
  *
- * Positions/teams were read directly from the MLB Stats API's own active-
- * roster data at the time this was written, not typed from memory, so they
- * match whatever season is live when this runs.
+ * `mlb.ts` fills in everything else about these players live on every
+ * request: season stats, last-14 stats, recent games, today's real game
+ * status and opposing pitcher, and real injury/IL status.
  */
 
 import {
@@ -28,50 +36,49 @@ export interface SamplePlayerDef {
   isPitcher: boolean;
 }
 
-// Mirrors the slot layout the old mock.ts roster used (17 hitters, 10
-// pitchers -- C/1B/2B/3B/SS/OF x2/UTIL x2 starting, a bench, two IL slots,
-// and SP/RP/P across the pitching staff) so nothing downstream (scoring,
-// grouping, the Hitters/Pitchers split) has to change.
 export const SAMPLE_ROSTER_PLAYERS: SamplePlayerDef[] = [
-  // Hitters
-  { playerKey: 'mlb.668939', personId: 668939, name: 'Adley Rutschman', teamId: 111, positions: ['C'], slot: 'C', isPitcher: false },
-  { playerKey: 'mlb.518692', personId: 518692, name: 'Freddie Freeman', teamId: 119, positions: ['1B', 'UTIL'], slot: '1B', isPitcher: false },
-  { playerKey: 'mlb.514888', personId: 514888, name: 'Jose Altuve', teamId: 117, positions: ['2B'], slot: '2B', isPitcher: false },
-  { playerKey: 'mlb.663586', personId: 663586, name: 'Austin Riley', teamId: 144, positions: ['3B'], slot: '3B', isPitcher: false },
-  { playerKey: 'mlb.677951', personId: 677951, name: 'Bobby Witt Jr.', teamId: 118, positions: ['SS'], slot: 'SS', isPitcher: false },
-  { playerKey: 'mlb.592450', personId: 592450, name: 'Aaron Judge', teamId: 147, positions: ['OF'], slot: 'OF', isPitcher: false },
-  { playerKey: 'mlb.663656', personId: 663656, name: 'Kyle Tucker', teamId: 119, positions: ['OF', 'UTIL'], slot: 'OF', isPitcher: false },
-  { playerKey: 'mlb.665742', personId: 665742, name: 'Juan Soto', teamId: 121, positions: ['OF'], slot: 'OF', isPitcher: false },
-  { playerKey: 'mlb.624413', personId: 624413, name: 'Pete Alonso', teamId: 110, positions: ['1B', 'UTIL'], slot: 'UTIL', isPitcher: false },
-  { playerKey: 'mlb.680776', personId: 680776, name: 'Jarren Duran', teamId: 111, positions: ['OF', 'UTIL'], slot: 'UTIL', isPitcher: false },
-  { playerKey: 'mlb.682998', personId: 682998, name: 'Corbin Carroll', teamId: 109, positions: ['OF'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.621566', personId: 621566, name: 'Matt Olson', teamId: 144, positions: ['1B', '3B'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.592663', personId: 592663, name: 'J.T. Realmuto', teamId: 143, positions: ['C'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.596019', personId: 596019, name: 'Francisco Lindor', teamId: 121, positions: ['SS'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.592518', personId: 592518, name: 'Manny Machado', teamId: 135, positions: ['3B', 'UTIL'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.701538', personId: 701538, name: 'Jackson Merrill', teamId: 135, positions: ['OF'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.670770', personId: 670770, name: 'TJ Friedl', teamId: 113, positions: ['OF', 'UTIL'], slot: 'IL', isPitcher: false },
+  // Hitters -- C/1B/2B/3B/SS/OF x3/UTIL starting, 4 bench, 1 IL (Pages, per
+  // the screenshot's own "IL" flag; DeLauter's "DTD" is a status, not a
+  // bench assignment, so he stays in his OF slot).
+  { playerKey: 'mlb.661388', personId: 661388, name: 'William Contreras', teamId: 158, positions: ['C'], slot: 'C', isPitcher: false },
+  { playerKey: 'mlb.686469', personId: 686469, name: 'Vinnie Pasquantino', teamId: 118, positions: ['1B'], slot: '1B', isPitcher: false },
+  { playerKey: 'mlb.683953', personId: 683953, name: 'Travis Bazzana', teamId: 114, positions: ['2B'], slot: '2B', isPitcher: false },
+  { playerKey: 'mlb.571970', personId: 571970, name: 'Max Muncy', teamId: 119, positions: ['3B'], slot: '3B', isPitcher: false },
+  { playerKey: 'mlb.608369', personId: 608369, name: 'Corey Seager', teamId: 140, positions: ['SS'], slot: 'SS', isPitcher: false },
+  { playerKey: 'mlb.545361', personId: 545361, name: 'Mike Trout', teamId: 108, positions: ['OF'], slot: 'OF', isPitcher: false },
+  { playerKey: 'mlb.681715', personId: 681715, name: 'Heriberto Hernández', teamId: 146, positions: ['OF'], slot: 'OF', isPitcher: false },
+  { playerKey: 'mlb.800050', personId: 800050, name: 'Chase DeLauter', teamId: 114, positions: ['OF'], slot: 'OF', isPitcher: false },
+  { playerKey: 'mlb.702616', personId: 702616, name: 'Jackson Holliday', teamId: 110, positions: ['2B', 'SS', 'UTIL'], slot: 'UTIL', isPitcher: false },
+  { playerKey: 'mlb.700250', personId: 700250, name: 'Ben Rice', teamId: 147, positions: ['C', '1B'], slot: 'BN', isPitcher: false },
+  { playerKey: 'mlb.687952', personId: 687952, name: 'Christian Encarnacion-Strand', teamId: 110, positions: ['1B', '3B'], slot: 'BN', isPitcher: false },
+  { playerKey: 'mlb.805999', personId: 805999, name: 'A.J. Ewing', teamId: 121, positions: ['2B', 'OF'], slot: 'BN', isPitcher: false },
+  { playerKey: 'mlb.683737', personId: 683737, name: 'Michael Busch', teamId: 112, positions: ['1B'], slot: 'BN', isPitcher: false },
+  { playerKey: 'mlb.681624', personId: 681624, name: 'Andy Pages', teamId: 119, positions: ['OF'], slot: 'IL', isPitcher: false },
 
-  // Pitchers
-  { playerKey: 'mlb.694973', personId: 694973, name: 'Paul Skenes', teamId: 134, positions: ['SP'], slot: 'SP', isPitcher: true },
+  // Pitchers -- 5 SP, 1 RP, 5 P (flex), 2 bench. Ohtani listed specifically
+  // as "(Pitcher)" in the screenshot, i.e. his pitching-side roster spot.
+  { playerKey: 'mlb.807739', personId: 807739, name: 'Kade Anderson', teamId: 136, positions: ['SP'], slot: 'SP', isPitcher: true },
   { playerKey: 'mlb.554430', personId: 554430, name: 'Zack Wheeler', teamId: 143, positions: ['SP'], slot: 'SP', isPitcher: true },
-  { playerKey: 'mlb.623352', personId: 623352, name: 'Josh Hader', teamId: 117, positions: ['RP'], slot: 'RP', isPitcher: true },
-  { playerKey: 'mlb.675911', personId: 675911, name: 'Spencer Strider', teamId: 144, positions: ['SP', 'RP'], slot: 'IL', isPitcher: true },
-  { playerKey: 'mlb.543037', personId: 543037, name: 'Gerrit Cole', teamId: 147, positions: ['SP'], slot: 'SP', isPitcher: true },
-  { playerKey: 'mlb.664854', personId: 664854, name: 'Ryan Helsley', teamId: 110, positions: ['RP'], slot: 'RP', isPitcher: true },
-  { playerKey: 'mlb.669302', personId: 669302, name: 'Logan Gilbert', teamId: 136, positions: ['SP'], slot: 'P', isPitcher: true },
-  { playerKey: 'mlb.661395', personId: 661395, name: 'Jhoan Duran', teamId: 143, positions: ['RP'], slot: 'P', isPitcher: true },
-  { playerKey: 'mlb.664285', personId: 664285, name: 'Framber Valdez', teamId: 116, positions: ['SP'], slot: 'P', isPitcher: true },
-  { playerKey: 'mlb.642397', personId: 642397, name: 'Gregory Soto', teamId: 134, positions: ['RP'], slot: 'BN', isPitcher: true },
+  { playerKey: 'mlb.605483', personId: 605483, name: 'Blake Snell', teamId: 119, positions: ['SP'], slot: 'SP', isPitcher: true },
+  { playerKey: 'mlb.696149', personId: 696149, name: 'Bubba Chandler', teamId: 134, positions: ['SP'], slot: 'SP', isPitcher: true },
+  { playerKey: 'mlb.660271', personId: 660271, name: 'Shohei Ohtani', teamId: 119, positions: ['SP'], slot: 'SP', isPitcher: true },
+  { playerKey: 'mlb.656730', personId: 656730, name: 'Trevor Megill', teamId: 158, positions: ['RP'], slot: 'RP', isPitcher: true },
+  { playerKey: 'mlb.669713', personId: 669713, name: 'Hayden Wesneski', teamId: 117, positions: ['SP'], slot: 'P', isPitcher: true },
+  { playerKey: 'mlb.672456', personId: 672456, name: 'Keider Montero', teamId: 116, positions: ['SP', 'RP'], slot: 'P', isPitcher: true },
+  { playerKey: 'mlb.645261', personId: 645261, name: 'Sandy Alcantara', teamId: 146, positions: ['SP'], slot: 'P', isPitcher: true },
+  { playerKey: 'mlb.543135', personId: 543135, name: 'Nathan Eovaldi', teamId: 140, positions: ['SP'], slot: 'P', isPitcher: true },
+  { playerKey: 'mlb.571510', personId: 571510, name: 'Matthew Boyd', teamId: 112, positions: ['SP'], slot: 'P', isPitcher: true },
+  { playerKey: 'mlb.624133', personId: 624133, name: 'Ranger Suarez', teamId: 111, positions: ['SP'], slot: 'BN', isPitcher: true },
+  { playerKey: 'mlb.543243', personId: 543243, name: 'Sonny Gray', teamId: 111, positions: ['SP'], slot: 'BN', isPitcher: true },
 ];
 
 export const SAMPLE_TEAM = {
-  teamKey: '458.l.000000.t.1', name: 'Bunts', leagueKey: '458.l.000000', logoUrl: null, rank: 3,
+  teamKey: '458.l.000000.t.1', name: 'Bunts', leagueKey: '458.l.000000', logoUrl: null, rank: null,
 };
 
 export const SAMPLE_LEAGUE = {
   leagueKey: '458.l.000000',
-  name: 'Sample roster — real players, not your league',
+  name: 'Your real roster — live MLB stats, league details pending Yahoo',
   scoringCategories: ['R', 'HR', 'RBI', 'SB', 'AVG', 'W', 'SV', 'K', 'ERA', 'WHIP'],
   keeperSlots: 12,
   weeklyAddLimit: 6,
@@ -95,8 +102,8 @@ interface Env {
 const CACHE_TTL_SECONDS = 300;
 
 /**
- * Assembles a Roster-shaped object (same contract as the real Yahoo path
- * will use) from live MLB Stats API data for the fixed player list above.
+ * Assembles a Roster-shaped object (same contract the real Yahoo path will
+ * use) from live MLB Stats API data for Mack's real player list above.
  * Cached in KV for a few minutes so a burst of page loads doesn't turn into
  * a burst of MLB API calls -- this is read on every `/roster` request while
  * Yahoo is dark.
