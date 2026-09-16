@@ -54,6 +54,15 @@ export function PlayerSheet({
         <div className="sheet-grab" aria-hidden="true" />
 
         <div className="sheet-head">
+          {player.headshotUrl ? (
+            <img
+              className="sheet-avatar"
+              src={player.headshotUrl}
+              alt=""
+              aria-hidden="true"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : null}
           <div>
             <h2 className="sheet-name">{player.name}</h2>
             <p className="sheet-meta">
@@ -85,6 +94,30 @@ export function PlayerSheet({
             <div className="item pending" style={{ marginTop: 12 }}>
               <p className="verdict" style={{ marginTop: 0 }}>{player.note}</p>
             </div>
+          ) : null}
+
+          {!isPitcher && player.opposingPitcher ? (
+            <>
+              <p className="sect">Career vs {player.opposingPitcher}</p>
+              {player.vsPitcher ? (
+                <div className="tonight">
+                  <div>
+                    <span className="k">AVG</span>
+                    <span className="v">{fmt(player.vsPitcher.avg)}</span>
+                  </div>
+                  <div>
+                    <span className="k">AB · H · HR</span>
+                    <span className="v">{player.vsPitcher.atBats}-{player.vsPitcher.hits}-{player.vsPitcher.homeRuns}</span>
+                  </div>
+                  <div>
+                    <span className="k">BB · K</span>
+                    <span className="v">{player.vsPitcher.walks}-{player.vsPitcher.strikeOuts}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="muted">No career at-bats against him.</p>
+              )}
+            </>
           ) : null}
 
           <p className="sect">Last 14 days</p>

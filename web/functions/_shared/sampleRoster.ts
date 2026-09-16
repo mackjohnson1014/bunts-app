@@ -19,7 +19,8 @@
  */
 
 import {
-  getPlayerStats, getRecentGames, getRosterStatuses, getScheduleByTeams, startingToday, MLB_TEAM_ABBR,
+  getBatterVsPitcher, getPlayerStats, getRecentGames, getRosterStatuses, getScheduleByTeams, headshotUrl,
+  startingToday, MLB_TEAM_ABBR,
 } from './mlb';
 
 export interface SamplePlayerDef {
@@ -128,6 +129,20 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
     getRecentGames(personIds, season, 5),
   ]);
 
+  // Career vs. tonight's opposing starter -- only meaningful for hitters, and
+  // only once a game (and so an opposing pitcher) is known, so this has to
+  // wait until `schedule` above has resolved rather than joining that
+  // Promise.all.
+  const vsPitcherMatchups = SAMPLE_ROSTER_PLAYERS
+    .filter((def) => !def.isPitcher)
+    .flatMap((def) => {
+      const game = schedule.get(def.teamId);
+      return game?.probablePitcherId != null
+        ? [{ personId: def.personId, pitcherId: game.probablePitcherId, pitcherName: game.probablePitcherName ?? '' }]
+        : [];
+    });
+  const vsPitcher = await getBatterVsPitcher(vsPitcherMatchups);
+
   const lockAt = [...schedule.values()]
     .map((g) => g.gameDate)
     .filter((d): d is string => !!d)
@@ -153,6 +168,8 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
       percentOwned: null,
       recentGames: recentGames.get(def.personId) ?? [],
       note: mlbStatus ? `MLB roster status: ${mlbStatus}.` : null,
+      headshotUrl: headshotUrl(def.personId),
+      vsPitcher: def.isPitcher ? null : vsPitcher.get(def.personId) ?? null,
     };
   });
 

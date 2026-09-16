@@ -25,6 +25,21 @@ export interface GameLine {
   quality: 'good' | 'neutral' | 'bad' | 'dnp';
 }
 
+/** A hitter's career numbers against one specific pitcher -- not season-scoped. */
+export interface VsPitcherStats {
+  pitcherName: string;
+  games: number;
+  atBats: number;
+  hits: number;
+  homeRuns: number;
+  rbi: number;
+  avg: number;
+  obp: number;
+  slg: number;
+  strikeOuts: number;
+  walks: number;
+}
+
 export interface Player {
   playerKey: string;
   name: string;
@@ -51,6 +66,15 @@ export interface Player {
   recentGames: GameLine[];
   /** Injury or role note in plain language, when there is one. */
   note: string | null;
+  /** MLB headshot, when available. Optional -- older data sources may not set it. */
+  headshotUrl?: string | null;
+  /**
+   * Hitter's career line against tonight's opposing starter. Null (or the
+   * key absent entirely) when there's no game today, the opposing starter
+   * isn't known yet, this player is a pitcher, or he's simply never faced
+   * that pitcher before -- all of which are ordinary, not errors.
+   */
+  vsPitcher?: VsPitcherStats | null;
 }
 
 export interface League {

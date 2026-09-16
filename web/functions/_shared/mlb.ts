@@ -24,6 +24,21 @@ async function fetchMlb<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+/**
+ * MLB's own headshot CDN (Cloudinary-backed, the same one mlb.com uses).
+ * No auth, works for any valid person id, and degrades to a generic
+ * silhouette (still HTTP 200, still an image) for an id it doesn't
+ * recognize rather than erroring -- so this never needs a fallback path,
+ * just an <img> tag.
+ */
+export function headshotUrl(personId: number): string {
+  return (
+    'https://img.mlbstatic.com/mlb-photos/image/upload/' +
+    'd_people:generic:headshot:67:current.png,q_auto:best,f_auto,w_180/' +
+    `v1/people/${personId}/headshot/67/current`
+  );
+}
+
 /** Stable across seasons -- MLB has not added or removed a team in decades. */
 export const MLB_TEAM_ABBR: Record<number, string> = {
   108: 'LAA', 109: 'AZ', 110: 'BAL', 111: 'BOS', 112: 'CHC', 113: 'CIN',
@@ -226,6 +241,84 @@ export async function getPlayerStats(
         : mapStat(pickSplit(find('byDateRange', 'hitting')), HITTING_KEYS),
     });
   }
+  return out;
+}
+
+// ---- career vs. opposing pitcher -------------------------------------------------
+
+export interface VsPitcherStats {
+  pitcherName: string;
+  games: number;
+  atBats: number;
+  hits: number;
+  homeRuns: number;
+  rbi: number;
+  avg: number;
+  obp: number;
+  slg: number;
+  strikeOuts: number;
+  walks: number;
+}
+
+/**
+ * One (hitter, opposing starter) pair to look up. `pitcherName` rides along
+ * so the caller doesn't need a second lookup just to label the result.
+ */
+export interface VsPitcherMatchup {
+  personId: number;
+  pitcherId: number;
+  pitcherName: string;
+}
+
+/**
+ * Career totals for a hitter against a specific pitcher -- everything they've
+ * ever faced each other, not scoped to a season. Batters facing the SAME
+ * pitcher today are batched into one call each (grouped by pitcherId), since
+ * `opposingPlayerId` is a single value per request and can't itself batch.
+ * A pair with no history comes back with an empty split, which is treated
+ * the same as a lookup failure: simply absent from the returned map, not an
+ * error -- "he's never faced this pitcher" is a normal, common case.
+ */
+export async function getBatterVsPitcher(matchups: VsPitcherMatchup[]): Promise<Map<number, VsPitcherStats>> {
+  const out = new Map<number, VsPitcherStats>();
+  if (matchups.length === 0) return out;
+
+  const byPitcher = new Map<number, number[]>();
+  for (const m of matchups) {
+    const list = byPitcher.get(m.pitcherId) ?? [];
+    list.push(m.personId);
+    byPitcher.set(m.pitcherId, list);
+  }
+  const nameByPitcher = new Map(matchups.map((m) => [m.pitcherId, m.pitcherName]));
+
+  await Promise.all([...byPitcher.entries()].map(async ([pitcherId, personIds]) => {
+    try {
+      const hydrate = `stats(group=hitting,type=vsPlayerTotal,opposingPlayerId=${pitcherId})`;
+      const data = await fetchMlb<PeopleStatsResponse>(
+        `/people?personIds=${personIds.join(',')}&hydrate=${encodeURIComponent(hydrate)}`,
+      );
+      for (const person of data.people) {
+        const stat = person.stats?.find((s) => s.type.displayName === 'vsPlayerTotal')?.splits[0]?.stat;
+        if (!stat || num(stat.atBats) === 0) continue;   // no career history -- leave unset
+        out.set(person.id, {
+          pitcherName: nameByPitcher.get(pitcherId) ?? '',
+          games: num(stat.gamesPlayed),
+          atBats: num(stat.atBats),
+          hits: num(stat.hits),
+          homeRuns: num(stat.homeRuns),
+          rbi: num(stat.rbi),
+          avg: num(stat.avg),
+          obp: num(stat.obp),
+          slg: num(stat.slg),
+          strikeOuts: num(stat.strikeOuts),
+          walks: num(stat.baseOnBalls),
+        });
+      }
+    } catch {
+      /* that pitcher's matchup data just stays unset for these hitters */
+    }
+  }));
+
   return out;
 }
 
