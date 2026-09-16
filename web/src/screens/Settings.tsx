@@ -5,11 +5,13 @@ import { APP_VERSION, RELEASES, formatDate } from '../changelog';
 import { useInstall } from '../install';
 import { ALERT_KINDS, type AlertKind, type Prefs, type User } from '../types';
 import { currentSubscription, isIOS, isStandalone, subscribe, supportLevel, type PushState } from '../push';
+import { useTheme } from '../useTheme';
 
-type SectionId = 'account' | 'alerts' | 'changelog' | 'about';
+type SectionId = 'account' | 'appearance' | 'alerts' | 'changelog' | 'about';
 
 const SECTIONS: { id: SectionId; label: string; Icon: (props: { className?: string }) => ReactNode }[] = [
   { id: 'account', label: 'My Account', Icon: AccountIcon },
+  { id: 'appearance', label: 'Appearance', Icon: AppearanceIcon },
   { id: 'alerts', label: 'Alerts & Notifications', Icon: AlertsIcon },
   { id: 'changelog', label: 'Changelog', Icon: ChangelogIcon },
   { id: 'about', label: 'About', Icon: AboutIcon },
@@ -25,6 +27,16 @@ function AccountIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <circle cx="10" cy="7" r="3.4" stroke="currentColor" strokeWidth="1.5" />
       <path d="M4 17c0-3.6 2.7-6.2 6-6.2s6 2.6 6 6.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Half-filled circle -- the day/night split, same stroke-first style as the others. */
+function AppearanceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 3a7 7 0 0 1 0 14z" fill="currentColor" />
     </svg>
   );
 }
@@ -60,7 +72,7 @@ function AboutIcon({ className }: { className?: string }) {
 }
 
 function sectionFromHash(): SectionId | null {
-  const m = /^#settings\/(account|alerts|changelog|about)$/.exec(location.hash);
+  const m = /^#settings\/(account|appearance|alerts|changelog|about)$/.exec(location.hash);
   return m ? (m[1] as SectionId) : null;
 }
 
@@ -126,6 +138,7 @@ export default function Settings({
           {lastSection === 'account' && (
             <AccountPane user={user} onChange={onProfileChange} onBack={close} />
           )}
+          {lastSection === 'appearance' && <AppearancePane onBack={close} />}
           {lastSection === 'alerts' && (
             <AlertsPane user={user} onChange={onProfileChange} onBack={close} />
           )}
@@ -252,6 +265,36 @@ function AccountPane({
           </button>
         ) : null}
         {status ? <p className="muted" style={{ marginTop: 8, marginBottom: 0 }}>{status}</p> : null}
+      </div>
+    </Screen>
+  );
+}
+
+/**
+ * One toggle: the app's own light/dark choice, independent of the OS theme
+ * (the app never followed prefers-color-scheme even before this existed).
+ * Persisted client-side only -- useTheme.ts -- there is nothing to sync
+ * server-side about how someone likes their own screen to look.
+ */
+function AppearancePane({ onBack }: { onBack: () => void }) {
+  const { theme, toggle } = useTheme();
+
+  return (
+    <Screen title="Appearance" onBack={onBack}>
+      <p className="sect">Display</p>
+      <div className="toggle">
+        <div className="toggle-text">
+          <div className="t">Dark Mode</div>
+          <div className="d">
+            Scoreboard-at-night palette. Off shows the paper/day palette instead.
+          </div>
+        </div>
+        <button
+          className="sw"
+          aria-pressed={theme === 'dark'}
+          aria-label="Dark Mode"
+          onClick={toggle}
+        />
       </div>
     </Screen>
   );
