@@ -193,9 +193,11 @@ button { font: inherit; color: inherit; }
   font-size: 12px; color: var(--chalk-dim); letter-spacing: .03em;
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.row .sub { margin: 2px 0 0; }
+/* Sits next to the name rather than on its own line -- shrinks and
+   ellipsizes to make room instead of wrapping. */
+.row-top .sub { flex: 1 1 auto; }
 .row-top {
-  display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px;
+  display: flex; align-items: baseline; gap: 2px 8px;
 }
 .row-bottom {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -210,7 +212,7 @@ button { font: inherit; color: inherit; }
   font-variant-numeric: tabular-nums;
 }
 .statcol {
-  width: 32px; flex: none; text-align: right; white-space: nowrap;
+  width: 34px; flex: none; text-align: right; white-space: nowrap;
   color: var(--chalk);
 }
 
@@ -235,8 +237,14 @@ button { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--rule);
 }
 .stat-header .statcol {
+  /* Each label is a sort button now -- undo the native button chrome, keep
+     the plain small-caps look, and let the active column stand out. */
+  appearance: none; background: none; border: 0; margin: 0; padding: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
   color: var(--chalk-dim); font-weight: 700; text-transform: uppercase;
+  cursor: pointer;
 }
+.stat-header .statcol.active { color: var(--amber); }
 .state { text-align: center; width: 32px; }
 .state .dot { width: 7px; height: 7px; border-radius: 50%; margin: 0 auto 3px; }
 .state .lbl {

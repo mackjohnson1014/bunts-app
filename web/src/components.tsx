@@ -111,8 +111,8 @@ export function FormStrip({ games }: { games: GameLine[] }) {
   );
 }
 
-export const HITTER_KEYS = ['R', 'HR', 'RBI', 'SB', 'AVG'];
-export const PITCHER_KEYS = ['W', 'SV', 'K', 'ERA', 'WHIP'];
+export const HITTER_KEYS = ['AVG', 'R', 'HR', 'RBI', 'SB'];
+export const PITCHER_KEYS = ['W', 'ERA', 'K', 'WHIP', 'SV'];
 
 export const isPitcher = (p: Player) => p.positions.some((x) => x === 'SP' || x === 'RP' || x === 'P');
 
@@ -136,14 +136,32 @@ const slotTone = (slot: Player['slot']) =>
  * under it. Mirrors `.row`'s own grid (slot/avatar/main/state columns) with
  * two empty spacer cells so its category labels land exactly above the
  * same-width number columns every row lines up beneath it -- see `.statcol`.
+ * Each label doubles as a sort button; the active one shows which way.
  */
-export function StatHeader({ keys }: { keys: string[] }) {
+export function StatHeader({
+  keys, sortKey, sortDir, onSort,
+}: {
+  keys: string[];
+  sortKey: string | null;
+  sortDir: 'asc' | 'desc';
+  onSort: (key: string) => void;
+}) {
   return (
     <div className="stat-header">
       <div aria-hidden="true" />
       <div aria-hidden="true" />
       <div className="statcols">
-        {keys.map((k) => <span key={k} className="statcol">{k}</span>)}
+        {keys.map((k) => (
+          <button
+            key={k}
+            type="button"
+            className={`statcol${sortKey === k ? ' active' : ''}`}
+            aria-pressed={sortKey === k}
+            onClick={() => onSort(k)}
+          >
+            {k}{sortKey === k ? (sortDir === 'desc' ? '▾' : '▴') : ''}
+          </button>
+        ))}
       </div>
       <div aria-hidden="true" />
     </div>
@@ -169,7 +187,9 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
         <div className="row-avatar" aria-hidden="true" />
       )}
       <div className="row-main">
-        {/* identity: who, and any injury/role flag */}
+        {/* identity: who (plus any injury/role flag), and context -- team,
+            eligible positions, tonight's matchup -- on the same line. .sub
+            shrinks and ellipsizes rather than wrapping when space is tight. */}
         <div className="row-top">
           <div className="pname">
             {player.name}
@@ -182,11 +202,10 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
             ) : null}
             {player.status ? <> <span className="chip dtd">{player.status}</span></> : null}
           </div>
-        </div>
-        {/* context: team, eligible positions, tonight's matchup */}
-        <div className="sub">
-          {player.mlbTeam} · {player.positions.join('/')}
-          {player.opponent ? ` · ${player.opponent}` : ''}
+          <div className="sub">
+            {player.mlbTeam} · {player.positions.join('/')}
+            {player.opponent ? ` · ${player.opponent}` : ''}
+          </div>
         </div>
         {/* performance: just the counts -- the category labels live in the
             sticky StatHeader above the list, not repeated on every row --
