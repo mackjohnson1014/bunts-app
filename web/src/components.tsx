@@ -147,19 +147,12 @@ export const LOWER_IS_BETTER = new Set(['ERA', 'WHIP']);
 const RATE_STATS = new Set(['AVG', 'ERA', 'WHIP']);
 
 /**
- * How many decimals a category is actually displayed to -- the same
- * precision fmtStat()/fmt() render -- so "no real change" can be judged by
- * what the number would look like on screen, not by exact float equality
- * (a fractional pace like 2.3 projected HR essentially never exactly equals
- * a whole-number actual, so a strict === here would almost never fire).
- */
-const displayDecimals = (key: string) => (TWO_DECIMAL_STATS.has(key) ? 2 : RATE_STATS.has(key) ? 3 : 0);
-
-/**
  * Whether this week's line is ahead of, behind, or even with the player's
- * season-long form -- 'neutral' when it rounds to the same displayed value
- * as his season pace, undefined when there's nothing to compare (no games
- * yet this week, or no season/games-played baseline to project from).
+ * season-long form. A hitter picking up even one extra run/HR/RBI/SB (or a
+ * pitcher's ERA/WHIP moving by even 0.01, or his W/SV/K by even one) counts
+ * as a real move and gets colored -- only an EXACT tie with the projected
+ * pace is 'neutral'. undefined means there's nothing to compare at all (no
+ * games yet this week, or no season/games-played baseline to project from).
  */
 function weekTrend(key: string, player: Player): 'better' | 'worse' | 'neutral' | undefined {
   const actual = player.weekStats?.[key];
@@ -173,8 +166,7 @@ function weekTrend(key: string, player: Player): 'better' | 'worse' | 'neutral' 
     if (seasonG === 0 || weekG === 0) return undefined;
     expected = (season / seasonG) * weekG;
   }
-  const decimals = displayDecimals(key);
-  if (actual.toFixed(decimals) === expected.toFixed(decimals)) return 'neutral';
+  if (actual === expected) return 'neutral';
   const higherIsBetter = !LOWER_IS_BETTER.has(key);
   return (actual > expected) === higherIsBetter ? 'better' : 'worse';
 }
