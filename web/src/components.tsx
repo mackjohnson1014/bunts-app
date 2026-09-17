@@ -135,16 +135,37 @@ export const fmtStat = (key: string, v: number | undefined) => {
 
 /** ERA and WHIP are the only stats where a lower number is the better one --
  * everything else (AVG, counting stats) is better the higher it goes. Shared
- * between the roster's default sort direction and its week-over-week trend. */
+ * between the roster's default sort direction and its week-vs-season trend. */
 export const LOWER_IS_BETTER = new Set(['ERA', 'WHIP']);
 
-/** Whether this week's count is an improvement, a step back, or unchanged
- * from the week before -- undefined when either week has no value to
- * compare (nothing played yet), so there's nothing to highlight. */
-function weekTrend(key: string, cur: number | undefined, prev: number | undefined): 'better' | 'worse' | undefined {
-  if (cur === undefined || prev === undefined || cur === prev) return undefined;
+/** Rate stats compare directly to the season figure; counting stats do not --
+ * a single week's HR total being lower than a whole season's says nothing
+ * except that a week is shorter than a season. Those get compared against
+ * the player's own season rate projected over however many games he played
+ * THIS week -- "is he beating his own pace" -- the same convention the
+ * player detail sheet already uses for last-14-days vs. season. */
+const RATE_STATS = new Set(['AVG', 'ERA', 'WHIP']);
+
+/**
+ * Whether this week's line is ahead of, behind, or even with the player's
+ * season-long form -- undefined when there's nothing to compare (no games
+ * yet this week, or no season/games-played baseline to project from).
+ */
+function weekTrend(key: string, player: Player): 'better' | 'worse' | undefined {
+  const actual = player.weekStats?.[key];
+  const season = player.seasonStats[key];
+  if (actual === undefined || season === undefined) return undefined;
+
+  let expected = season;
+  if (!RATE_STATS.has(key)) {
+    const seasonG = player.seasonStats.G ?? 0;
+    const weekG = player.weekStats?.G ?? 0;
+    if (seasonG === 0 || weekG === 0) return undefined;
+    expected = (season / seasonG) * weekG;
+  }
+  if (actual === expected) return undefined;
   const higherIsBetter = !LOWER_IS_BETTER.has(key);
-  return (cur > prev) === higherIsBetter ? 'better' : 'worse';
+  return (actual > expected) === higherIsBetter ? 'better' : 'worse';
 }
 
 /** Longer names (hyphenated surnames especially) would otherwise wrap onto
@@ -256,23 +277,22 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
           </div>
           <FormStrip games={player.recentGames} />
         </div>
-        {/* This week (Mon-Sun so far) vs. the week before it, so a hot or
+        {/* This week (Mon-Sun so far) vs. his own season pace, so a hot or
             cold stretch stands out without having to open the player sheet.
             Same fixed-width columns as the season row above, so it lines up
             under the same sticky header -- only the color (and arrow) is new. */}
         <div className="row-week">
           <div className="statcols">
             {keys.map((k) => {
-              const cur = player.weekStats?.[k];
-              const trend = weekTrend(k, cur, player.prevWeekStats?.[k]);
+              const trend = weekTrend(k, player);
               return (
                 <span key={k} className={`statcol${trend ? ` trend-${trend}` : ''}`}>
-                  {fmtStat(k, cur)}{trend === 'better' ? ' ▲' : trend === 'worse' ? ' ▼' : ''}
+                  {fmtStat(k, player.weekStats?.[k])}{trend === 'better' ? ' ▲' : trend === 'worse' ? ' ▼' : ''}
                 </span>
               );
             })}
           </div>
-          <span className="row-week-label">this wk</span>
+          <span className="row-week-label" title="This week vs. his season pace">this wk</span>
         </div>
       </div>
       <LineupState starting={player.startingToday} />

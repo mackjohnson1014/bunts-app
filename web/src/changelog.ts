@@ -22,7 +22,7 @@ export const RELEASES: Release[] = [
       'Stat category names (AVG, HR, ERA, and the rest) now stick to the top of the screen as you scroll, so every row can just show the numbers \u2014 more of your roster fits on screen at once.',
       'Tap any stat header to sort the list by it, best-first; today\u2019s probable starting pitchers now always stay pinned to the top of the Pitchers tab no matter how it\u2019s sorted.',
       'A player\u2019s team, position and tonight\u2019s matchup now sit right next to their name. Hitting stats are ordered AVG, R, HR, RBI, SB and pitching W, ERA, K, WHIP, SV to match how you actually scan them, and ERA/WHIP always show two decimal places.',
-      'New: each player now shows a second row with their stats for the current week, colored green or red against the week before \u2014 a hot or cold stretch jumps out without opening their card.',
+      'New: each player now shows a second row with their stats for the current week, colored green or red against their own season pace \u2014 a hot or cold stretch jumps out without opening their card.',
       'Long names (like Christian Encarnacion-Strand) no longer wrap onto a second line.',
     ],
   },

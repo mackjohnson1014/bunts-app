@@ -221,9 +221,9 @@ button { font: inherit; color: inherit; }
   color: var(--chalk);
 }
 
-/* This week vs. last week: same fixed columns as the season row, one line
-   below it, with color (and an arrow, for anyone not relying on color) doing
-   the highlighting the request asked for. */
+/* This week vs. the player's own season pace: same fixed columns as the
+   season row, one line below it, with color (and an arrow, for anyone not
+   relying on color) doing the highlighting. */
 .row-week {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   margin-top: 3px;

@@ -62,12 +62,11 @@ export interface Player {
   seasonStats: Record<string, number>;
   last14Stats: Record<string, number>;
   /**
-   * This week's (Monday through today) and last week's (Monday-Sunday) stat
-   * totals, for a week-over-week trend on the roster. Optional -- older data
-   * sources (e.g. the offline mock roster) may not set these.
+   * This week's (Monday through today) stat totals so far, for comparing
+   * against the player's own season pace on the roster. Optional -- older
+   * data sources (e.g. the offline mock roster) may not set this.
    */
   weekStats?: Record<string, number>;
-  prevWeekStats?: Record<string, number>;
   percentOwned: number | null;
   /** Newest first. Empty for a player who has not appeared recently. */
   recentGames: GameLine[];
