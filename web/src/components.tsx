@@ -147,11 +147,21 @@ export const LOWER_IS_BETTER = new Set(['ERA', 'WHIP']);
 const RATE_STATS = new Set(['AVG', 'ERA', 'WHIP']);
 
 /**
+ * How many decimals a category is actually displayed to -- the same
+ * precision fmtStat()/fmt() render -- so "no real change" can be judged by
+ * what the number would look like on screen, not by exact float equality
+ * (a fractional pace like 2.3 projected HR essentially never exactly equals
+ * a whole-number actual, so a strict === here would almost never fire).
+ */
+const displayDecimals = (key: string) => (TWO_DECIMAL_STATS.has(key) ? 2 : RATE_STATS.has(key) ? 3 : 0);
+
+/**
  * Whether this week's line is ahead of, behind, or even with the player's
- * season-long form -- undefined when there's nothing to compare (no games
+ * season-long form -- 'neutral' when it rounds to the same displayed value
+ * as his season pace, undefined when there's nothing to compare (no games
  * yet this week, or no season/games-played baseline to project from).
  */
-function weekTrend(key: string, player: Player): 'better' | 'worse' | undefined {
+function weekTrend(key: string, player: Player): 'better' | 'worse' | 'neutral' | undefined {
   const actual = player.weekStats?.[key];
   const season = player.seasonStats[key];
   if (actual === undefined || season === undefined) return undefined;
@@ -163,7 +173,8 @@ function weekTrend(key: string, player: Player): 'better' | 'worse' | undefined 
     if (seasonG === 0 || weekG === 0) return undefined;
     expected = (season / seasonG) * weekG;
   }
-  if (actual === expected) return undefined;
+  const decimals = displayDecimals(key);
+  if (actual.toFixed(decimals) === expected.toFixed(decimals)) return 'neutral';
   const higherIsBetter = !LOWER_IS_BETTER.has(key);
   return (actual > expected) === higherIsBetter ? 'better' : 'worse';
 }
@@ -287,7 +298,7 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
               const trend = weekTrend(k, player);
               return (
                 <span key={k} className={`statcol${trend ? ` trend-${trend}` : ''}`}>
-                  {fmtStat(k, player.weekStats?.[k])}{trend === 'better' ? ' ▲' : trend === 'worse' ? ' ▼' : ''}
+                  {fmtStat(k, player.weekStats?.[k])}{trend === 'better' ? ' ▲' : trend === 'worse' ? ' ▼' : trend === 'neutral' ? ' •' : ''}
                 </span>
               );
             })}

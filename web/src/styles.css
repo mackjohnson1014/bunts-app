@@ -236,6 +236,10 @@ button { font: inherit; color: inherit; }
 }
 .statcol.trend-better { color: var(--grass); font-weight: 700; }
 .statcol.trend-worse { color: var(--clay); font-weight: 700; }
+/* On pace with his season rate -- neither an improvement nor a step back,
+   so it gets a quiet dot instead of a color, distinct from a plain number
+   with no marker at all (nothing to compare yet, e.g. no games this week). */
+.statcol.trend-neutral { color: var(--chalk-dim); }
 
 /* Sticks to the top of .screen as the roster list scrolls under it. Same
    grid as .row (36px slot / 32px avatar / 1fr main / 32px state) with two
