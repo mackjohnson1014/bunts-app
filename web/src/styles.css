@@ -219,10 +219,18 @@ button { font: inherit; color: inherit; }
    empty spacer cells, so its labels land exactly above the number columns
    every row's .statcols lines up beneath it. */
 .stat-header {
-  position: sticky; top: 0; z-index: 2;
+  /* .screen has its own 10px top padding, and a sticky element's "top: 0"
+     sticks flush with the *padding* edge of its scrolling ancestor, not its
+     outer edge -- so a plain "top: 0" leaves that 10px of scrolled content
+     (e.g. a player's avatar) peeking out above the header once it's stuck.
+     Offsetting top by -10px (the exact size of that padding) cancels it out,
+     and the header's own padding-top grows by the same amount so it still
+     covers that reclaimed strip with its background instead of just shifting
+     the visible gap up by 10px. */
+  position: sticky; top: -10px; z-index: 2;
   display: grid; grid-template-columns: 36px 32px 1fr 32px;
   gap: 10px; align-items: center;
-  padding: 6px 2px; margin-bottom: 2px;
+  padding: 16px 2px 6px; margin-bottom: 2px;
   background: var(--board);
   border-bottom: 1px solid var(--rule);
 }
