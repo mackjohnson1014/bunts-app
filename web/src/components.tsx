@@ -138,37 +138,41 @@ export const fmtStat = (key: string, v: number | undefined) => {
  * between the roster's default sort direction and its week-vs-season trend. */
 export const LOWER_IS_BETTER = new Set(['ERA', 'WHIP']);
 
-/** Rate stats compare directly to the season figure; counting stats do not --
- * a single week's HR total being lower than a whole season's says nothing
- * except that a week is shorter than a season. Those get compared against
- * the player's own season rate projected over however many games he played
- * THIS week -- "is he beating his own pace" -- the same convention the
- * player detail sheet already uses for last-14-days vs. season. */
+/** The only stats where the week's line is a rate, comparable straight
+ * against the season figure -- everything else in HITTER_KEYS/PITCHER_KEYS
+ * is a raw weekly count (R, HR, RBI, SB, W, K, SV). */
 const RATE_STATS = new Set(['AVG', 'ERA', 'WHIP']);
 
 /**
- * Whether this week's line is ahead of, behind, or even with the player's
- * season-long form. A hitter picking up even one extra run/HR/RBI/SB (or a
- * pitcher's ERA/WHIP moving by even 0.01, or his W/SV/K by even one) counts
- * as a real move and gets colored -- only an EXACT tie with the projected
- * pace is 'neutral'. undefined means there's nothing to compare at all (no
- * games yet this week, or no season/games-played baseline to project from).
+ * Whether this week's line reads as an improvement, a step back, or
+ * unchanged.
+ *
+ * Counting stats (everything except AVG/ERA/WHIP) are entirely count-based,
+ * not compared against any season pace or projection: a raw weekly count
+ * can only ever add to itself, never subtract, so there's no such thing as
+ * "negative" home runs. Any count above zero is a real event and reads as
+ * 'better'; zero is simply the ordinary week where it didn't happen, and
+ * reads as 'neutral' rather than a false step back.
+ *
+ * Rate stats (AVG/ERA/WHIP) compare directly to the season figure at full
+ * precision -- moving by even 0.01 counts as real and gets colored, only an
+ * exact tie is 'neutral'.
+ *
+ * undefined means there's nothing to compare at all -- no games yet this
+ * week (weekStats has no entry for the key), or, for a rate stat, no season
+ * figure to compare against.
  */
 function weekTrend(key: string, player: Player): 'better' | 'worse' | 'neutral' | undefined {
   const actual = player.weekStats?.[key];
-  const season = player.seasonStats[key];
-  if (actual === undefined || season === undefined) return undefined;
+  if (actual === undefined) return undefined;
 
-  let expected = season;
-  if (!RATE_STATS.has(key)) {
-    const seasonG = player.seasonStats.G ?? 0;
-    const weekG = player.weekStats?.G ?? 0;
-    if (seasonG === 0 || weekG === 0) return undefined;
-    expected = (season / seasonG) * weekG;
-  }
-  if (actual === expected) return 'neutral';
+  if (!RATE_STATS.has(key)) return actual > 0 ? 'better' : 'neutral';
+
+  const season = player.seasonStats[key];
+  if (season === undefined) return undefined;
+  if (actual === season) return 'neutral';
   const higherIsBetter = !LOWER_IS_BETTER.has(key);
-  return (actual > expected) === higherIsBetter ? 'better' : 'worse';
+  return (actual > season) === higherIsBetter ? 'better' : 'worse';
 }
 
 /** Longer names (hyphenated surnames especially) would otherwise wrap onto
