@@ -290,7 +290,7 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
               const trend = weekTrend(k, player);
               return (
                 <span key={k} className={`statcol${trend ? ` trend-${trend}` : ''}`}>
-                  {fmtStat(k, player.weekStats?.[k])}{trend === 'better' ? ' ▲' : trend === 'worse' ? ' ▼' : trend === 'neutral' ? ' •' : ''}
+                  {trend === 'better' ? '▲ ' : trend === 'worse' ? '▼ ' : trend === 'neutral' ? '• ' : ''}{fmtStat(k, player.weekStats?.[k])}
                 </span>
               );
             })}
