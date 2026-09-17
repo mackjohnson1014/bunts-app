@@ -201,15 +201,34 @@ button { font: inherit; color: inherit; }
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   margin-top: 4px;
 }
-.statline {
-  display: flex; flex-wrap: wrap; justify-content: flex-start;
-  gap: 4px 10px;
+/* Numbers only, in fixed-width columns -- the category names live once, in
+   the sticky .stat-header below, rather than repeated on every row. */
+.statcols {
+  display: flex; gap: 6px;
   font-family: 'Barlow Condensed', system-ui, sans-serif;
-  font-size: 12.5px; color: var(--chalk-dim);
-  font-variant-numeric: tabular-nums; letter-spacing: .04em;
+  font-size: 12.5px; letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
 }
-.statline span { white-space: nowrap; }
-.statline b { color: var(--chalk); font-weight: 600; }
+.statcol {
+  width: 32px; flex: none; text-align: right; white-space: nowrap;
+  color: var(--chalk);
+}
+
+/* Sticks to the top of .screen as the roster list scrolls under it. Same
+   grid as .row (36px slot / 32px avatar / 1fr main / 32px state) with two
+   empty spacer cells, so its labels land exactly above the number columns
+   every row's .statcols lines up beneath it. */
+.stat-header {
+  position: sticky; top: 0; z-index: 2;
+  display: grid; grid-template-columns: 36px 32px 1fr 32px;
+  gap: 10px; align-items: center;
+  padding: 6px 2px; margin-bottom: 2px;
+  background: var(--board);
+  border-bottom: 1px solid var(--rule);
+}
+.stat-header .statcol {
+  color: var(--chalk-dim); font-weight: 700; text-transform: uppercase;
+}
 .state { text-align: center; width: 32px; }
 .state .dot { width: 7px; height: 7px; border-radius: 50%; margin: 0 auto 3px; }
 .state .lbl {

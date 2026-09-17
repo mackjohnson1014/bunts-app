@@ -111,8 +111,8 @@ export function FormStrip({ games }: { games: GameLine[] }) {
   );
 }
 
-const HITTER_KEYS = ['R', 'HR', 'RBI', 'SB', 'AVG'];
-const PITCHER_KEYS = ['W', 'SV', 'K', 'ERA', 'WHIP'];
+export const HITTER_KEYS = ['R', 'HR', 'RBI', 'SB', 'AVG'];
+export const PITCHER_KEYS = ['W', 'SV', 'K', 'ERA', 'WHIP'];
 
 export const isPitcher = (p: Player) => p.positions.some((x) => x === 'SP' || x === 'RP' || x === 'P');
 
@@ -131,9 +131,27 @@ export const fmt = (v: number | undefined) => {
 const slotTone = (slot: Player['slot']) =>
   STARTING_SLOTS.includes(slot) ? 'active' : slot === 'BN' ? 'bench' : 'inactive';
 
+/**
+ * Sticks to the top of the scrolling screen as the roster list scrolls
+ * under it. Mirrors `.row`'s own grid (slot/avatar/main/state columns) with
+ * two empty spacer cells so its category labels land exactly above the
+ * same-width number columns every row lines up beneath it -- see `.statcol`.
+ */
+export function StatHeader({ keys }: { keys: string[] }) {
+  return (
+    <div className="stat-header">
+      <div aria-hidden="true" />
+      <div aria-hidden="true" />
+      <div className="statcols">
+        {keys.map((k) => <span key={k} className="statcol">{k}</span>)}
+      </div>
+      <div aria-hidden="true" />
+    </div>
+  );
+}
+
 export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Player) => void }) {
   const keys = isPitcher(player) ? PITCHER_KEYS : HITTER_KEYS;
-  const stats = keys.filter((k) => player.seasonStats[k] !== undefined);
 
   const body = (
     <>
@@ -170,17 +188,20 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
           {player.mlbTeam} · {player.positions.join('/')}
           {player.opponent ? ` · ${player.opponent}` : ''}
         </div>
-        {/* performance: season line, then five-game trend */}
-        {stats.length > 0 || player.recentGames.length > 0 ? (
-          <div className="row-bottom">
-            <div className="statline">
-              {stats.map((k) => (
-                <span key={k}><b>{fmt(player.seasonStats[k])}</b> {k}</span>
-              ))}
-            </div>
-            <FormStrip games={player.recentGames} />
+        {/* performance: just the counts -- the category labels live in the
+            sticky StatHeader above the list, not repeated on every row --
+            then the five-game trend. Every row renders all of `keys`, in
+            the same order, so a column always lines up under its header
+            even when a player is missing one of the stats (fmt() gives
+            the empty ones a plain "-"). */}
+        <div className="row-bottom">
+          <div className="statcols">
+            {keys.map((k) => (
+              <span key={k} className="statcol">{fmt(player.seasonStats[k])}</span>
+            ))}
           </div>
-        ) : null}
+          <FormStrip games={player.recentGames} />
+        </div>
       </div>
       <LineupState starting={player.startingToday} />
     </>

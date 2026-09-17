@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { isPitcher, PlayerRow, Screen } from '../components';
+import { HITTER_KEYS, isPitcher, PITCHER_KEYS, PlayerRow, Screen, StatHeader } from '../components';
 import { PlayerSheet } from '../PlayerSheet';
 import type { Player } from '../types';
 import { STARTING_SLOTS } from '../types';
@@ -62,6 +62,7 @@ export default function RosterScreen() {
           </div>
         ) : null}
 
+        {shown.length > 0 ? <StatHeader keys={filter === 'hitters' ? HITTER_KEYS : PITCHER_KEYS} /> : null}
         {shown.map((p) => <PlayerRow key={p.playerKey} player={p} onOpen={setSelected} />)}
       </Screen>
 
