@@ -121,6 +121,18 @@ export const fmt = (v: number | undefined) => {
   return v < 10 && !Number.isInteger(v) ? v.toFixed(3).replace(/^0/, '') : String(v);
 };
 
+/** ERA and WHIP read best to two decimals, e.g. "3.45" / "0.98" -- unlike
+ * AVG, they keep the leading digit rather than dropping it, since a WHIP
+ * under 1 is a real (if rare) value, not a fraction-of-one convention. */
+const TWO_DECIMAL_STATS = new Set(['ERA', 'WHIP']);
+
+/** Stat-column formatter: same as fmt(), except ERA/WHIP get their own
+ * two-decimal treatment instead of the general three-decimal one. */
+export const fmtStat = (key: string, v: number | undefined) => {
+  if (v === undefined) return '–';
+  return TWO_DECIMAL_STATS.has(key) ? v.toFixed(2) : fmt(v);
+};
+
 /**
  * Fantasy-lineup status (starting slot / bench / IL) is read straight off
  * `player.slot` -- as current as the last roster fetch, since Bunts has no
@@ -216,7 +228,7 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
         <div className="row-bottom">
           <div className="statcols">
             {keys.map((k) => (
-              <span key={k} className="statcol">{fmt(player.seasonStats[k])}</span>
+              <span key={k} className="statcol">{fmtStat(k, player.seasonStats[k])}</span>
             ))}
           </div>
           <FormStrip games={player.recentGames} />
