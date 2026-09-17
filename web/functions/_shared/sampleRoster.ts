@@ -19,8 +19,8 @@
  */
 
 import {
-  getBatterVsPitcher, getPlayerStats, getRecentGames, getRosterStatuses, getScheduleByTeams, headshotUrl,
-  startingToday, MLB_TEAM_ABBR,
+  getBatterVsPitcher, getPlayerStats, getPlayerStatsByRange, getRecentGames, getRosterStatuses, getScheduleByTeams,
+  headshotUrl, startingToday, MLB_TEAM_ABBR,
 } from './mlb';
 
 export interface SamplePlayerDef {
@@ -93,6 +93,22 @@ function mlbDate(date: Date): string {
   return `${mm}/${dd}/${date.getFullYear()}`;
 }
 
+/** Local midnight on the Monday that starts the week containing `date`. */
+function mondayOf(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0 = Sunday .. 6 = Saturday
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  return d;
+}
+
+/** `date` plus `days` days, local time -- for turning a Monday into its Sunday. */
+function plusDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 interface Env {
   BUNTS?: KVNamespace;
 }
@@ -122,11 +138,22 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
   const rangeStart = new Date(rangeEnd);
   rangeStart.setDate(rangeStart.getDate() - 14);
 
-  const [schedule, statuses, stats, recentGames] = await Promise.all([
+  // This week (Monday through today) and the Monday-Sunday week before it,
+  // for the roster's week-over-week trend row. Two separate byDateRange
+  // calls -- MLB's hydrate syntax only takes one startDate/endDate pair per
+  // call, so there's no way to ask for both windows at once.
+  const thisMonday = mondayOf(rangeEnd);
+  const thisSunday = plusDays(thisMonday, 6);
+  const lastMonday = plusDays(thisMonday, -7);
+  const lastSunday = plusDays(thisMonday, -1);
+
+  const [schedule, statuses, stats, recentGames, weekStats, prevWeekStats] = await Promise.all([
     getScheduleByTeams(teamIds, date),
     getRosterStatuses(teamIds),
     getPlayerStats(personIds, season, mlbDate(rangeStart), mlbDate(rangeEnd)),
     getRecentGames(personIds, season, 5),
+    getPlayerStatsByRange(personIds, mlbDate(thisMonday), mlbDate(thisSunday)),
+    getPlayerStatsByRange(personIds, mlbDate(lastMonday), mlbDate(lastSunday)),
   ]);
 
   // Career vs. tonight's opposing starter -- only meaningful for hitters, and
@@ -165,6 +192,8 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
       opposingPitcher: game?.probablePitcherName ?? null,
       seasonStats: line?.season ?? {},
       last14Stats: line?.last14 ?? {},
+      weekStats: weekStats.get(def.personId) ?? {},
+      prevWeekStats: prevWeekStats.get(def.personId) ?? {},
       percentOwned: null,
       recentGames: recentGames.get(def.personId) ?? [],
       note: mlbStatus ? `MLB roster status: ${mlbStatus}.` : null,

@@ -61,6 +61,13 @@ export interface Player {
   opposingPitcher: string | null;
   seasonStats: Record<string, number>;
   last14Stats: Record<string, number>;
+  /**
+   * This week's (Monday through today) and last week's (Monday-Sunday) stat
+   * totals, for a week-over-week trend on the roster. Optional -- older data
+   * sources (e.g. the offline mock roster) may not set these.
+   */
+  weekStats?: Record<string, number>;
+  prevWeekStats?: Record<string, number>;
   percentOwned: number | null;
   /** Newest first. Empty for a player who has not appeared recently. */
   recentGames: GameLine[];

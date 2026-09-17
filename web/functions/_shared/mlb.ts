@@ -249,6 +249,41 @@ export async function getPlayerStats(
   return out;
 }
 
+/**
+ * One batched call for every player's stat line over an arbitrary date
+ * range -- used to fetch a single Monday-Sunday week's totals at a time.
+ * Same isPitcher-from-splits trick as getPlayerStats: a player with no
+ * innings pitched in this range and no at-bats either just comes back with
+ * two empty stat lines, which mapStat renders as {} either way.
+ */
+export async function getPlayerStatsByRange(
+  personIds: number[],
+  startDate: string,
+  endDate: string,
+): Promise<Map<number, Record<string, number>>> {
+  const out = new Map<number, Record<string, number>>();
+  if (personIds.length === 0) return out;
+
+  const hydrate = `stats(group=[hitting,pitching],type=[byDateRange],startDate=${startDate},endDate=${endDate})`;
+  const data = await fetchMlb<PeopleStatsResponse>(
+    `/people?personIds=${personIds.join(',')}&hydrate=${encodeURIComponent(hydrate)}`,
+  );
+
+  for (const person of data.people) {
+    const find = (group: string) =>
+      person.stats?.find((s) => s.type.displayName === 'byDateRange' && s.group.displayName === group);
+
+    const pitching = find('pitching');
+    const isPitcher = (pitching?.splits.length ?? 0) > 0;
+
+    out.set(
+      person.id,
+      isPitcher ? mapStat(pickSplit(pitching), PITCHING_KEYS) : mapStat(pickSplit(find('hitting')), HITTING_KEYS),
+    );
+  }
+  return out;
+}
+
 // ---- career vs. opposing pitcher -------------------------------------------------
 
 export interface VsPitcherStats {

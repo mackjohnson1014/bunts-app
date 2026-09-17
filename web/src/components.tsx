@@ -133,6 +133,29 @@ export const fmtStat = (key: string, v: number | undefined) => {
   return TWO_DECIMAL_STATS.has(key) ? v.toFixed(2) : fmt(v);
 };
 
+/** ERA and WHIP are the only stats where a lower number is the better one --
+ * everything else (AVG, counting stats) is better the higher it goes. Shared
+ * between the roster's default sort direction and its week-over-week trend. */
+export const LOWER_IS_BETTER = new Set(['ERA', 'WHIP']);
+
+/** Whether this week's count is an improvement, a step back, or unchanged
+ * from the week before -- undefined when either week has no value to
+ * compare (nothing played yet), so there's nothing to highlight. */
+function weekTrend(key: string, cur: number | undefined, prev: number | undefined): 'better' | 'worse' | undefined {
+  if (cur === undefined || prev === undefined || cur === prev) return undefined;
+  const higherIsBetter = !LOWER_IS_BETTER.has(key);
+  return (cur > prev) === higherIsBetter ? 'better' : 'worse';
+}
+
+/** Longer names (hyphenated surnames especially) would otherwise wrap onto
+ * a second line next to the team/position/opponent subtext -- shrink the
+ * font instead so every row stays one line tall. */
+function pnameSize(name: string): number {
+  if (name.length > 21) return 12.5;
+  if (name.length > 16) return 13.5;
+  return 15;
+}
+
 /**
  * Fantasy-lineup status (starting slot / bench / IL) is read straight off
  * `player.slot` -- as current as the last roster fetch, since Bunts has no
@@ -203,7 +226,7 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
             eligible positions, tonight's matchup -- on the same line. .sub
             shrinks and ellipsizes rather than wrapping when space is tight. */}
         <div className="row-top">
-          <div className="pname">
+          <div className="pname" style={{ fontSize: pnameSize(player.name) }}>
             {player.name}
             {/* Whether a probable starter is even taking the mound today is
                 the single most decision-relevant fact on a pitcher's row --
@@ -232,6 +255,24 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
             ))}
           </div>
           <FormStrip games={player.recentGames} />
+        </div>
+        {/* This week (Mon-Sun so far) vs. the week before it, so a hot or
+            cold stretch stands out without having to open the player sheet.
+            Same fixed-width columns as the season row above, so it lines up
+            under the same sticky header -- only the color (and arrow) is new. */}
+        <div className="row-week">
+          <div className="statcols">
+            {keys.map((k) => {
+              const cur = player.weekStats?.[k];
+              const trend = weekTrend(k, cur, player.prevWeekStats?.[k]);
+              return (
+                <span key={k} className={`statcol${trend ? ` trend-${trend}` : ''}`}>
+                  {fmtStat(k, cur)}{trend === 'better' ? ' ▲' : trend === 'worse' ? ' ▼' : ''}
+                </span>
+              );
+            })}
+          </div>
+          <span className="row-week-label">this wk</span>
         </div>
       </div>
       <LineupState starting={player.startingToday} />

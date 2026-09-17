@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api';
-import { HITTER_KEYS, isPitcher, PITCHER_KEYS, PlayerRow, Screen, StatHeader } from '../components';
+import { HITTER_KEYS, isPitcher, LOWER_IS_BETTER, PITCHER_KEYS, PlayerRow, Screen, StatHeader } from '../components';
 import { PlayerSheet } from '../PlayerSheet';
 import type { Player } from '../types';
 import { STARTING_SLOTS } from '../types';
@@ -14,9 +14,6 @@ const rosterRank = (p: Player) => (STARTING_SLOTS.includes(p.slot) ? 0 : p.slot 
 type SortDir = 'asc' | 'desc';
 type Sort = { key: string | null; dir: SortDir };
 
-/** ERA and WHIP are the only stats where a lower number is the better one --
- * everything else (AVG, counting stats) is better the higher it goes. */
-const LOWER_IS_BETTER = new Set(['ERA', 'WHIP']);
 const defaultDirFor = (key: string): SortDir => (LOWER_IS_BETTER.has(key) ? 'asc' : 'desc');
 
 const byStat = (key: string, dir: SortDir) => (a: Player, b: Player) => {

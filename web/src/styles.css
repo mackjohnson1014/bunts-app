@@ -141,7 +141,12 @@ button { font: inherit; color: inherit; }
 .item.plain    { border-left-color: var(--rule); }
 
 .item-top { display: flex; align-items: baseline; gap: 8px; }
-.pname { font-weight: 600; font-size: 15px; }
+.pname {
+  font-weight: 600; font-size: 15px;
+  /* Font size is set inline per-row (see pnameSize) so a long hyphenated
+     surname shrinks to fit instead of wrapping to a second line. */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .pmeta {
   font-family: 'Barlow Condensed', system-ui, sans-serif;
   font-size: 13px; color: var(--chalk-dim); letter-spacing: .03em;
@@ -215,6 +220,22 @@ button { font: inherit; color: inherit; }
   width: 34px; flex: none; text-align: right; white-space: nowrap;
   color: var(--chalk);
 }
+
+/* This week vs. last week: same fixed columns as the season row, one line
+   below it, with color (and an arrow, for anyone not relying on color) doing
+   the highlighting the request asked for. */
+.row-week {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 3px;
+}
+.row-week .statcols { font-size: 11.5px; }
+.row-week-label {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--chalk-dim); white-space: nowrap;
+}
+.statcol.trend-better { color: var(--grass); font-weight: 700; }
+.statcol.trend-worse { color: var(--clay); font-weight: 700; }
 
 /* Sticks to the top of .screen as the roster list scrolls under it. Same
    grid as .row (36px slot / 32px avatar / 1fr main / 32px state) with two
