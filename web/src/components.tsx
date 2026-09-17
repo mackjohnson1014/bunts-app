@@ -155,6 +155,13 @@ export function PlayerRow({ player, onOpen }: { player: Player; onOpen?: (p: Pla
         <div className="row-top">
           <div className="pname">
             {player.name}
+            {/* Whether a probable starter is even taking the mound today is
+                the single most decision-relevant fact on a pitcher's row --
+                worth a badge right next to the name, not just the small
+                state light on the right that every row already carries. */}
+            {isPitcher(player) && player.startingToday ? (
+              <> <span className="chip in" aria-label="Probable starter today">✓ Start</span></>
+            ) : null}
             {player.status ? <> <span className="chip dtd">{player.status}</span></> : null}
           </div>
         </div>
