@@ -14,6 +14,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.9',
+    date: '2026-09-28',
+    title: 'Matchup, laid out like a scoreboard',
+    notes: [
+      '\u201cThis Week\u201d is now called Matchup, on the Home screen and in the tab bar.',
+      'Each category now reads left to right like a scoreboard: your total on the left, your opponent\u2019s on the right, each in its own circle \u2014 whoever\u2019s leading gets theirs highlighted.',
+      'How close a category is now sits centred between the two numbers, with the category name above it.',
+      'New: your chance of winning the week, shown under the categories, with the odds of a win, tie or loss and a projected category score. It\u2019s worked out from the live totals and how much each category can still move, so it firms up as the week runs out.',
+    ],
+  },
+  {
     version: '1.8',
     date: '2026-09-17',
     title: 'A roster you can actually read',
