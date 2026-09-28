@@ -23,7 +23,7 @@ export type Tab = 'home' | 'today' | 'week' | 'roster' | 'keepers' | 'transactio
 const TABS: { id: Tab; label: string; Icon: (props: IconProps) => ReactNode }[] = [
   { id: 'home', label: 'Home', Icon: HomeIcon },
   { id: 'today', label: 'Today', Icon: TodayIcon },
-  { id: 'week', label: 'Week', Icon: WeekIcon },
+  { id: 'week', label: 'Matchup', Icon: WeekIcon },
   { id: 'roster', label: 'Roster', Icon: RosterIcon },
   { id: 'keepers', label: 'Keepers', Icon: KeepersIcon },
   { id: 'settings', label: 'Settings', Icon: SettingsIcon },

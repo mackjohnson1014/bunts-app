@@ -8,7 +8,7 @@ type Section = Exclude<Tab, 'home'>;
 
 const SECTIONS: { id: Section; label: string; Icon: (props: IconProps) => ReactNode }[] = [
   { id: 'today', label: 'Today', Icon: TodayIcon },
-  { id: 'week', label: 'This Week', Icon: WeekIcon },
+  { id: 'week', label: 'Matchup', Icon: WeekIcon },
   { id: 'roster', label: 'Roster', Icon: RosterIcon },
   { id: 'keepers', label: 'Keepers', Icon: KeepersIcon },
   { id: 'transactions', label: 'Transactions', Icon: TransactionsIcon },

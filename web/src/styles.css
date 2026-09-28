@@ -783,39 +783,94 @@ select.note-input {
 }
 
 /* ---------- matchup ---------- */
-.catrow {
-  padding: 9px 0; border-bottom: 1px solid var(--rule);
-  border-left: 3px solid transparent; padding-left: 10px; margin-left: -10px;
+/* Scoreboard layout: Bunts' number left, opponent's right, the category and
+   how close it is centred between them. The three columns are shared by the
+   team header and every row so the rings line up down the page. */
+.mu-teams, .mrow {
+  display: grid; grid-template-columns: 64px 1fr 64px;
+  align-items: center; column-gap: 12px;
 }
-.catrow.live, .catrow.tied { border-left-color: var(--amber); }
-.catrow.won { border-left-color: var(--grass); }
-.catrow.lost { border-left-color: var(--clay); }
-.catrow-top { display: flex; align-items: baseline; gap: 8px; }
+/* Team names get the full width (a long opponent name shouldn't truncate to
+   the 64px ring column), anchored to the outer edges above each ring. */
+.mu-teams { grid-template-columns: 1fr auto 1fr; margin: 16px 0 0; }
+.mu-team {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mu-team.mine { color: var(--grass); text-align: left; padding-left: 2px; }
+.mu-team.theirs { color: var(--chalk-dim); text-align: right; padding-right: 2px; }
+.mu-sect { text-align: center; }
+.mu-teams + .mu-sect { margin-top: 8px; }
+
+.mrow {
+  padding: 10px 0 10px 10px; margin-left: -10px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 3px solid transparent;
+}
+.mrow.live, .mrow.tied { border-left-color: var(--amber); }
+.mrow.won { border-left-color: var(--grass); }
+.mrow.lost { border-left-color: var(--clay); }
+
+.ring {
+  width: 60px; height: 60px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--rule); border-radius: 50%;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 19px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ring.theirs { color: var(--chalk-dim); font-weight: 600; }
+.ring.mine.lead { border-color: var(--grass); color: var(--grass); }
+.ring.theirs.lead { border-color: var(--clay); color: var(--clay); }
+
+.mrow-mid {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; min-width: 0; text-align: center;
+}
+.mrow-cat { display: flex; align-items: baseline; gap: 6px; }
 .cat-key {
   font-family: 'Barlow Condensed', system-ui, sans-serif;
   font-size: 12px; font-weight: 700; letter-spacing: .08em;
-  color: var(--chalk-dim); min-width: 34px;
-}
-.cat-name { font-size: 14.5px; font-weight: 600; flex: 1; }
-.cat-values {
-  display: flex; align-items: baseline; gap: 8px; margin-top: 5px;
-  font-family: 'Barlow Condensed', system-ui, sans-serif;
-  font-variant-numeric: tabular-nums;
-}
-.cat-values .mine { font-size: 19px; font-weight: 700; }
-.cat-values .mine.ahead { color: var(--grass); }
-.cat-values .theirs { font-size: 19px; font-weight: 600; color: var(--chalk-dim); }
-.cat-sep {
-  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--chalk-dim);
 }
-.lev { display: flex; align-items: center; gap: 9px; margin-top: 7px; }
+.cat-name { font-size: 14.5px; font-weight: 600; }
+.mrow-foot { display: flex; align-items: baseline; justify-content: center; gap: 7px; flex-wrap: wrap; }
+.mrow-foot .muted { font-size: 11.5px; white-space: nowrap; }
 .lev-track {
-  flex: 1; height: 3px; border-radius: 2px;
+  width: 100%; height: 3px; border-radius: 2px;
   background: var(--board-3); overflow: hidden;
 }
 .lev-fill { height: 3px; background: var(--amber); border-radius: 2px; }
-.lev .muted { font-size: 11.5px; white-space: nowrap; }
+
+/* win probability */
+.winprob { padding: 2px 0 4px; }
+.winprob-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.winprob-n {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 40px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.winprob-n.good { color: var(--grass); }
+.winprob-n.bad { color: var(--clay); }
+.winprob-proj { font-size: 13px; color: var(--chalk-dim); }
+.winprob-bar {
+  display: flex; height: 8px; margin-top: 10px;
+  border-radius: 4px; overflow: hidden; background: var(--board-3);
+}
+.winprob-bar span { display: block; height: 100%; transition: width .4s ease; }
+.wp-win { background: var(--grass); }
+.wp-tie { background: var(--amber); }
+.wp-lose { background: var(--clay); }
+.winprob-legend {
+  display: flex; gap: 14px; margin-top: 8px;
+  font-size: 12px; color: var(--chalk-dim); font-variant-numeric: tabular-nums;
+}
+.winprob-legend i {
+  display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+  margin-right: 5px; vertical-align: 0;
+}
+.winprob-note { margin: 8px 0 0; font-size: 12px; }
 
 /* six tabs need tighter icons/labels */
 .tab-icon { width: 19px; height: 19px; }
