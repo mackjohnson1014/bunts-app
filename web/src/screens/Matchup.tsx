@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { api } from '../api';
 import { Screen } from '../components';
+import { OpponentSheet } from '../OpponentSheet';
 import { formatStat, metaFor } from '../scoring/categories';
 import { categoryStates, type CategoryState } from '../scoring/leverage';
+import { weekScore } from '../scoring/h2h';
 import { weekOdds } from '../scoring/winprob';
 import { useAsync } from '../useAsync';
 
@@ -16,12 +19,12 @@ import { useAsync } from '../useAsync';
 export default function MatchupScreen() {
   const roster = useAsync(() => api.getRoster());
   const matchup = useAsync(() => api.getMatchup());
+  const [showOpponent, setShowOpponent] = useState(false);
 
   const states =
     matchup.data && roster.data ? categoryStates(matchup.data, roster.data.players) : [];
 
-  const won = states.filter((s) => s.status === 'won').length;
-  const lost = states.filter((s) => s.status === 'lost').length;
+  const score = weekScore(states);
   const live = states.filter((s) => s.status === 'live' || s.status === 'tied');
   const decided = states.filter((s) => s.status === 'won' || s.status === 'lost');
 
@@ -30,6 +33,7 @@ export default function MatchupScreen() {
     : null;
 
   return (
+    <>
     <Screen
       title="Matchup"
       subtitle={
@@ -42,26 +46,38 @@ export default function MatchupScreen() {
       error={roster.error ?? matchup.error}
       onReload={() => { roster.reload(); matchup.reload(); }}
     >
-      <div className="slate">
-        <div><span className="n" style={{ color: 'var(--grass)' }}>{won}</span><span className="k">Won</span></div>
-        <div><span className="n" style={{ color: 'var(--amber)' }}>{live.length}</span><span className="k">Live</span></div>
-        <div><span className="n" style={{ color: 'var(--clay)' }}>{lost}</span><span className="k">Lost</span></div>
-        <div><span className="n">{states.length}</span><span className="k">Cats</span></div>
-      </div>
+      {states.length > 0 && matchup.data ? (
+        <>
+          {/* Head-to-head: the week is one result, decided by categories won,
+              so the score if it ended now is the headline. Columns line up
+              with the rings below: ours left, theirs right. */}
+          <div className="mu-teams">
+            <span className="mu-team mine">Bunts</span>
+            <span />
+            <button className="mu-team theirs mu-opp" onClick={() => setShowOpponent(true)}>
+              {matchup.data.opponentName}<span className="mu-chev" aria-hidden="true">›</span>
+            </button>
+          </div>
+          <div className="mu-score" aria-label={`Bunts ${score.mine}, ${matchup.data.opponentName} ${score.theirs}, ${score.ties} tied`}>
+            <span className={`mu-n mine${score.mine > score.theirs ? ' lead' : ''}`}>{score.mine}</span>
+            <div className="mu-score-mid">
+              <span className={`chip ${score.mine > score.theirs ? 'in' : score.mine < score.theirs ? 'out' : 'unk'}`}>
+                {score.mine > score.theirs ? 'Leading' : score.mine < score.theirs ? 'Trailing' : 'Level'}
+              </span>
+              <span className="mu-score-k">
+                {score.ties > 0 ? `${score.ties} tied · ` : ''}if it ended now
+              </span>
+            </div>
+            <span className={`mu-n theirs${score.theirs > score.mine ? ' lead' : ''}`}>{score.theirs}</span>
+          </div>
+        </>
+      ) : null}
 
-      <p className="muted" style={{ marginBottom: 4 }}>
+      <p className="muted" style={{ marginTop: 12, marginBottom: 4 }}>
         {live.length === 0
           ? 'Every category is decided. Nothing you do this week changes the result.'
           : `${live.length} ${live.length === 1 ? 'category is' : 'categories are'} still in play — those are the only ones a lineup change can move.`}
       </p>
-
-      {states.length > 0 && matchup.data ? (
-        <div className="mu-teams">
-          <span className="mu-team mine">Bunts</span>
-          <span />
-          <span className="mu-team theirs">{matchup.data.opponentName}</span>
-        </div>
-      ) : null}
 
       {live.length > 0 ? <p className="sect mu-sect">Still in play</p> : null}
       {[...live].sort((a, b) => b.leverage - a.leverage).map((s) => <CatRow key={s.key} state={s} />)}
@@ -105,6 +121,15 @@ export default function MatchupScreen() {
         projection — and so is the win chance above.
       </p>
     </Screen>
+
+    {showOpponent && matchup.data ? (
+      <OpponentSheet
+        name={matchup.data.opponentName}
+        live={score}
+        onClose={() => setShowOpponent(false)}
+      />
+    ) : null}
+    </>
   );
 }
 

@@ -1,8 +1,8 @@
 import type {
-  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, Profile, ProfileInput, Roster, Suggestion,
+  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, Profile, ProfileInput, Roster, Suggestion,
   SuggestionInput, User,
 } from './types';
-import { mockMatchup, mockRoster, mockTransactions } from './mock';
+import { mockMatchup, mockOpponent, mockRoster, mockTransactions } from './mock';
 import { keeperTally } from './scoring/keepers';
 import { startSit } from './scoring/startsit';
 
@@ -90,6 +90,12 @@ export const api = {
 
   getMatchup: (): Promise<Matchup> =>
     usingMockData ? settle(mockMatchup) : withSampleFallback(() => req<Matchup>('/matchup'), mockMatchup),
+
+  /** This week's opponent: his roster, record, and our season series with him. */
+  getOpponent: (): Promise<OpponentDetail> =>
+    usingMockData
+      ? settle(mockOpponent)
+      : withSampleFallback(() => req<OpponentDetail>('/opponent'), mockOpponent),
 
   getTransactions: (): Promise<LeagueTransactions> =>
     usingMockData

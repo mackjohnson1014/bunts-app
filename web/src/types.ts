@@ -204,6 +204,39 @@ export interface Matchup {
   endsAt: string;
 }
 
+/** Win-loss-tie record in matchups (one result per week, head-to-head). */
+export interface TeamRecord {
+  wins: number;
+  losses: number;
+  ties: number;
+}
+
+/**
+ * One regular-season meeting with an opponent. Every team plays every other
+ * team twice, so a season series is two of these. Scores are categories won
+ * that week ("8-1"); categories that finish level count for neither side.
+ */
+export interface Meeting {
+  week: number;
+  status: 'final' | 'live' | 'upcoming';
+  /** Categories won by us / them / level. Null until the meeting starts. */
+  mine: number | null;
+  theirs: number | null;
+  ties: number | null;
+}
+
+/** Everything the Matchup screen shows about this week's opponent. */
+export interface OpponentDetail {
+  team: Team;
+  record: TeamRecord;
+  /** Their roster, with this week's stats in `weekStats` like our own. */
+  players: Player[];
+  /** This season's meetings with them, in week order. */
+  meetings: Meeting[];
+  fetchedAt: string;
+  sample?: boolean;
+}
+
 export type TransactionMove = 'add' | 'drop';
 
 export interface TransactionPlayer {

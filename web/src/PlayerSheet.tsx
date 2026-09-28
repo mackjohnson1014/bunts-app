@@ -8,11 +8,13 @@ import type { GameLine, Player, SuggestionInput } from './types';
  * worth starting or keeping lives here.
  */
 export function PlayerSheet({
-  player, onClose, onSuggested,
+  player, onClose, onSuggested, readOnly = false,
 }: {
   player: Player | null;
   onClose: () => void;
   onSuggested?: () => void;
+  /** Someone else's player (the opponent's): nothing to suggest to the co-owner. */
+  readOnly?: boolean;
 }) {
   useEffect(() => {
     if (!player) return;
@@ -121,6 +123,10 @@ export function PlayerSheet({
           ) : null}
 
           <p className="sect">Last 14 days</p>
+          {recentG === 0 ? (
+            <p className="muted">No games in the last 14 days.</p>
+          ) : (
+          <>
           <table className="compare">
             <thead>
               <tr>
@@ -158,6 +164,8 @@ export function PlayerSheet({
             Expected is his own season rate over the same {recentG || 0} games — so an
             arrow means beating or trailing himself, not the league.
           </p>
+          </>
+          )}
 
           <p className="sect">Last five games</p>
           {player.recentGames.length === 0 ? (
@@ -175,7 +183,9 @@ export function PlayerSheet({
             </>
           )}
 
-          <Compose player={player} onSent={() => { onSuggested?.(); onClose(); }} />
+          {readOnly ? null : (
+            <Compose player={player} onSent={() => { onSuggested?.(); onClose(); }} />
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,6 @@
-import type { KeeperCandidate, LeagueTransactions, LineupCall, Matchup, Roster } from './types';
+import type {
+  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, Player, Roster,
+} from './types';
 
 // Stand-in data until Yahoo provisions API access. Shaped as the normalized
 // domain model, not as Yahoo JSON -- see src/types.ts for why.
@@ -617,5 +619,86 @@ export const mockTransactions: LeagueTransactions = {
         { playerKey: 'p.132', name: 'Owen Beswick', move: 'drop' },
       ],
     },
+  ],
+};
+
+/**
+ * This week's opponent. Invented players in the same shape as ours, with a
+ * week-so-far line on each, so the opponent sheet reads like our Roster.
+ *
+ * The season series is set up to exercise the tiebreaker: we lost the first
+ * meeting 4-6, so he holds it on record right now -- but if this week ends
+ * as it stands (6-3-1), the series goes 1-1 and we take it on points, 10-9.
+ */
+const oppHitter = (
+  n: number, name: string, mlbTeam: string, positions: string[], slot: Player['slot'],
+  startingToday: boolean | null, opponent: string | null,
+  season: [number, number, number, number, number, number],   // G R HR RBI SB AVG
+  week: [number, number, number, number, number] | null,       // R HR RBI SB AVG
+  status: Player['status'] = null,
+): Player => ({
+  playerKey: `o.${n}`, name, mlbTeam, positions, slot, status, startingToday, opponent,
+  opposingPitcher: null,
+  seasonStats: { G: season[0], R: season[1], HR: season[2], RBI: season[3], SB: season[4], AVG: season[5] },
+  last14Stats: {},
+  weekStats: week ? { R: week[0], HR: week[1], RBI: week[2], SB: week[3], AVG: week[4] } : undefined,
+  percentOwned: null, recentGames: [], note: null,
+});
+
+const oppPitcher = (
+  n: number, name: string, mlbTeam: string, positions: string[], slot: Player['slot'],
+  startingToday: boolean | null, opponent: string | null,
+  season: [number, number, number, number, number, number],   // G W SV K ERA WHIP
+  week: [number, number, number, number, number] | null,       // W SV K ERA WHIP
+  status: Player['status'] = null,
+): Player => ({
+  playerKey: `o.${n}`, name, mlbTeam, positions, slot, status, startingToday, opponent,
+  opposingPitcher: null,
+  seasonStats: { G: season[0], W: season[1], SV: season[2], K: season[3], ERA: season[4], WHIP: season[5] },
+  last14Stats: {},
+  weekStats: week ? { W: week[0], SV: week[1], K: week[2], ERA: week[3], WHIP: week[4] } : undefined,
+  percentOwned: null, recentGames: [], note: null,
+});
+
+export const mockOpponent: OpponentDetail = {
+  fetchedAt: today,
+  sample: true,
+  team: {
+    teamKey: '458.l.000000.t.7',
+    name: 'Dinger Machine',
+    leagueKey: '458.l.000000',
+    logoUrl: null,
+    rank: 5,
+  },
+  record: { wins: 13, losses: 8, ties: 1 },
+  meetings: [
+    { week: 9, status: 'final', mine: 4, theirs: 6, ties: 0 },
+    // Live score is filled in from the Matchup screen's own numbers.
+    { week: 23, status: 'live', mine: null, theirs: null, ties: null },
+  ],
+  players: [
+    oppHitter(1, 'Rocco Tallis', 'NYY', ['C'], 'C', true, 'vs BAL', [121, 58, 24, 71, 1, 0.247], [3, 1, 4, 0, 0.278]),
+    oppHitter(2, 'Beau Kittredge', 'HOU', ['1B'], '1B', true, '@ SEA', [144, 91, 38, 109, 3, 0.276], [5, 3, 7, 0, 0.318]),
+    oppHitter(3, 'Jalen Price', 'TB', ['2B', 'OF'], '2B', true, 'vs BOS', [139, 84, 17, 62, 29, 0.271], [4, 0, 2, 2, 0.296]),
+    oppHitter(4, 'Carter Wynn', 'SD', ['3B'], '3B', false, 'vs LAD', [133, 70, 27, 88, 5, 0.259], [2, 1, 3, 0, 0.231]),
+    oppHitter(5, 'Mateo Ibarra', 'TOR', ['SS'], 'SS', true, '@ NYY', [146, 95, 22, 74, 18, 0.288], [4, 1, 2, 1, 0.304]),
+    oppHitter(6, 'Graham Holt', 'ATL', ['OF'], 'OF', true, 'vs NYM', [141, 88, 33, 97, 9, 0.264], [3, 2, 5, 0, 0.250]),
+    oppHitter(7, 'Isaiah Brooks', 'CIN', ['OF'], 'OF', null, '@ CHC', [128, 76, 14, 51, 31, 0.279], [2, 0, 1, 3, 0.263]),
+    oppHitter(8, 'Declan Shaw', 'BOS', ['OF'], 'OF', true, '@ TB', [137, 69, 29, 85, 4, 0.252], [2, 2, 4, 0, 0.214]),
+    oppHitter(9, 'Tomas Lindgren', 'MIN', ['1B', 'UTIL'], 'UTIL', true, 'vs DET', [118, 55, 21, 67, 0, 0.261], [1, 1, 3, 0, 0.250]),
+    oppHitter(10, 'Aaron Pell', 'LAA', ['2B', 'SS'], 'BN', null, '@ OAK', [102, 44, 8, 33, 11, 0.243], [1, 0, 0, 1, 0.200]),
+    oppHitter(11, 'Kofi Mensah', 'COL', ['OF'], 'BN', true, 'vs SF', [96, 47, 12, 40, 7, 0.268], [2, 0, 1, 0, 0.286]),
+    oppHitter(12, 'Nolan Reece', 'SEA', ['C', '1B'], 'BN', false, 'vs HOU', [84, 29, 9, 36, 0, 0.231], null),
+    oppHitter(13, 'Victor Salcedo', 'MIL', ['3B', 'OF'], 'IL', false, null, [71, 35, 13, 42, 2, 0.255], null, 'IL15'),
+
+    oppPitcher(14, 'Wade Harrigan', 'PHI', ['SP'], 'SP', true, 'vs WSH', [29, 14, 0, 201, 2.96, 1.04], [1, 0, 7, 3.00, 1.00]),
+    oppPitcher(15, 'Julio Arce', 'SEA', ['SP'], 'SP', false, 'vs HOU', [28, 11, 0, 176, 3.41, 1.15], [0, 0, 5, 4.50, 1.33]),
+    oppPitcher(16, 'Brandon Kessel', 'NYM', ['SP'], 'SP', false, '@ ATL', [27, 10, 0, 164, 3.88, 1.22], [1, 0, 9, 2.57, 1.00]),
+    oppPitcher(17, 'Ricky Duval', 'DET', ['SP'], 'SP', false, '@ MIN', [26, 9, 0, 150, 4.12, 1.27], null),
+    oppPitcher(18, 'Shane Ogle', 'CLE', ['SP', 'RP'], 'P', false, 'vs KC', [31, 8, 1, 139, 3.67, 1.19], [1, 0, 6, 1.50, 0.83]),
+    oppPitcher(19, 'Luis Almonte', 'SF', ['RP'], 'RP', false, '@ COL', [64, 3, 34, 71, 2.41, 0.98], [0, 3, 4, 0.00, 0.67]),
+    oppPitcher(20, 'Pete Garnier', 'BAL', ['RP'], 'RP', false, '@ NYY', [61, 5, 27, 68, 2.88, 1.06], [0, 2, 3, 3.00, 1.33]),
+    oppPitcher(21, 'Colby Strand', 'CHC', ['RP'], 'P', false, 'vs CIN', [58, 4, 12, 62, 3.10, 1.11], [0, 1, 2, 0.00, 1.00]),
+    oppPitcher(22, 'Emmett Vale', 'TEX', ['SP'], 'BN', false, 'vs OAK', [18, 5, 0, 88, 4.47, 1.31], null),
   ],
 };

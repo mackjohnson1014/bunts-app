@@ -843,6 +843,76 @@ select.note-input {
 }
 .lev-fill { height: 3px; background: var(--amber); border-radius: 2px; }
 
+/* weekly score: big numbers sit in the ring columns so they line up with
+   every category's rings underneath */
+.mu-score {
+  display: grid; grid-template-columns: 64px 1fr 64px;
+  align-items: center; column-gap: 12px; margin-top: 2px;
+}
+.mu-n {
+  text-align: center;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 46px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--chalk-dim);
+}
+.mu-n.mine { color: var(--chalk); }
+.mu-n.mine.lead { color: var(--grass); }
+.mu-n.theirs.lead { color: var(--clay); }
+.mu-score-mid { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mu-score-k { font-size: 11.5px; color: var(--chalk-dim); }
+/* The opponent's name opens his team, so it reads as a link: amber, with a
+   chevron. Declared as .mu-team.mu-opp so it outranks .mu-team.theirs. */
+.mu-team.mu-opp {
+  appearance: none; background: none; border: 0; padding: 0 2px 0 0; margin: 0;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; color: var(--amber); justify-self: end; max-width: 100%;
+}
+.mu-opp:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 3px; }
+.mu-chev { margin-left: 4px; font-size: 14px; line-height: 0; }
+
+/* opponent sheet */
+.sheet.sheet-tall { height: 92vh; max-height: 92vh; }
+/* In a sheet the scroller is .sheet-body (4px top padding), not .screen. */
+.sheet-body .stat-header { top: -4px; padding-top: 10px; }
+.h2h-list { list-style: none; margin: 0; padding: 0; }
+.h2h-row {
+  display: grid; grid-template-columns: 70px 1fr auto 64px;
+  align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--rule);
+}
+.h2h-row .chip { justify-self: end; }
+.h2h-week {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: .04em;
+}
+.h2h-status { font-size: 12.5px; color: var(--chalk-dim); }
+.h2h-row.live .h2h-status { color: var(--amber); }
+.h2h-score {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.h2h-row.upcoming .h2h-score { color: var(--chalk-dim); font-weight: 600; }
+.h2h-summary {
+  margin-top: 12px; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: 8px;
+}
+.h2h-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.h2h-stats .k {
+  display: block; font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--chalk-dim);
+}
+.h2h-stats .v {
+  display: block; margin-top: 2px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.h2h-stats .v.good { color: var(--grass); }
+.h2h-stats .v.bad { color: var(--clay); }
+.h2h-stats .v.warn { color: var(--amber); }
+.h2h-line { margin: 9px 0 0; font-size: 13px; line-height: 1.4; }
+.h2h-line.live .chip { margin-right: 4px; }
+
 /* win probability */
 .winprob { padding: 2px 0 4px; }
 .winprob-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
