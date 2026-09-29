@@ -504,6 +504,13 @@ export const mockMatchup: Matchup = {
     d.setHours(23, 59, 0, 0);
     return d.toISOString();
   })(),
+  // AVG and ERA below are consistent with these: 38/140 = .271, 37/138 = .268;
+  // 7 ER over 18.1 IP = 3.44. Opponent adds match the Transactions sample.
+  totals: {
+    mine:   { adds: 2, hits: 38, atBats: 140, outsPitched: 55 },   // 18.1 IP -- short of the minimum
+    theirs: { adds: 4, hits: 37, atBats: 138, outsPitched: 77 },   // 25.2 IP
+  },
+  minOutsPitched: 60,   // 20 IP
   categories: [
     { key: 'R',    mine: 31,    theirs: 29 },      // close
     { key: 'HR',   mine: 9,     theirs: 14 },      // losing, reachable

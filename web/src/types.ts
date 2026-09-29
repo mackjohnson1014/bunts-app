@@ -194,10 +194,31 @@ export interface MatchupCategory {
   theirs: number;
 }
 
+/**
+ * Supporting totals for one team's week -- not scoring categories, but the
+ * numbers behind them and the league limits that constrain them.
+ */
+export interface TeamWeekTotals {
+  /** Player adds this week; counted against League.weeklyAddLimit. */
+  adds: number;
+  /** Hitting: the H/AB behind AVG. */
+  hits: number;
+  atBats: number;
+  /**
+   * Innings pitched, stored as outs (3 per inning) so 20 1/3 IP is exact --
+   * baseball's "20.1" notation is a display format, not a decimal.
+   */
+  outsPitched: number;
+}
+
 export interface Matchup {
   week: number;
   opponentName: string;
   categories: MatchupCategory[];
+  /** Ours and the opponent's supporting totals for this week. */
+  totals?: { mine: TeamWeekTotals; theirs: TeamWeekTotals };
+  /** League's weekly innings minimum for ERA/WHIP, in outs; null if none. */
+  minOutsPitched?: number | null;
   /** Scoring days left in the week, including today. */
   daysRemaining: number;
   /** When the matchup ends, ISO. */

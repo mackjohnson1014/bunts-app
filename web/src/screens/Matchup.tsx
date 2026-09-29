@@ -6,7 +6,23 @@ import { formatStat, metaFor } from '../scoring/categories';
 import { categoryStates, type CategoryState } from '../scoring/leverage';
 import { weekScore } from '../scoring/h2h';
 import { weekOdds } from '../scoring/winprob';
+import type { TeamWeekTotals } from '../types';
 import { useAsync } from '../useAsync';
+
+/** Display order within each half, as Mack reads them. */
+const HITTING_ORDER = ['AVG', 'R', 'HR', 'RBI', 'SB'];
+const PITCHING_ORDER = ['W', 'K', 'ERA', 'WHIP', 'SV'];
+
+/** Categories in the given order; anything unexpected on that side goes last. */
+function side(states: CategoryState[], which: 'hitting' | 'pitching', order: string[]): CategoryState[] {
+  const rank = (k: string) => (order.includes(k) ? order.indexOf(k) : order.length);
+  return states
+    .filter((s) => metaFor(s.key).side === which)
+    .sort((a, b) => rank(a.key) - rank(b.key));
+}
+
+/** Outs -> baseball's innings notation: 55 outs is "18.1", not 18.33. */
+const ipText = (outs: number) => `${Math.floor(outs / 3)}.${outs % 3}`;
 
 /**
  * The week, category by category. In head-to-head this is the scoreboard every
@@ -25,8 +41,11 @@ export default function MatchupScreen() {
     matchup.data && roster.data ? categoryStates(matchup.data, roster.data.players) : [];
 
   const score = weekScore(states);
-  const live = states.filter((s) => s.status === 'live' || s.status === 'tied');
-  const decided = states.filter((s) => s.status === 'won' || s.status === 'lost');
+  const hitting = side(states, 'hitting', HITTING_ORDER);
+  const pitching = side(states, 'pitching', PITCHING_ORDER);
+  const totals = matchup.data?.totals;
+  const addLimit = roster.data?.league.weeklyAddLimit ?? null;
+  const minOuts = matchup.data?.minOutsPitched ?? null;
 
   const odds = matchup.data && states.length > 0
     ? weekOdds(states, matchup.data.daysRemaining)
@@ -73,17 +92,25 @@ export default function MatchupScreen() {
         </>
       ) : null}
 
-      <p className="muted" style={{ marginTop: 12, marginBottom: 4 }}>
-        {live.length === 0
-          ? 'Every category is decided. Nothing you do this week changes the result.'
-          : `${live.length} ${live.length === 1 ? 'category is' : 'categories are'} still in play — those are the only ones a lineup change can move.`}
-      </p>
+      {totals ? (
+        <AddsRow mine={totals.mine.adds} theirs={totals.theirs.adds} limit={addLimit} />
+      ) : null}
 
-      {live.length > 0 ? <p className="sect mu-sect">Still in play</p> : null}
-      {[...live].sort((a, b) => b.leverage - a.leverage).map((s) => <CatRow key={s.key} state={s} />)}
+      {hitting.length > 0 ? <p className="sect mu-sect">Hitting</p> : null}
+      {totals && hitting.length > 0 ? (
+        <TotalRow
+          label="H / AB"
+          mine={`${totals.mine.hits}/${totals.mine.atBats}`}
+          theirs={`${totals.theirs.hits}/${totals.theirs.atBats}`}
+        />
+      ) : null}
+      {hitting.map((s) => <CatRow key={s.key} state={s} />)}
 
-      {decided.length > 0 ? <p className="sect mu-sect">Decided</p> : null}
-      {decided.map((s) => <CatRow key={s.key} state={s} />)}
+      {pitching.length > 0 ? <p className="sect mu-sect">Pitching</p> : null}
+      {totals && pitching.length > 0 ? (
+        <InningsRow mine={totals.mine} theirs={totals.theirs} minOuts={minOuts} />
+      ) : null}
+      {pitching.map((s) => <CatRow key={s.key} state={s} />)}
 
       {odds && matchup.data ? (
         <>
@@ -116,9 +143,9 @@ export default function MatchupScreen() {
       ) : null}
 
       <p className="muted" style={{ marginTop: 14 }}>
-        "Still in play" means the gap is within reach of what your active roster
-        can produce in the days left. It is an estimate from season rates, not a
-        projection — and so is the win chance above.
+        "Won" and "Lost" mean the gap is already out of reach of what your
+        active roster can produce in the days left. That is an estimate from
+        season rates, not a projection — and so is the win chance above.
       </p>
     </Screen>
 
@@ -139,6 +166,89 @@ function pct(p: number): string {
   if (n === 0 && p > 0) return '<1%';
   if (n === 100 && p < 1) return '>99%';
   return `${n}%`;
+}
+
+/**
+ * A supporting-numbers row: not a scoring category, so no ring and no
+ * closeness bar -- just our figure and theirs in the ring columns, with
+ * what it is in the middle.
+ */
+function TotalRow({
+  label, note, mine, theirs, mineTone, theirsTone,
+}: {
+  label: string;
+  note?: string;
+  mine: string;
+  theirs: string;
+  mineTone?: 'good' | 'warn' | 'bad';
+  theirsTone?: 'good' | 'warn' | 'bad';
+}) {
+  return (
+    <div className="mu-total">
+      <span className={`mu-total-v ${mineTone ?? ''}`}>{mine}</span>
+      <div className="mu-total-mid">
+        <span className="mu-total-k">{label}</span>
+        {note ? <span className="mu-total-note">{note}</span> : null}
+      </div>
+      <span className={`mu-total-v theirs ${theirsTone ?? ''}`}>{theirs}</span>
+    </div>
+  );
+}
+
+/** Player adds against the weekly cap, as a row of pips per team. */
+function AddsRow({ mine, theirs, limit }: { mine: number; theirs: number; limit: number | null }) {
+  const cell = (n: number) => (
+    <span className="mu-adds">
+      <span className="mu-total-v">{limit !== null ? `${n}/${limit}` : n}</span>
+      {limit !== null ? (
+        <span className="mu-pips" aria-hidden="true">
+          {Array.from({ length: limit }, (_, i) => <i key={i} className={i < n ? 'on' : ''} />)}
+        </span>
+      ) : null}
+    </span>
+  );
+  const left = (n: number) => (limit === null ? '' : n >= limit ? 'none left' : `${limit - n} left`);
+  return (
+    <div className="mu-total mu-adds-row">
+      {cell(mine)}
+      <div className="mu-total-mid">
+        <span className="mu-total-k">Adds this week</span>
+        {limit !== null ? <span className="mu-total-note">You: {left(mine)} · Him: {left(theirs)}</span> : null}
+      </div>
+      {cell(theirs)}
+    </div>
+  );
+}
+
+/**
+ * Innings against the league's weekly minimum. Short of it is flagged, not
+ * scored differently here -- the category rows still show ERA/WHIP as they
+ * stand.
+ */
+function InningsRow({
+  mine, theirs, minOuts,
+}: { mine: TeamWeekTotals; theirs: TeamWeekTotals; minOuts: number | null }) {
+  const short = (t: TeamWeekTotals) => minOuts !== null && t.outsPitched < minOuts;
+  const need = (t: TeamWeekTotals) => (minOuts === null ? 0 : minOuts - t.outsPitched);
+
+  let note: string | undefined;
+  if (minOuts !== null) {
+    const parts: string[] = [];
+    if (short(mine)) parts.push(`you need ${ipText(need(mine))} more`);
+    if (short(theirs)) parts.push(`he needs ${ipText(need(theirs))} more`);
+    note = `Minimum ${ipText(minOuts).replace(/\.0$/, '')}${parts.length ? ` · ${parts.join(', ')}` : ' · both over'}`;
+  }
+
+  return (
+    <TotalRow
+      label="Innings pitched"
+      note={note}
+      mine={ipText(mine.outsPitched)}
+      theirs={ipText(theirs.outsPitched)}
+      mineTone={short(mine) ? 'warn' : undefined}
+      theirsTone={short(theirs) ? 'warn' : undefined}
+    />
+  );
 }
 
 /**

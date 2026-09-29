@@ -22,6 +22,8 @@ export const RELEASES: Release[] = [
       'Each category now reads left to right like a scoreboard: your total on the left, your opponent\u2019s on the right, each in its own circle \u2014 whoever\u2019s leading gets theirs highlighted.',
       'How close a category is now sits centred between the two numbers, with the category name above it.',
       'The top of Matchup now shows the week\u2019s head-to-head score \u2014 categories you\u2019re leading vs. his, and how many are tied \u2014 instead of the Won/Live/Lost strip.',
+      'Categories are now grouped into Hitting (AVG, R, HR, RBI, SB) and Pitching (W, K, ERA, WHIP, SV) instead of \u201cstill in play\u201d and \u201cdecided\u201d.',
+      'Matchup also shows the numbers behind the categories for both teams: player adds used out of the weekly 6, hits and at-bats, and innings pitched against the 20-inning minimum \u2014 with a heads-up when either side is short.',
       'Tap your opponent\u2019s name to open his team: his overall record and place, his roster laid out just like yours (with this week\u2019s stats), and your season series with him.',
       'The season series shows both meetings and who holds the playoff tiebreaker \u2014 head-to-head record first, then combined category score across both weeks \u2014 plus who would hold it if this week ended as it stands.',
       'New: your chance of winning the week, shown under the categories, with the odds of a win, tie or loss and a projected category score. It\u2019s worked out from the live totals and how much each category can still move, so it firms up as the week runs out.',
