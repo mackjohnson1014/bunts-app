@@ -4,7 +4,7 @@
 Usage:
   python3 yahoo.py check             # is Fantasy access provisioned yet?
   python3 yahoo.py exchange <code>   # one-time: swap the oob code for tokens
-  python3 yahoo.py dump              # pull league / team / roster JSON
+  python3 yahoo.py dump [season]     # pull every response normalize.ts needs
   python3 yahoo.py get <api-path>    # e.g. get "team/458.l.12345.t.6/roster"
 """
 import base64, json, os, sys, time, urllib.parse, urllib.request, urllib.error
@@ -143,23 +143,51 @@ def walk_keys(obj, suffix):
     return found
 
 
-def dump():
-    leagues = get("users;use_login=1/games;game_codes=mlb/leagues")
+def try_save(name, path):
+    """Save one response; a single bad path must not sink the whole dump."""
+    try:
+        save(name, get(path))
+        return True
+    except Exception as e:
+        print(f"  skipped {name}: {e}", file=sys.stderr)
+        return False
+
+
+def dump(season=None):
+    # Pin the season when given: once Yahoo rolls the "mlb" game code over to
+    # next season, the bare code would return a game with no league in it yet.
+    games = "games;game_codes=mlb" + (f";seasons={season}" if season else "")
+
+    leagues = get(f"users;use_login=1/{games}/leagues")
     save("leagues", leagues)
     league_keys = sorted(set(walk_keys(leagues, "league_key")))
     print("leagues found:", league_keys)
 
-    teams = get("users;use_login=1/games;game_codes=mlb/teams")
+    teams = get(f"users;use_login=1/{games}/teams")
     save("my_teams", teams)
     team_keys = sorted(set(walk_keys(teams, "team_key")))
     print("my teams:", team_keys)
 
+    today = time.strftime("%Y-%m-%d")
     for lk in league_keys:
-        save("league_%s_settings" % lk, get(f"league/{lk}/settings"))
-        save("league_%s_standings" % lk, get(f"league/{lk}/standings"))
+        game_key = lk.split(".l.")[0]
+        # stat_id -> name map; every stat in every other response is keyed by id.
+        try_save(f"game_{game_key}_stat_categories", f"game/{game_key}/stat_categories")
+        try_save(f"league_{lk}_settings", f"league/{lk}/settings")
+        try_save(f"league_{lk}_standings", f"league/{lk}/standings")
+        # Current week's head-to-head scores -> Matchup screen, opponent lookup.
+        try_save(f"league_{lk}_scoreboard", f"league/{lk}/scoreboard")
+        # Adds/drops/trades -> Transactions screen and checkTransactions().
+        try_save(f"league_{lk}_transactions", f"league/{lk}/transactions")
+        # Every team's metadata incl. roster_adds (adds used this week).
+        try_save(f"league_{lk}_teams", f"league/{lk}/teams")
+        try_save(f"league_{lk}_draftresults", f"league/{lk}/draftresults")
     for tk in team_keys:
-        save("team_%s_roster" % tk, get(f"team/{tk}/roster"))
-        save("team_%s_roster_stats" % tk, get(f"team/{tk}/roster/players/stats"))
+        try_save(f"team_{tk}_roster", f"team/{tk}/roster")
+        try_save(f"team_{tk}_roster_today", f"team/{tk}/roster;date={today}")
+        try_save(f"team_{tk}_roster_stats", f"team/{tk}/roster/players/stats")
+        try_save(f"team_{tk}_matchups", f"team/{tk}/matchups")
+        try_save(f"team_{tk}_stats_season", f"team/{tk}/stats;type=season")
     print("\nDone. Everything is in ./data/")
 
 
@@ -170,7 +198,7 @@ if __name__ == "__main__":
     elif cmd == "exchange" and len(sys.argv) > 2:
         exchange(sys.argv[2].strip())
     elif cmd == "dump":
-        dump()
+        dump(sys.argv[2].strip() if len(sys.argv) > 2 else None)
     elif cmd == "get" and len(sys.argv) > 2:
         print(json.dumps(get(sys.argv[2]), indent=2))
     else:
