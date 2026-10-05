@@ -180,6 +180,100 @@ const HOW_LABEL: Record<AcquisitionHow, string> = {
 };
 const HOW_ORDER: AcquisitionHow[] = ['keeper', 'draft', 'waiver', 'free-agent', 'trade'];
 
+/**
+ * The target split of the 26 active spots, agreed with Mack 2026-10-05: 10
+ * starting hitters + 3 bench, 3 relievers for saves (2 starting + 1 spare),
+ * and 10 starters, since in daily H2H categories each extra SP adds ~1.2
+ * starts a week of K and W. Revisit if the league turns out to cap games
+ * started or innings.
+ */
+const IDEAL = [
+  { id: 'hit', label: 'Hitters', n: 13 },
+  { id: 'sp', label: 'SP', n: 10 },
+  { id: 'rp', label: 'RP', n: 3 },
+] as const;
+type Group = (typeof IDEAL)[number]['id'];
+
+const isPitcherP = (p: Player) => p.positions.some((x) => x === 'SP' || x === 'RP' || x === 'P');
+
+/** Anyone who can fill an RP slot counts as RP, so a swingman (SP/RP) covers the bullpen. */
+const groupOf = (p: Player): Group =>
+  !isPitcherP(p) ? 'hit' : p.positions.includes('RP') ? 'rp' : 'sp';
+
+/**
+ * Two stacked bars on one scale -- what we have against the target -- rather
+ * than a donut: a donut shows shares of a whole but has nowhere to put the
+ * target, and the gap is the point.
+ */
+function Composition({ players }: { players: Player[] }) {
+  const active = players.filter((p) => !isInjured(p));
+  const now = Object.fromEntries(IDEAL.map((g) => [g.id, active.filter((p) => groupOf(p) === g.id).length])) as Record<Group, number>;
+  const idealTotal = IDEAL.reduce((t, g) => t + g.n, 0);
+  const scale = Math.max(idealTotal, active.length);
+  const off = IDEAL.reduce((t, g) => t + Math.abs(now[g.id] - g.n), 0);
+  const injured = players.length - active.length;
+
+  const bar = (counts: Record<Group, number>, label: string) => (
+    <div className="comp-row">
+      <span className="comp-label">{label}</span>
+      <div className="comp-bar" role="img" aria-label={`${label}: ${IDEAL.map((g) => `${counts[g.id]} ${g.label}`).join(', ')}`}>
+        {IDEAL.map((g, i) => counts[g.id] > 0 ? (
+          <span
+            key={g.id}
+            className={`comp-seg comp-${g.id}${IDEAL.slice(i + 1).every((h) => counts[h.id] === 0) ? ' end' : ''}`}
+            style={{ flexGrow: counts[g.id], flexBasis: 0 }}
+            title={`${g.label}: ${now[g.id]} now, ${g.n} ideal`}
+          >
+            {counts[g.id]}
+          </span>
+        ) : null)}
+        {/* Unused room on the shared scale, so both bars measure the same 26. */}
+        {scale - IDEAL.reduce((t, g) => t + counts[g.id], 0) > 0 ? (
+          <span style={{ flexGrow: scale - IDEAL.reduce((t, g) => t + counts[g.id], 0), flexBasis: 0 }} />
+        ) : null}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <p className="keep-note" style={{ marginBottom: 8 }}>
+        {active.length} active players{injured ? ` (plus ${injured} on IL)` : ''} ·{' '}
+        {off === 0 ? 'right on the ideal split' : `${off} ${off === 1 ? 'spot' : 'spots'} off the ideal split`}
+      </p>
+      {bar(now, 'Now')}
+      {bar(Object.fromEntries(IDEAL.map((g) => [g.id, g.n])) as Record<Group, number>, 'Ideal')}
+      <table className="compare" style={{ marginTop: 10 }}>
+        <thead>
+          <tr>
+            <th>Group</th>
+            <th>Now</th>
+            <th>Ideal</th>
+            <th>Gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          {IDEAL.map((g) => {
+            const d = now[g.id] - g.n;
+            return (
+              <tr key={g.id}>
+                <td className="cat"><span className={`comp-swatch comp-${g.id}`} aria-hidden="true" />{g.label}</td>
+                <td>{now[g.id]}</td>
+                <td className="expected">{g.n}</td>
+                <td>{d === 0 ? <span className="expected">On target</span> : d > 0 ? `${d} over` : `${-d} short`}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="keep-note" style={{ marginTop: 6 }}>
+        Ideal is 13 hitters (10 starters, 3 bench), 10 starting pitchers and 3
+        relievers. Players on IL aren&rsquo;t counted, and anyone who can play RP counts as a reliever.
+      </p>
+    </>
+  );
+}
+
 function BuildTab({ roster, onOpen }: { roster: Roster; onOpen: (p: Player) => void }) {
   const slots = roster.league.rosterSlots ?? DEFAULT_SLOTS;
 
@@ -203,7 +297,10 @@ function BuildTab({ roster, onOpen }: { roster: Roster; onOpen: (p: Player) => v
 
   return (
     <>
-      <p className="sect" style={{ marginTop: 0 }}>Depth by position</p>
+      <p className="sect" style={{ marginTop: 0 }}>Roster composition</p>
+      <Composition players={roster.players} />
+
+      <p className="sect">Depth by position</p>
       <p className="keep-note" style={{ marginBottom: 6 }}>
         {flags.length ? `Thin at ${flags.join(', ')}.` : 'No thin spots.'}
         {surplus.length ? ` Surplus at ${surplus.join(', ')}.` : ''}
