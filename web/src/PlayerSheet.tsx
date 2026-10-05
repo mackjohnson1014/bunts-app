@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
-import type { AcquisitionHow, GameLine, Player, SuggestionInput } from './types';
+import type { AcquisitionHow, GameLine, Player, PlayerMove, SuggestionInput } from './types';
 
 /**
  * Full detail for one player, as a bottom sheet. A roster row can only carry a
@@ -169,6 +169,9 @@ export function PlayerSheet({
 
           <p className="sect">On our team</p>
           <OnOurTeam player={player} keys={keys} />
+
+          <p className="sect">Transaction history</p>
+          <History moves={player.history} />
 
           <p className="sect">Last five games</p>
           {player.recentGames.length === 0 ? (
@@ -357,6 +360,41 @@ function OnOurTeam({ player, keys }: { player: Player; keys: string[] }) {
     </>
   );
 }
+
+/** Who has owned him this season, newest first; our own moves highlighted. */
+function History({ moves }: { moves?: PlayerMove[] }) {
+  if (!moves) {
+    return <p className="muted">His moves between teams this season show up once Yahoo is connected.</p>;
+  }
+  if (moves.length === 0) return <p className="muted">No moves this season.</p>;
+  return (
+    <ul className="history">
+      {moves.map((m, i) => (
+        <li key={i} className={m.ours ? 'ours' : undefined}>
+          <span className="h-date">{shortDate(m.date)}</span>
+          <span className="h-text">
+            {moveText(m)}
+            {m.detail ? <span className="h-detail">{m.detail}</span> : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function moveText(m: PlayerMove): string {
+  switch (m.kind) {
+    case 'drafted': return `Drafted by ${m.toTeam}`;
+    case 'kept': return `Kept by ${m.toTeam}`;
+    case 'added': return `Added by ${m.toTeam} from free agents`;
+    case 'claimed': return `Claimed off waivers by ${m.toTeam}`;
+    case 'dropped': return `Dropped by ${m.fromTeam}`;
+    case 'traded': return `Traded to ${m.toTeam} from ${m.fromTeam}`;
+  }
+}
+
+const shortDate = (iso: string) =>
+  new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
 function GameRow({ game }: { game: GameLine }) {
   const date = new Date(game.date + 'T12:00:00').toLocaleDateString(undefined, {

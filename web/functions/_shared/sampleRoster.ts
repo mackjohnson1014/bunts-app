@@ -97,7 +97,121 @@ export const SAMPLE_LEAGUE = {
   keeperSlots: 12,
   weeklyAddLimit: 6,
   currentWeek: null,
+  // Real: Mack's starting slots, read off his Yahoo roster screenshot.
+  rosterSlots: { C: 1, '1B': 1, '2B': 1, '3B': 1, SS: 1, OF: 3, UTIL: 2, SP: 3, RP: 2, P: 3 },
 };
+
+// ---- PLACEHOLDER draft and transaction history (2026-10-05) -----------------
+// Built at Mack's request so the Keepers draft tab and the player card's
+// transaction history can be seen before Yahoo is connected. Everything below
+// is invented: a 12-team snake draft from the 5th slot, keepers spending the
+// rounds in KEEPER_ROUND, the other 14 picks real MLB players (ids checked
+// against the live MLB player list) who were "drafted and later dropped", and
+// rival team names borrowed from mock.ts. Replace with Yahoo's draftresults and
+// transactions.
+
+const OTHER_TEAMS = ['Dinger Machine', 'Groundskeepers', 'Bullpen Mafia'];
+const OPENING_DAY = '2026-03-25';
+const DRAFT_TEAMS = 12;
+const DRAFT_SLOT = 5;
+
+const KEEPER_ROUND: Record<string, number> = {
+  'Shohei Ohtani': 1, 'Corey Seager': 2, 'Zack Wheeler': 3, 'Mike Trout': 4, 'Blake Snell': 5,
+  'William Contreras': 6, 'Michael Busch': 8, 'Vinnie Pasquantino': 9, 'Sandy Alcantara': 10,
+  'Sonny Gray': 12, 'Nathan Eovaldi': 14, 'Max Muncy': 16, 'Jackson Holliday': 18,
+};
+
+const DRAFTED_AND_DROPPED: { round: number; personId: number; name: string; teamId: number; positions: string[] }[] = [
+  { round: 7, personId: 641355, name: 'Cody Bellinger', teamId: 147, positions: ['OF'] },
+  { round: 11, personId: 669364, name: 'Xavier Edwards', teamId: 146, positions: ['2B', 'SS'] },
+  { round: 13, personId: 690916, name: 'Richard Fitts', teamId: 138, positions: ['SP'] },
+  { round: 15, personId: 666624, name: 'Christopher Morel', teamId: 121, positions: ['1B', 'OF'] },
+  { round: 17, personId: 681546, name: 'James Outman', teamId: 116, positions: ['OF'] },
+  { round: 19, personId: 669622, name: 'Anthony Bender', teamId: 146, positions: ['RP'] },
+  { round: 20, personId: 665828, name: 'Oswaldo Cabrera', teamId: 113, positions: ['3B'] },
+  { round: 21, personId: 691009, name: 'Dylan Ray', teamId: 109, positions: ['SP'] },
+  { round: 22, personId: 682657, name: 'Angel Martínez', teamId: 114, positions: ['OF'] },
+  { round: 23, personId: 623211, name: 'Huascar Brazobán', teamId: 145, positions: ['RP'] },
+  { round: 24, personId: 701655, name: 'Reed Trimble', teamId: 110, positions: ['OF'] },
+  { round: 25, personId: 656786, name: 'Parker Mushinski', teamId: 115, positions: ['RP'] },
+  { round: 26, personId: 695508, name: 'Cam Cauley', teamId: 140, positions: ['SS'] },
+  { round: 27, personId: 692013, name: 'Henry Baez', teamId: 133, positions: ['RP'] },
+];
+
+/** Overall pick number in a snake draft. */
+function overallPick(round: number): number {
+  const inRound = round % 2 === 1 ? DRAFT_SLOT : DRAFT_TEAMS - DRAFT_SLOT + 1;
+  return (round - 1) * DRAFT_TEAMS + inRound;
+}
+
+function placeholderDraft() {
+  const keepers = SAMPLE_ROSTER_PLAYERS
+    .filter((d) => KEEPER_ROUND[d.name] !== undefined)
+    .map((d) => ({
+      round: KEEPER_ROUND[d.name], playerKey: d.playerKey, playerName: d.name,
+      mlbTeam: MLB_TEAM_ABBR[d.teamId] ?? '', positions: d.positions, keeper: true, onRoster: true,
+    }));
+  const dropped = DRAFTED_AND_DROPPED.map((d) => ({
+    round: d.round, playerKey: `mlb.${d.personId}`, playerName: d.name,
+    mlbTeam: MLB_TEAM_ABBR[d.teamId] ?? '', positions: d.positions, keeper: false, onRoster: false,
+  }));
+  return [...keepers, ...dropped]
+    .map((p) => ({ ...p, pick: overallPick(p.round) }))
+    .sort((a, b) => a.round - b.round);
+}
+
+function hashOf(s: string): number {
+  let h = 0;
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return Math.abs(h);
+}
+
+function shiftIso(iso: string, days: number): string {
+  const d = new Date(iso + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/** A believable path to our roster, consistent with the placeholder `acquired`. Newest first. */
+function placeholderHistory(def: SamplePlayerDef) {
+  const a = def.acquired;
+  if (!a) return undefined;
+  const us = SAMPLE_TEAM.name;
+  const h = hashOf(def.playerKey);
+  const other = OTHER_TEAMS[h % OTHER_TEAMS.length];
+  type Move = { date: string; kind: string; fromTeam: string | null; toTeam: string | null; detail?: string };
+  const moves: Move[] = [];
+  const draftedBy = (team: string): Move => ({ date: OPENING_DAY, kind: 'drafted', fromTeam: null, toTeam: team });
+
+  switch (a.how) {
+    case 'keeper':
+      moves.push({
+        date: a.date, kind: 'kept', fromTeam: null, toTeam: us,
+        detail: KEEPER_ROUND[def.name] ? `Kept from last season with our round ${KEEPER_ROUND[def.name]} pick` : 'Kept from last season',
+      });
+      break;
+    case 'draft':
+      moves.push(draftedBy(us));
+      break;
+    case 'trade':
+      moves.push(draftedBy(other), { date: a.date, kind: 'traded', fromTeam: other, toTeam: us });
+      break;
+    case 'waiver':
+      moves.push(
+        draftedBy(other),
+        { date: shiftIso(a.date, -2), kind: 'dropped', fromTeam: other, toTeam: null },
+        { date: a.date, kind: 'claimed', fromTeam: null, toTeam: us },
+      );
+      break;
+    case 'free-agent':
+      if (h % 2 === 0) {
+        moves.push(draftedBy(other), { date: shiftIso(a.date, -(3 + (h % 10))), kind: 'dropped', fromTeam: other, toTeam: null });
+      }
+      moves.push({ date: a.date, kind: 'added', fromTeam: null, toTeam: us });
+      break;
+  }
+  return moves.reverse().map((m) => ({ ...m, ours: m.toTeam === us || m.fromTeam === us }));
+}
 
 function todayIso(date = new Date()): string {
   return date.toISOString().slice(0, 10);
@@ -140,7 +254,7 @@ const CACHE_TTL_SECONDS = 300;
  */
 export async function buildSampleRoster(env: Env): Promise<unknown> {
   const date = todayIso();
-  const cacheKey = `mlb:sample-roster:${date}`;
+  const cacheKey = `mlb:sample-roster:v2:${date}`;
 
   if (env.BUNTS) {
     const cached = await env.BUNTS.get(cacheKey);
@@ -225,6 +339,7 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
       headshotUrl: headshotUrl(def.personId),
       vsPitcher: def.isPitcher ? null : vsPitcher.get(def.personId) ?? null,
       acquired: def.acquired ?? null,
+      history: placeholderHistory(def),
       ...(withUs.has(def.personId) ? { withUsStats: withUs.get(def.personId) } : {}),
     };
   });
@@ -236,6 +351,7 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
     team: SAMPLE_TEAM,
     league: SAMPLE_LEAGUE,
     players,
+    draft: placeholderDraft(),
   };
 
   if (env.BUNTS) {

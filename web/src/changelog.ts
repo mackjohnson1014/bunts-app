@@ -14,6 +14,18 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '2.1',
+    date: '2026-10-05',
+    title: 'Draft, depth and how the roster was built',
+    notes: [
+      'Player cards now have a transaction history: every move between teams this season, newest first \u2014 drafted, kept, dropped, claimed off waivers, picked up or traded \u2014 with your own team\u2019s moves marked.',
+      'Keepers now has three tabs. Keepers is the running tally you already had.',
+      'Draft lists your picks this season by round, which ones went to keepers, and which draftees are still on the roster.',
+      'Roster build shows how many healthy players you have at each position against the slots you start, and flags where you\u2019re thin (no healthy backup) or have more than you can use. Below that is how every player joined \u2014 keeper, draft, waivers, free agent or trade \u2014 in date order; tap one to open his card.',
+      'Draft picks and transaction histories are placeholders for now, matching the made-up join dates. Real ones arrive with Yahoo.',
+    ],
+  },
+  {
     version: '2.0',
     date: '2026-10-05',
     title: 'What a player has done for us',

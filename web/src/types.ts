@@ -51,6 +51,37 @@ export interface Acquisition {
   detail?: string;
 }
 
+/** One change of hands in a player's season, from Yahoo's draft and transaction log. */
+export type MoveKind = 'drafted' | 'kept' | 'added' | 'claimed' | 'dropped' | 'traded';
+
+export interface PlayerMove {
+  /** ISO date. */
+  date: string;
+  kind: MoveKind;
+  /** Fantasy team he left; null when he came from free agents/waivers or the draft. */
+  fromTeam: string | null;
+  /** Fantasy team he joined; null when he was dropped to waivers. */
+  toTeam: string | null;
+  detail?: string;
+  /** True when our team is either side of the move. */
+  ours: boolean;
+}
+
+/** One of our picks in this season's draft. */
+export interface DraftPick {
+  round: number;
+  /** Overall pick number. */
+  pick: number;
+  playerKey: string;
+  playerName: string;
+  mlbTeam: string;
+  positions: string[];
+  /** Pick spent on keeping one of last season's players. */
+  keeper: boolean;
+  /** Still on our roster today. */
+  onRoster: boolean;
+}
+
 export interface Player {
   playerKey: string;
   name: string;
@@ -103,6 +134,8 @@ export interface Player {
    * whole season is ours (use seasonStats), and when `acquired` is unknown.
    */
   withUsStats?: Record<string, number>;
+  /** His season's moves between teams, newest first. Absent when unknown. */
+  history?: PlayerMove[];
 }
 
 export interface League {
@@ -115,6 +148,8 @@ export interface League {
   /** League's weekly free-agent/waiver add cap, or null if the league has none. */
   weeklyAddLimit: number | null;
   currentWeek: number | null;
+  /** Starting slots per position, e.g. { C: 1, OF: 3, UTIL: 2, SP: 3, P: 3 }. */
+  rosterSlots?: Record<string, number>;
 }
 
 export interface Team {
@@ -135,6 +170,8 @@ export interface Roster {
   lockAt: string | null;
   /** True when this is the stand-in dataset rather than the real league. */
   sample?: boolean;
+  /** Our picks in this season's draft, in order. Absent when unknown. */
+  draft?: DraftPick[];
 }
 
 export type Recommendation = 'start' | 'sit' | 'hold';
