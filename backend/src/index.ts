@@ -1,6 +1,11 @@
-import { notify } from '../../web/functions/_shared/push';
-import { collect } from './normalize';
-import { yahooGet, type Env } from './yahoo';
+import { notify, type PushEnv } from '../../web/functions/_shared/push';
+import { collect } from '../../web/functions/_shared/normalize';
+import { yahooGet, type YahooEnv } from '../../web/functions/_shared/yahoo';
+
+interface Env extends YahooEnv, PushEnv {
+  LEAGUE_KEY: string;
+  TEAM_KEY: string;
+}
 
 const KEY_LINEUP_STATE = 'state:lineups';
 
@@ -95,9 +100,12 @@ const KEY_TRANSACTIONS_SEEN = 'state:transactions-seen';
  *   1. `league/{leagueKey}/transactions` -- shape unknown. First test once
  *      Yahoo is live: `collect(raw, 'transaction_key')` against a real dump,
  *      same technique used below.
- *   2. Resolving *which* team is this week's opponent. `GET /matchup` is
- *      itself still a stub (see functions/api/[[path]].ts) -- likely
- *      `league/{leagueKey}/scoreboard;week=<current>`, but unconfirmed.
+ *   2. Resolving *which* team is this week's opponent. Yahoo's docs
+ *      (2026-10-05) confirm `team/{TEAM_KEY}/matchups;weeks={current_week}`
+ *      returns our matchup with both teams' keys -- simpler than scanning
+ *      the whole scoreboard. Shape still unseen.
+ *   Opponent adds-used likely needs no counting at all: the team resource's
+ *   `roster_adds` block (coverage_type week) carries it directly.
  * Until both are known, a real diff-against-KEY_TRANSACTIONS_SEEN and a
  * per-opponent notify() would be fiction. This only confirms the poll runs.
  */

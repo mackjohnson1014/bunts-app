@@ -6,6 +6,7 @@ import {
 } from '../_shared/suggestions';
 import type { PushSubscription } from '../_shared/webpush';
 import { buildSampleRoster } from '../_shared/sampleRoster';
+import { yahooGet, type YahooEnv } from '../_shared/yahoo';
 
 /**
  * The whole API, served from the same origin as the app so Cloudflare Access
@@ -13,13 +14,10 @@ import { buildSampleRoster } from '../_shared/sampleRoster';
  * already holds is the credential, and it names the user.
  */
 
-interface Env extends PushEnv {
+interface Env extends PushEnv, YahooEnv {
   BUNTS: KVNamespace;
   ACCESS_TEAM_DOMAIN: string;   // e.g. round-brook-679d.cloudflareaccess.com
   ACCESS_AUD: string;           // the Access application's AUD tag
-  YAHOO_CLIENT_ID: string;
-  YAHOO_CLIENT_SECRET: string;
-  YAHOO_REFRESH_TOKEN: string;
   LEAGUE_KEY: string;
   TEAM_KEY: string;
 }
@@ -125,6 +123,17 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
       case 'GET /health':
         return json({ ok: true, you: me.email, devices: (await listSubscriptions(env)).length });
+
+      case 'GET /yahoo/raw': {
+        // Escape hatch for learning Yahoo's real response shapes from the
+        // deployed app once access is provisioned, e.g.
+        // /api/yahoo/raw?path=league/{league_key}/transactions
+        // Read-only (GET to Yahoo, never PUT/POST) and behind Access like
+        // everything else here.
+        const yPath = new URL(request.url).searchParams.get('path');
+        if (!yPath) return json({ error: 'missing ?path=' }, 400);
+        return json(await yahooGet(env, yPath.replace(/^\/+/, '')));
+      }
 
       case 'GET /roster':
       case 'GET /lineup': {
