@@ -205,7 +205,7 @@ const groupOf = (p: Player): Group =>
  * than a donut: a donut shows shares of a whole but has nowhere to put the
  * target, and the gap is the point.
  */
-function Composition({ players }: { players: Player[] }) {
+function Composition({ players, ilSlots }: { players: Player[]; ilSlots?: number }) {
   const active = players.filter((p) => !isInjured(p));
   const now = Object.fromEntries(IDEAL.map((g) => [g.id, active.filter((p) => groupOf(p) === g.id).length])) as Record<Group, number>;
   const idealTotal = IDEAL.reduce((t, g) => t + g.n, 0);
@@ -238,7 +238,8 @@ function Composition({ players }: { players: Player[] }) {
   return (
     <>
       <p className="keep-note" style={{ marginBottom: 8 }}>
-        {active.length} active players{injured ? ` (plus ${injured} on IL)` : ''} ·{' '}
+        {active.length} active players ·{' '}
+        {ilSlots ? `${injured} of ${ilSlots} IL spots used` : `${injured} on IL`} ·{' '}
         {off === 0 ? 'right on the ideal split' : `${off} ${off === 1 ? 'spot' : 'spots'} off the ideal split`}
       </p>
       {bar(now, 'Now')}
@@ -298,7 +299,7 @@ function BuildTab({ roster, onOpen }: { roster: Roster; onOpen: (p: Player) => v
   return (
     <>
       <p className="sect" style={{ marginTop: 0 }}>Roster composition</p>
-      <Composition players={roster.players} />
+      <Composition players={roster.players} ilSlots={slots.IL} />
 
       <p className="sect">Depth by position</p>
       <p className="keep-note" style={{ marginBottom: 6 }}>

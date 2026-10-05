@@ -148,7 +148,7 @@ export interface League {
   /** League's weekly free-agent/waiver add cap, or null if the league has none. */
   weeklyAddLimit: number | null;
   currentWeek: number | null;
-  /** Starting slots per position, e.g. { C: 1, OF: 3, UTIL: 2, SP: 3, P: 3 }. */
+  /** Slots per position, e.g. { C: 1, OF: 3, UTIL: 2, SP: 3, P: 3, BN: 8, IL: 3 }. */
   rosterSlots?: Record<string, number>;
 }
 
