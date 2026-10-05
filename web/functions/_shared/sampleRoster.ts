@@ -44,41 +44,46 @@ export interface SamplePlayerDef {
   };
 }
 
+// PLACEHOLDER `acquired` values (2026-10-05, at Mack's request, to preview the
+// player card's "On our team" section): 13 players marked as keepers from
+// opening day, the other 14 given RANDOM add dates and types. None of these
+// are real -- replace with Yahoo's draftresults/transactions (or Mack's
+// screenshots) before trusting any "with us" numbers.
 export const SAMPLE_ROSTER_PLAYERS: SamplePlayerDef[] = [
   // Hitters -- exact slots from Mack's own screenshot of his Yahoo roster
   // (2026-09-16): C/1B/2B/3B/SS/OF x3/Util x2 starting, 3 bench, 1 IL.
-  { playerKey: 'mlb.661388', personId: 661388, name: 'William Contreras', teamId: 158, positions: ['C'], slot: 'C', isPitcher: false },
-  { playerKey: 'mlb.700250', personId: 700250, name: 'Ben Rice', teamId: 147, positions: ['C', '1B'], slot: '1B', isPitcher: false },
-  { playerKey: 'mlb.683953', personId: 683953, name: 'Travis Bazzana', teamId: 114, positions: ['2B'], slot: '2B', isPitcher: false },
-  { playerKey: 'mlb.687952', personId: 687952, name: 'Christian Encarnacion-Strand', teamId: 110, positions: ['1B', '3B'], slot: '3B', isPitcher: false },
-  { playerKey: 'mlb.608369', personId: 608369, name: 'Corey Seager', teamId: 140, positions: ['SS'], slot: 'SS', isPitcher: false },
-  { playerKey: 'mlb.545361', personId: 545361, name: 'Mike Trout', teamId: 108, positions: ['OF'], slot: 'OF', isPitcher: false },
-  { playerKey: 'mlb.805999', personId: 805999, name: 'A.J. Ewing', teamId: 121, positions: ['2B', 'OF'], slot: 'OF', isPitcher: false },
-  { playerKey: 'mlb.681715', personId: 681715, name: 'Heriberto Hernández', teamId: 146, positions: ['OF'], slot: 'OF', isPitcher: false },
-  { playerKey: 'mlb.683737', personId: 683737, name: 'Michael Busch', teamId: 112, positions: ['1B'], slot: 'UTIL', isPitcher: false },
-  { playerKey: 'mlb.686469', personId: 686469, name: 'Vinnie Pasquantino', teamId: 118, positions: ['1B'], slot: 'UTIL', isPitcher: false },
-  { playerKey: 'mlb.571970', personId: 571970, name: 'Max Muncy', teamId: 119, positions: ['3B'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.800050', personId: 800050, name: 'Chase DeLauter', teamId: 114, positions: ['OF'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.702616', personId: 702616, name: 'Jackson Holliday', teamId: 110, positions: ['2B', 'SS'], slot: 'BN', isPitcher: false },
-  { playerKey: 'mlb.681624', personId: 681624, name: 'Andy Pages', teamId: 119, positions: ['OF'], slot: 'IL', isPitcher: false },
+  { playerKey: 'mlb.661388', personId: 661388, name: 'William Contreras', teamId: 158, positions: ['C'], slot: 'C', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.700250', personId: 700250, name: 'Ben Rice', teamId: 147, positions: ['C', '1B'], slot: '1B', isPitcher: false, acquired: { how: 'trade', date: '2026-06-10' } },
+  { playerKey: 'mlb.683953', personId: 683953, name: 'Travis Bazzana', teamId: 114, positions: ['2B'], slot: '2B', isPitcher: false, acquired: { how: 'free-agent', date: '2026-06-15' } },
+  { playerKey: 'mlb.687952', personId: 687952, name: 'Christian Encarnacion-Strand', teamId: 110, positions: ['1B', '3B'], slot: '3B', isPitcher: false, acquired: { how: 'waiver', date: '2026-05-10' } },
+  { playerKey: 'mlb.608369', personId: 608369, name: 'Corey Seager', teamId: 140, positions: ['SS'], slot: 'SS', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.545361', personId: 545361, name: 'Mike Trout', teamId: 108, positions: ['OF'], slot: 'OF', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.805999', personId: 805999, name: 'A.J. Ewing', teamId: 121, positions: ['2B', 'OF'], slot: 'OF', isPitcher: false, acquired: { how: 'trade', date: '2026-08-20' } },
+  { playerKey: 'mlb.681715', personId: 681715, name: 'Heriberto Hernández', teamId: 146, positions: ['OF'], slot: 'OF', isPitcher: false, acquired: { how: 'waiver', date: '2026-04-06' } },
+  { playerKey: 'mlb.683737', personId: 683737, name: 'Michael Busch', teamId: 112, positions: ['1B'], slot: 'UTIL', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.686469', personId: 686469, name: 'Vinnie Pasquantino', teamId: 118, positions: ['1B'], slot: 'UTIL', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.571970', personId: 571970, name: 'Max Muncy', teamId: 119, positions: ['3B'], slot: 'BN', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.800050', personId: 800050, name: 'Chase DeLauter', teamId: 114, positions: ['OF'], slot: 'BN', isPitcher: false, acquired: { how: 'free-agent', date: '2026-04-29' } },
+  { playerKey: 'mlb.702616', personId: 702616, name: 'Jackson Holliday', teamId: 110, positions: ['2B', 'SS'], slot: 'BN', isPitcher: false, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.681624', personId: 681624, name: 'Andy Pages', teamId: 119, positions: ['OF'], slot: 'IL', isPitcher: false, acquired: { how: 'free-agent', date: '2026-08-16' } },
 
   // Pitchers -- exact slots from the same screenshot: 3 SP, 1 RP (Mack's
   // 2nd RP spot is actually open, so only 13 real pitchers here), 3 P
   // (flex), 5 bench, 1 IL. Ohtani is listed specifically as "(Pitcher)"
   // with an IL flag -- his pitching-side roster spot.
-  { playerKey: 'mlb.807739', personId: 807739, name: 'Kade Anderson', teamId: 136, positions: ['SP'], slot: 'SP', isPitcher: true },
-  { playerKey: 'mlb.554430', personId: 554430, name: 'Zack Wheeler', teamId: 143, positions: ['SP'], slot: 'SP', isPitcher: true },
-  { playerKey: 'mlb.605483', personId: 605483, name: 'Blake Snell', teamId: 119, positions: ['SP'], slot: 'SP', isPitcher: true },
-  { playerKey: 'mlb.656730', personId: 656730, name: 'Trevor Megill', teamId: 158, positions: ['RP'], slot: 'RP', isPitcher: true },
-  { playerKey: 'mlb.696149', personId: 696149, name: 'Bubba Chandler', teamId: 134, positions: ['SP'], slot: 'P', isPitcher: true },
-  { playerKey: 'mlb.669713', personId: 669713, name: 'Hayden Wesneski', teamId: 117, positions: ['SP'], slot: 'P', isPitcher: true },
-  { playerKey: 'mlb.672456', personId: 672456, name: 'Keider Montero', teamId: 116, positions: ['SP', 'RP'], slot: 'P', isPitcher: true },
-  { playerKey: 'mlb.645261', personId: 645261, name: 'Sandy Alcantara', teamId: 146, positions: ['SP'], slot: 'BN', isPitcher: true },
-  { playerKey: 'mlb.543135', personId: 543135, name: 'Nathan Eovaldi', teamId: 140, positions: ['SP'], slot: 'BN', isPitcher: true },
-  { playerKey: 'mlb.571510', personId: 571510, name: 'Matthew Boyd', teamId: 112, positions: ['SP'], slot: 'BN', isPitcher: true },
-  { playerKey: 'mlb.624133', personId: 624133, name: 'Ranger Suarez', teamId: 111, positions: ['SP'], slot: 'BN', isPitcher: true },
-  { playerKey: 'mlb.543243', personId: 543243, name: 'Sonny Gray', teamId: 111, positions: ['SP'], slot: 'BN', isPitcher: true },
-  { playerKey: 'mlb.660271', personId: 660271, name: 'Shohei Ohtani', teamId: 119, positions: ['SP'], slot: 'IL', isPitcher: true },
+  { playerKey: 'mlb.807739', personId: 807739, name: 'Kade Anderson', teamId: 136, positions: ['SP'], slot: 'SP', isPitcher: true, acquired: { how: 'free-agent', date: '2026-07-23' } },
+  { playerKey: 'mlb.554430', personId: 554430, name: 'Zack Wheeler', teamId: 143, positions: ['SP'], slot: 'SP', isPitcher: true, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.605483', personId: 605483, name: 'Blake Snell', teamId: 119, positions: ['SP'], slot: 'SP', isPitcher: true, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.656730', personId: 656730, name: 'Trevor Megill', teamId: 158, positions: ['RP'], slot: 'RP', isPitcher: true, acquired: { how: 'free-agent', date: '2026-08-29' } },
+  { playerKey: 'mlb.696149', personId: 696149, name: 'Bubba Chandler', teamId: 134, positions: ['SP'], slot: 'P', isPitcher: true, acquired: { how: 'waiver', date: '2026-05-29' } },
+  { playerKey: 'mlb.669713', personId: 669713, name: 'Hayden Wesneski', teamId: 117, positions: ['SP'], slot: 'P', isPitcher: true, acquired: { how: 'free-agent', date: '2026-05-09' } },
+  { playerKey: 'mlb.672456', personId: 672456, name: 'Keider Montero', teamId: 116, positions: ['SP', 'RP'], slot: 'P', isPitcher: true, acquired: { how: 'free-agent', date: '2026-07-13' } },
+  { playerKey: 'mlb.645261', personId: 645261, name: 'Sandy Alcantara', teamId: 146, positions: ['SP'], slot: 'BN', isPitcher: true, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.543135', personId: 543135, name: 'Nathan Eovaldi', teamId: 140, positions: ['SP'], slot: 'BN', isPitcher: true, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.571510', personId: 571510, name: 'Matthew Boyd', teamId: 112, positions: ['SP'], slot: 'BN', isPitcher: true, acquired: { how: 'free-agent', date: '2026-06-15' } },
+  { playerKey: 'mlb.624133', personId: 624133, name: 'Ranger Suarez', teamId: 111, positions: ['SP'], slot: 'BN', isPitcher: true, acquired: { how: 'free-agent', date: '2026-06-10' } },
+  { playerKey: 'mlb.543243', personId: 543243, name: 'Sonny Gray', teamId: 111, positions: ['SP'], slot: 'BN', isPitcher: true, acquired: { how: 'keeper', date: '2026-03-25' } },
+  { playerKey: 'mlb.660271', personId: 660271, name: 'Shohei Ohtani', teamId: 119, positions: ['SP'], slot: 'IL', isPitcher: true, acquired: { how: 'keeper', date: '2026-03-25' } },
 ];
 
 export const SAMPLE_TEAM = {

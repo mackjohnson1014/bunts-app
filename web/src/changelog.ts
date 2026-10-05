@@ -21,7 +21,7 @@ export const RELEASES: Release[] = [
       'Player cards have a new \u201cOn our team\u201d section: how he joined (drafted, kept, waivers, free agent or trade), the date, and how many days and games he\u2019s been ours.',
       'For anyone who joined mid-season, it shows his stats since he joined next to his full season, plus what share of each season total came while he was ours \u2014 so a July pickup is judged on what he did for you, not for his old team.',
       'AVG, ERA and WHIP compare his rate with us to his full-season rate, with an arrow when he\u2019s been better or worse for us.',
-      'Join dates fill in once Yahoo is connected; until then the section says it\u2019s waiting.',
+      'For now the join dates are placeholders so you can see how the section works \u2014 half the roster is marked as opening-day keepers and the rest have made-up add dates. Real ones arrive with Yahoo.',
     ],
   },
   {
