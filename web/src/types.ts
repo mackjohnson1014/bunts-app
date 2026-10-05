@@ -40,6 +40,17 @@ export interface VsPitcherStats {
   walks: number;
 }
 
+/** How a player came to be on our team. */
+export type AcquisitionHow = 'draft' | 'keeper' | 'waiver' | 'free-agent' | 'trade';
+
+export interface Acquisition {
+  how: AcquisitionHow;
+  /** ISO date he joined our roster. */
+  date: string;
+  /** Optional specifics, e.g. "Round 4, pick 37" or "from Pierre's Team". */
+  detail?: string;
+}
+
 export interface Player {
   playerKey: string;
   name: string;
@@ -81,6 +92,17 @@ export interface Player {
    * that pitcher before -- all of which are ordinary, not errors.
    */
   vsPitcher?: VsPitcherStats | null;
+  /**
+   * When and how he joined our roster. Null/absent when we don't know yet --
+   * Yahoo's draft results and transaction log are the real source.
+   */
+  acquired?: Acquisition | null;
+  /**
+   * His totals from `acquired.date` through today -- the part of his season
+   * that actually counted for us. Absent for drafted/kept players, whose
+   * whole season is ours (use seasonStats), and when `acquired` is unknown.
+   */
+  withUsStats?: Record<string, number>;
 }
 
 export interface League {

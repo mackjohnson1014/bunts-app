@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
-import type { GameLine, Player, SuggestionInput } from './types';
+import type { AcquisitionHow, GameLine, Player, SuggestionInput } from './types';
 
 /**
  * Full detail for one player, as a bottom sheet. A roster row can only carry a
@@ -167,6 +167,9 @@ export function PlayerSheet({
           </>
           )}
 
+          <p className="sect">On our team</p>
+          <OnOurTeam player={player} keys={keys} />
+
           <p className="sect">Last five games</p>
           {player.recentGames.length === 0 ? (
             <p className="muted">No recent appearances.</p>
@@ -254,6 +257,103 @@ function Compose({ player, onSent }: { player: Player; onSent: () => void }) {
         {sending ? 'Sending…' : 'Send suggestion'}
       </button>
       {result ? <p className="muted" style={{ marginTop: 8 }}>{result}</p> : null}
+    </>
+  );
+}
+
+const HOW: Record<AcquisitionHow, string> = {
+  draft: 'Drafted',
+  keeper: 'Kept',
+  waiver: 'Waivers',
+  'free-agent': 'Free agent',
+  trade: 'Trade',
+};
+
+/**
+ * What he has done for US, not his season. A player picked up in July has a
+ * season line that is mostly someone else's; this isolates the part that
+ * counted for our team, and shows how big a share of his season that is.
+ */
+function OnOurTeam({ player, keys }: { player: Player; keys: string[] }) {
+  const a = player.acquired;
+  if (!a) {
+    return <p className="muted">When and how he joined isn&rsquo;t known yet &mdash; this fills in once Yahoo is connected.</p>;
+  }
+
+  const joined = new Date(a.date + 'T12:00:00');
+  const now = new Date();
+  const days = Math.max(0, Math.floor((now.getTime() - joined.getTime()) / 86_400_000));
+  const joinedStr = joined.toLocaleDateString(undefined, {
+    month: 'short', day: 'numeric',
+    ...(joined.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+  });
+
+  // Drafted and kept players' whole season is ours.
+  const wholeSeason = a.how === 'draft' || a.how === 'keeper';
+  const withUs = wholeSeason ? player.seasonStats : player.withUsStats;
+  const gamesWithUs = withUs?.G ?? 0;
+
+  const RATE = new Set(['AVG', 'ERA', 'WHIP']);
+  const lowerIsBetter = new Set(['ERA', 'WHIP']);
+  const share = (w?: number, s?: number) =>
+    w === undefined || !s ? '–' : `${Math.round((w / s) * 100)}%`;
+
+  return (
+    <>
+      <div className="tonight">
+        <div>
+          <span className="k">How</span>
+          <span className="v">{HOW[a.how]}</span>
+        </div>
+        <div>
+          <span className="k">Joined</span>
+          <span className="v">{joinedStr}</span>
+        </div>
+        <div>
+          <span className="k">With us</span>
+          <span className="v">{days} days · {gamesWithUs} G</span>
+        </div>
+      </div>
+      {a.detail ? <p className="muted" style={{ marginTop: 6 }}>{a.detail}</p> : null}
+
+      {!withUs || gamesWithUs === 0 ? (
+        <p className="muted" style={{ marginTop: 8 }}>No games for us yet.</p>
+      ) : wholeSeason ? (
+        <p className="muted" style={{ marginTop: 8 }}>
+          He&rsquo;s been ours all season, so his whole season line counted for us.
+        </p>
+      ) : (
+        <>
+          <table className="compare" style={{ marginTop: 10 }}>
+            <thead>
+              <tr>
+                <th>Cat</th>
+                <th>With us</th>
+                <th>Season</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {['G', ...keys].map((k) => {
+                const w = withUs[k];
+                const s = player.seasonStats[k];
+                return (
+                  <tr key={k}>
+                    <td className="cat">{k}</td>
+                    <td>{fmt(w)}</td>
+                    <td className="expected">{fmt(s)}</td>
+                    <td>{RATE.has(k) ? arrow(s, w, lowerIsBetter.has(k)) : <span className="expected">{share(w, s)}</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="muted" style={{ marginTop: 6 }}>
+            Share is how much of his season total came while he was ours &mdash; compare
+            it to his share of games. AVG, ERA and WHIP compare his rate with us to his full season.
+          </p>
+        </>
+      )}
     </>
   );
 }

@@ -14,6 +14,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '2.0',
+    date: '2026-10-05',
+    title: 'What a player has done for us',
+    notes: [
+      'Player cards have a new \u201cOn our team\u201d section: how he joined (drafted, kept, waivers, free agent or trade), the date, and how many days and games he\u2019s been ours.',
+      'For anyone who joined mid-season, it shows his stats since he joined next to his full season, plus what share of each season total came while he was ours \u2014 so a July pickup is judged on what he did for you, not for his old team.',
+      'AVG, ERA and WHIP compare his rate with us to his full-season rate, with an arrow when he\u2019s been better or worse for us.',
+      'Join dates fill in once Yahoo is connected; until then the section says it\u2019s waiting.',
+    ],
+  },
+  {
     version: '1.9',
     date: '2026-09-28',
     title: 'Matchup, laid out like a scoreboard',

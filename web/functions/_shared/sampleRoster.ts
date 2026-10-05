@@ -31,6 +31,17 @@ export interface SamplePlayerDef {
   positions: string[];
   slot: string;
   isPitcher: boolean;
+  /**
+   * When and how he joined Mack's team. Unknown for everyone until Mack
+   * supplies it or Yahoo's draftresults/transactions are connected --
+   * left absent rather than guessed. Shape matches `Acquisition` in
+   * web/src/types.ts.
+   */
+  acquired?: {
+    how: 'draft' | 'keeper' | 'waiver' | 'free-agent' | 'trade';
+    date: string;     // ISO, e.g. '2026-07-14'
+    detail?: string;
+  };
 }
 
 export const SAMPLE_ROSTER_PLAYERS: SamplePlayerDef[] = [
@@ -163,7 +174,22 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
         ? [{ personId: def.personId, pitcherId: game.probablePitcherId, pitcherName: game.probablePitcherName ?? '' }]
         : [];
     });
-  const vsPitcher = await getBatterVsPitcher(vsPitcherMatchups);
+  // Stats since joining us, for players who arrived mid-season. Drafted and
+  // kept players' whole season is ours, so they need no extra call. One
+  // batched call per distinct join date, not one per player.
+  const byJoinDate = new Map<string, number[]>();
+  for (const def of SAMPLE_ROSTER_PLAYERS) {
+    const a = def.acquired;
+    if (!a || a.how === 'draft' || a.how === 'keeper') continue;
+    byJoinDate.set(a.date, [...(byJoinDate.get(a.date) ?? []), def.personId]);
+  }
+  const [vsPitcher, withUsByDate] = await Promise.all([
+    getBatterVsPitcher(vsPitcherMatchups),
+    Promise.all([...byJoinDate].map(([iso, ids]) =>
+      getPlayerStatsByRange(ids, mlbDate(new Date(iso + 'T12:00:00')), mlbDate(rangeEnd)))),
+  ]);
+  const withUs = new Map<number, Record<string, number>>();
+  for (const m of withUsByDate) for (const [id, line] of m) withUs.set(id, line);
 
   const lockAt = [...schedule.values()]
     .map((g) => g.gameDate)
@@ -193,6 +219,8 @@ export async function buildSampleRoster(env: Env): Promise<unknown> {
       note: mlbStatus ? `MLB roster status: ${mlbStatus}.` : null,
       headshotUrl: headshotUrl(def.personId),
       vsPitcher: def.isPitcher ? null : vsPitcher.get(def.personId) ?? null,
+      acquired: def.acquired ?? null,
+      ...(withUs.has(def.personId) ? { withUsStats: withUs.get(def.personId) } : {}),
     };
   });
 
