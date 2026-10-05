@@ -22,7 +22,7 @@ export const RELEASES: Release[] = [
       'Keepers now has three tabs. Keepers is the running tally you already had.',
       'Draft lists your picks this season by round, which ones went to keepers, and which draftees are still on the roster.',
       'Roster build shows how many healthy players you have at each position against the slots you start, and flags where you\u2019re thin (no healthy backup) or have more than you can use. Below that is how every player joined \u2014 keeper, draft, waivers, free agent or trade \u2014 in date order; tap one to open his card.',
-      'Roster build opens with your roster composition: two bars comparing your active hitters, starting pitchers and relievers with the ideal 13 / 10 / 3 split, and how many you\u2019re over or short in each.',
+      'Roster build opens with your roster composition: two bars comparing your active hitters, starting pitchers and relievers with the ideal 12 / 10 / 3 split across your 25 active spots, and how many you\u2019re over or short in each.',
       'Draft picks and transaction histories are placeholders for now, matching the made-up join dates. Real ones arrive with Yahoo.',
     ],
   },

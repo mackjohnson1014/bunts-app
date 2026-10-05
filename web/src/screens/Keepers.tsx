@@ -181,14 +181,15 @@ const HOW_LABEL: Record<AcquisitionHow, string> = {
 const HOW_ORDER: AcquisitionHow[] = ['keeper', 'draft', 'waiver', 'free-agent', 'trade'];
 
 /**
- * The target split of the 26 active spots, agreed with Mack 2026-10-05: 10
- * starting hitters + 3 bench, 3 relievers for saves (2 starting + 1 spare),
- * and 10 starters, since in daily H2H categories each extra SP adds ~1.2
- * starts a week of K and W. Revisit if the league turns out to cap games
- * started or innings.
+ * The target split of the league's 25 active spots (2026-10-05): 10 starting
+ * hitters + 2 bench, 3 relievers for saves (2 starting + 1 spare), and 10
+ * starters, since in daily H2H categories each extra SP adds ~1.2 starts a
+ * week of K and W -- worth more than a third bench bat. First drafted as
+ * 13/10/3 on the assumption of 26 active spots; Mack confirmed the cap is 25.
+ * Revisit if the league turns out to cap games started or innings.
  */
 const IDEAL = [
-  { id: 'hit', label: 'Hitters', n: 13 },
+  { id: 'hit', label: 'Hitters', n: 12 },
   { id: 'sp', label: 'SP', n: 10 },
   { id: 'rp', label: 'RP', n: 3 },
 ] as const;
@@ -205,11 +206,11 @@ const groupOf = (p: Player): Group =>
  * than a donut: a donut shows shares of a whole but has nowhere to put the
  * target, and the gap is the point.
  */
-function Composition({ players, ilSlots }: { players: Player[]; ilSlots?: number }) {
+function Composition({ players, ilSlots, maxActive }: { players: Player[]; ilSlots?: number; maxActive?: number }) {
   const active = players.filter((p) => !isInjured(p));
   const now = Object.fromEntries(IDEAL.map((g) => [g.id, active.filter((p) => groupOf(p) === g.id).length])) as Record<Group, number>;
   const idealTotal = IDEAL.reduce((t, g) => t + g.n, 0);
-  const scale = Math.max(idealTotal, active.length);
+  const scale = Math.max(maxActive ?? idealTotal, idealTotal, active.length);
   const off = IDEAL.reduce((t, g) => t + Math.abs(now[g.id] - g.n), 0);
   const injured = players.length - active.length;
 
@@ -227,7 +228,7 @@ function Composition({ players, ilSlots }: { players: Player[]; ilSlots?: number
             {counts[g.id]}
           </span>
         ) : null)}
-        {/* Unused room on the shared scale, so both bars measure the same 26. */}
+        {/* Unused room on the shared scale, so both bars measure the same 25. */}
         {scale - IDEAL.reduce((t, g) => t + counts[g.id], 0) > 0 ? (
           <span style={{ flexGrow: scale - IDEAL.reduce((t, g) => t + counts[g.id], 0), flexBasis: 0 }} />
         ) : null}
@@ -238,7 +239,7 @@ function Composition({ players, ilSlots }: { players: Player[]; ilSlots?: number
   return (
     <>
       <p className="keep-note" style={{ marginBottom: 8 }}>
-        {active.length} active players ·{' '}
+        {maxActive ? `${active.length} of ${maxActive} active spots used` : `${active.length} active players`} ·{' '}
         {ilSlots ? `${injured} of ${ilSlots} IL spots used` : `${injured} on IL`} ·{' '}
         {off === 0 ? 'right on the ideal split' : `${off} ${off === 1 ? 'spot' : 'spots'} off the ideal split`}
       </p>
@@ -268,8 +269,8 @@ function Composition({ players, ilSlots }: { players: Player[]; ilSlots?: number
         </tbody>
       </table>
       <p className="keep-note" style={{ marginTop: 6 }}>
-        Ideal is 13 hitters (10 starters, 3 bench), 10 starting pitchers and 3
-        relievers. Players on IL aren&rsquo;t counted, and anyone who can play RP counts as a reliever.
+        Ideal fills all 25 active spots: 12 hitters (10 starters, 2 bench), 10
+        starting pitchers and 3 relievers. Players on IL aren&rsquo;t counted, and anyone who can play RP counts as a reliever.
       </p>
     </>
   );
@@ -299,7 +300,7 @@ function BuildTab({ roster, onOpen }: { roster: Roster; onOpen: (p: Player) => v
   return (
     <>
       <p className="sect" style={{ marginTop: 0 }}>Roster composition</p>
-      <Composition players={roster.players} ilSlots={slots.IL} />
+      <Composition players={roster.players} ilSlots={slots.IL} maxActive={roster.league.maxActive} />
 
       <p className="sect">Depth by position</p>
       <p className="keep-note" style={{ marginBottom: 6 }}>

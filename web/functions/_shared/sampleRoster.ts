@@ -97,9 +97,11 @@ export const SAMPLE_LEAGUE = {
   keeperSlots: 12,
   weeklyAddLimit: 6,
   currentWeek: null,
-  // Real: Mack's starting slots and 8 bench spots, read off his Yahoo roster
-  // screenshot; 3 IL spots per Mack (2026-10-05).
-  rosterSlots: { C: 1, '1B': 1, '2B': 1, '3B': 1, SS: 1, OF: 3, UTIL: 2, SP: 3, RP: 2, P: 3, BN: 8, IL: 3 },
+  // Real: Mack's starting slots, read off his Yahoo roster screenshot, and
+  // 3 IL spots per Mack (2026-10-05). Bench is unlimited; the cap is on
+  // active players instead (maxActive).
+  rosterSlots: { C: 1, '1B': 1, '2B': 1, '3B': 1, SS: 1, OF: 3, UTIL: 2, SP: 3, RP: 2, P: 3, IL: 3 },
+  maxActive: 25,
 };
 
 // ---- PLACEHOLDER draft and transaction history (2026-10-05) -----------------
