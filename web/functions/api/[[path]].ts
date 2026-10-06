@@ -121,7 +121,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
           },
           { exceptEmail: me.email, kind: 'suggestions' },
         );
-        return json({ suggestion: view(created, me.email), notified: pushed.sent });
+        // sent/skipped let the composer say whether it actually reached them:
+        // skipped means they've switched suggestion alerts off; neither means
+        // they have no phone registered yet.
+        return json({ suggestion: view(created, me.email), notified: pushed.sent, skipped: pushed.skipped });
       }
 
       case 'POST /suggestions/seen':

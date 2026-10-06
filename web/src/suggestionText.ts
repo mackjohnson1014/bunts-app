@@ -70,8 +70,15 @@ export function reactionLine(s: Suggestion): string | null {
 }
 
 export const refOf = (p: Player): PlayerRef => ({
-  key: p.playerKey, name: p.name, team: p.mlbTeam, pos: p.positions[0],
+  key: p.playerKey, name: p.name, team: p.mlbTeam || undefined, pos: p.positions[0] || undefined,
 });
+
+/** What happened to the push, in words, after sending a suggestion. */
+export function deliveryLine(partner: string, notified: number, skipped = 0): string {
+  if (notified > 0) return `Sent — ${partner}’s phone just buzzed.`;
+  if (skipped > 0) return `Saved, but ${partner} has suggestion alerts turned off, so no notification went out.`;
+  return `Saved, but ${partner} has no phone set up for alerts yet — they’ll see it next time they open Bunts.`;
+}
 
 export const isActive = (p: Player) => STARTING_SLOTS.includes(p.slot);
 

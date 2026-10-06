@@ -1327,3 +1327,12 @@ select.note-input {
   font-family: 'Barlow Condensed', system-ui, sans-serif;
   font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--chalk-dim);
 }
+
+/* what happened to the push after sending */
+.delivery {
+  margin: 8px 0 4px; padding: 14px 12px; border-radius: 8px;
+  border: 1px solid var(--rule); background: var(--board-2); font-size: 14.5px;
+}
+.delivery.ok { border-color: var(--grass); color: var(--grass); }
+.delivery.warn { border-color: var(--amber); }
+.delivery-note { margin: -4px 0 12px; }

@@ -6,7 +6,7 @@ import type {
   SuggestionStatus,
 } from './types';
 import {
-  ago, dayWord, headline, isActive, KIND_LABEL, localDate, reactionLine, refOf, STATE_LABEL, tone,
+  ago, dayWord, deliveryLine, headline, isActive, KIND_LABEL, localDate, reactionLine, refOf, STATE_LABEL, tone,
 } from './suggestionText';
 import { useAsync } from './useAsync';
 
@@ -56,7 +56,7 @@ export function Composer({
 }: {
   preset?: ComposePreset;
   partner: string;
-  onSent: (s: Suggestion) => void;
+  onSent: (s: Suggestion, delivery: string) => void;
 }) {
   const roster = useAsync(() => rosterOnce());
   const players = roster.data?.players ?? [];
@@ -74,6 +74,7 @@ export function Composer({
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState<{ line: string; ok: boolean } | null>(null);
 
   const dated = kind === 'swap' || (kind === 'call' && call !== 'watch');
   const ref = (key: string): PlayerRef | null => {
@@ -103,13 +104,20 @@ export function Composer({
     setError(null);
     try {
       const res = await api.addSuggestion({ ...input, note: note.trim() });
-      onSent(res.suggestion);
+      const line = deliveryLine(partner, res.notified, res.skipped);
+      // Say whether it actually reached them before the sheet goes away --
+      // a silent close hid "they have no phone registered" entirely.
+      setSent({ line, ok: res.notified > 0 });
+      setTimeout(() => onSent(res.suggestion, line), 1600);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
     setSending(false);
   }
 
+  if (sent) {
+    return <p className={`delivery ${sent.ok ? 'ok' : 'warn'}`} role="status">{sent.line}</p>;
+  }
   if (roster.loading) return <p className="muted">Loading your roster…</p>;
   if (roster.error) return <p className="muted">Couldn’t load the roster to suggest from.</p>;
 
@@ -372,7 +380,7 @@ export function ComposeSheet({
   preset?: ComposePreset;
   partner: string;
   onClose: () => void;
-  onSent: (s: Suggestion) => void;
+  onSent: (s: Suggestion, delivery: string) => void;
 }) {
   return (
     <Sheet title="Suggest a move" eyebrow={`To ${partner}`} onClose={onClose}>

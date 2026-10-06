@@ -24,6 +24,7 @@ export default function SuggestionsScreen({
   const [filter, setFilter] = useState<Filter>('open');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [delivery, setDelivery] = useState<string | null>(null);
 
   useEffect(() => { if (loaded.data) setItems(loaded.data); }, [loaded.data]);
 
@@ -72,6 +73,7 @@ export default function SuggestionsScreen({
         onReload={loaded.reload}
       >
         <button className="btn compose-btn" onClick={() => setComposing(true)}>Suggest a move</button>
+        {delivery ? <p className="delivery-note muted" role="status">{delivery}</p> : null}
 
         <div className="segmented sugg-filter" role="tablist" aria-label="Filter">
           {(['open', 'closed'] as const).map((f) => (
@@ -113,7 +115,12 @@ export default function SuggestionsScreen({
         <ComposeSheet
           partner={partner}
           onClose={() => setComposing(false)}
-          onSent={(s) => { upsert(s); setComposing(false); setFilter('open'); }}
+          onSent={(s, line) => {
+            upsert(s);
+            setComposing(false);
+            setFilter(s.state === 'open' ? 'open' : 'closed');
+            setDelivery(line);
+          }}
         />
       ) : null}
     </>

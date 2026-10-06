@@ -90,14 +90,15 @@ export interface Suggestion {
 // ---------- validation ----------
 
 const isStr = (v: unknown, max: number): v is string => typeof v === 'string' && v.length > 0 && v.length <= max;
+/** Display-only extras: absent or blank is fine (a player between teams has no team code). */
+const isOptStr = (v: unknown, max: number) => v === undefined || (typeof v === 'string' && v.length <= max);
 
 function isPlayerRef(v: unknown): v is PlayerRef {
   const p = v as PlayerRef;
   return (
     !!p && typeof p === 'object' &&
     isStr(p.key, 80) && isStr(p.name, 80) &&
-    (p.team === undefined || isStr(p.team, 8)) &&
-    (p.pos === undefined || isStr(p.pos, 20))
+    isOptStr(p.team, 8) && isOptStr(p.pos, 20)
   );
 }
 
@@ -122,7 +123,7 @@ export function isSuggestionInput(v: unknown): v is SuggestionInput {
 }
 
 function bodyOf(input: SuggestionInput): SuggestionBody {
-  const pick = ({ key, name, team, pos }: PlayerRef): PlayerRef => ({ key, name, team, pos });
+  const pick = ({ key, name, team, pos }: PlayerRef): PlayerRef => ({ key, name, team: team || undefined, pos: pos || undefined });
   switch (input.kind) {
     case 'call': return { kind: 'call', player: pick(input.player), call: input.call };
     case 'swap': return { kind: 'swap', start: pick(input.start), bench: pick(input.bench) };
@@ -177,9 +178,24 @@ export async function listSuggestions(kv: KVNamespace): Promise<Suggestion[]> {
 export const termsOwner = (s: Suggestion): Person =>
   s.termsBy ?? { email: s.authorEmail, name: s.authorName };
 
+/**
+ * When an open, dated suggestion goes stale. Early versions measured "today"
+ * calls against the day's first pitch even when that had already passed, so a
+ * call sent in the evening was born expired. A deadline at or before creation
+ * is that bug; treat it as lasting until early the next morning Eastern
+ * instead, the same fallback the API uses when no games are left.
+ */
+export function deadlineOf(s: Suggestion): number | null {
+  if (!s.expiresAt) return null;
+  const at = Date.parse(s.expiresAt);
+  if (at > Date.parse(s.createdAt) || !s.date) return at;
+  return Date.parse(`${s.date}T08:00:00Z`) + 24 * 3600_000;
+}
+
 export function stateOf(s: Suggestion, now = Date.now()): State {
   if (s.status !== 'open') return s.status;
-  if (s.expiresAt && new Date(s.expiresAt).getTime() <= now) return 'expired';
+  const deadline = deadlineOf(s);
+  if (deadline !== null && deadline <= now) return 'expired';
   return 'open';
 }
 

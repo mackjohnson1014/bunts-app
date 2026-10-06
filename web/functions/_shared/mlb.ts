@@ -417,15 +417,17 @@ export async function getRecentGames(personIds: number[], season: number, limit 
 }
 
 /**
- * Earliest scheduled first pitch on a date (YYYY-MM-DD), ISO, or null when
- * nobody plays. This is when a lineup call for that day stops mattering:
- * once games start, the decision has been made one way or the other.
+ * The next scheduled first pitch on a date (YYYY-MM-DD) that hasn't happened
+ * yet, ISO, or null when nobody plays or every game has started. That's when
+ * a lineup call for the day stops mattering. Only *future* starts count: a
+ * call made at 9 p.m. is about the games still to come, and measuring it
+ * against a 5 p.m. first pitch would expire it the instant it was sent.
  */
-export async function firstPitch(date: string): Promise<string | null> {
+export async function firstPitch(date: string, after = Date.now()): Promise<string | null> {
   const data = await fetchMlb<ScheduleResponse>(`/schedule?sportId=1&date=${date}`);
   const times = (data.dates[0]?.games ?? [])
     .map((g) => g.gameDate)
-    .filter((d): d is string => !!d)
+    .filter((d): d is string => !!d && Date.parse(d) > after)
     .sort();
   return times[0] ?? null;
 }

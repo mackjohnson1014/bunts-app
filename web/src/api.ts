@@ -146,9 +146,9 @@ export const api = {
   getSuggestions: (): Promise<Suggestion[]> =>
     usingMockData ? settle(mockSuggestions.list()) : req('/suggestions'),
 
-  addSuggestion: (input: SuggestionInput): Promise<{ suggestion: Suggestion; notified: number }> =>
+  addSuggestion: (input: SuggestionInput): Promise<{ suggestion: Suggestion; notified: number; skipped?: number }> =>
     usingMockData
-      ? settle({ suggestion: mockSuggestions.add(input), notified: 0 })
+      ? settle({ suggestion: mockSuggestions.add(input), notified: 0, skipped: 0 })
       : req('/suggestions', { method: 'POST', body: JSON.stringify(input) }),
 
   /** Agree, disagree, or null to take your reaction back. */

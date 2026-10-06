@@ -22,6 +22,8 @@ export const RELEASES: Release[] = [
       'Below that is how many adds you\u2019ve marked done this week against the league\u2019s 6. It only counts moves made through Bunts until Yahoo is connected.',
       'Counter a pickup without starting over: open it and tap \u201cCounter with a different add/drop\u201d. Your version goes into the same thread with the players it replaced crossed out, the suggestion takes on your add and drop, and it\u2019s then the other person\u2019s turn to agree or disagree. Either of you can counter back.',
       'Tapping any suggestion on the Home card now opens it directly instead of the full list.',
+      'Fixed: a start/sit call or swap for \u201cToday\u201d sent after the day\u2019s first game had started expired the moment it was sent, so it never showed as open. It now lasts through the rest of the day\u2019s games, and ones caught by this have reopened.',
+      'After you send a suggestion, Bunts now tells you whether it reached the other person\u2019s phone, or whether they don\u2019t have alerts set up yet.',
     ],
   },
   {
