@@ -406,11 +406,29 @@ export function SuggestionSheet({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(what: string, fn: () => Promise<{ suggestion: Suggestion }>) {
+  // After marking it done, say whether the other person actually heard about it.
+  const [delivery, setDelivery] = useState<{ line: string; ok: boolean } | null>(null);
+
+  async function run(
+    what: string,
+    fn: () => Promise<{ suggestion: Suggestion; notified?: number; skipped?: number }>,
+  ) {
     setBusy(what);
     setError(null);
+    setDelivery(null);
     try {
-      onChange((await fn()).suggestion);
+      const res = await fn();
+      onChange(res.suggestion);
+      if (what === 'done' && res.notified !== undefined) {
+        setDelivery({
+          ok: res.notified > 0,
+          line: res.notified > 0
+            ? `Marked done — ${partner}’s phone just buzzed.`
+            : res.skipped
+              ? `Marked done, but ${partner} has suggestion alerts turned off, so no notification went out.`
+              : `Marked done, but ${partner} has no phone set up for alerts yet — they’ll see it next time they open Bunts.`,
+        });
+      }
       if (what === 'reply') setReply('');
       if (what === 'counter') setCountering(false);
     } catch (e) {
@@ -449,6 +467,7 @@ export function SuggestionSheet({
           {s.resolvedBy ? ` · ${ago(s.resolvedBy.at)} ago` : ''}
         </p>
       ) : null}
+      {delivery ? <p className={`delivery ${delivery.ok ? 'ok' : 'warn'}`} role="status">{delivery.line}</p> : null}
       {s.state === 'expired' ? (
         <p className="muted">That day’s games have started, so this one has expired.</p>
       ) : null}

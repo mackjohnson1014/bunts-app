@@ -177,9 +177,11 @@ export const api = {
       : req(`/suggestions/${id}`, { method: 'DELETE' }),
 
   /** Done (made in Yahoo), passed, or back to open. */
-  resolveSuggestion: (id: string, status: SuggestionStatus): Promise<{ suggestion: Suggestion }> =>
+  resolveSuggestion: (
+    id: string, status: SuggestionStatus,
+  ): Promise<{ suggestion: Suggestion; notified?: number; skipped?: number }> =>
     usingMockData
-      ? settle({ suggestion: mockSuggestions.resolve(id, status) })
+      ? settle({ suggestion: mockSuggestions.resolve(id, status), notified: 0, skipped: 0 })
       : req(`/suggestions/${id}/resolve`, { method: 'POST', body: JSON.stringify({ status }) }),
 
   markSuggestionsSeen: (): Promise<{ ok: true }> =>

@@ -2,7 +2,7 @@ import { identify } from '../_shared/access';
 import { addSubscription, listSubscriptions, notify, type PushEnv } from '../_shared/push';
 import { displayName, getProfile, isProfileInput, saveProfile } from '../_shared/profiles';
 import {
-  addSuggestion, counter, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, remove, reply, resolve,
+  addSuggestion, counter, doneLine, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, remove, reply, resolve,
   stateOf, termsOwner, type Person, type Suggestion,
 } from '../_shared/suggestions';
 import { firstPitch, searchPlayers } from '../_shared/mlb';
@@ -288,13 +288,12 @@ async function suggestionAction(
     if (!STATUSES.has(b.status as string)) return json({ error: 'invalid status' }, 400);
     updated = await resolve(env.BUNTS, id, who, b.status as 'open' | 'done' | 'passed');
     if (!updated) return json({ error: 'not found' }, 404);
-    push = {
-      title:
-        b.status === 'done' ? `${who.name} made the move`
-        : b.status === 'passed' ? `${who.name} passed`
-        : `${who.name} reopened a suggestion`,
-      body: headline(updated.body),
-    };
+    // "Made it in Yahoo" is the one that changes the team, so it says exactly
+    // what changed rather than repeating the proposal.
+    push =
+      b.status === 'done' ? { title: `${who.name} made it in Yahoo ✓`, body: doneLine(updated.body) }
+      : b.status === 'passed' ? { title: `${who.name} passed`, body: headline(updated.body) }
+      : { title: `${who.name} reopened a suggestion`, body: headline(updated.body) };
   }
 
   const pushed = await notify(
@@ -303,5 +302,5 @@ async function suggestionAction(
     { ...push, tag: `suggestion-${id}`, url: `/#suggestions/${id}`, data: { type: 'suggestion', id } },
     { exceptEmail: me.email, kind: 'suggestions' },
   );
-  return json({ suggestion: view(updated, me.email), notified: pushed.sent });
+  return json({ suggestion: view(updated, me.email), notified: pushed.sent, skipped: pushed.skipped });
 }

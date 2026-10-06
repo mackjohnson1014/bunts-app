@@ -349,3 +349,17 @@ export function headline(b: SuggestionBody): string {
       return b.drop ? `Add ${b.add.name}, drop ${b.drop.name}` : `Add ${b.add.name}`;
   }
 }
+
+/** The move as something that happened, for the "made it in Yahoo" push. */
+export function doneLine(b: SuggestionBody): string {
+  switch (b.kind) {
+    case 'call':
+      return b.call === 'start' ? `Started ${b.player.name}`
+        : b.call === 'sit' ? `Sat ${b.player.name}`
+        : `Watching ${b.player.name}`;
+    case 'swap':
+      return `Started ${b.start.name} over ${b.bench.name}`;
+    case 'pickup':
+      return b.drop ? `Added ${b.add.name}, dropped ${b.drop.name}` : `Added ${b.add.name}`;
+  }
+}
