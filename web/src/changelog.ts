@@ -24,6 +24,7 @@ export const RELEASES: Release[] = [
       'Tapping any suggestion on the Home card now opens it directly instead of the full list.',
       'Fixed: a start/sit call or swap for \u201cToday\u201d sent after the day\u2019s first game had started expired the moment it was sent, so it never showed as open. It now lasts through the rest of the day\u2019s games, and ones caught by this have reopened.',
       'After you send a suggestion, Bunts now tells you whether it reached the other person\u2019s phone, or whether they don\u2019t have alerts set up yet.',
+      'You can delete a suggestion you wrote: open it and tap Delete suggestion at the bottom, then Delete to confirm. It disappears for both of you, and no notification goes out.',
     ],
   },
   {

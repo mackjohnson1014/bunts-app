@@ -108,6 +108,10 @@ export default function SuggestionsScreen({
           partner={partner}
           onClose={() => setSelectedId(null)}
           onChange={upsert}
+          onDeleted={(id) => {
+            setSelectedId(null);
+            setItems((cur) => (cur ?? []).filter((x) => x.id !== id));
+          }}
         />
       ) : null}
 

@@ -1336,3 +1336,9 @@ select.note-input {
 .delivery.ok { border-color: var(--grass); color: var(--grass); }
 .delivery.warn { border-color: var(--amber); }
 .delivery-note { margin: -4px 0 12px; }
+
+.delete-row {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px;
+  margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--rule);
+}
+.link-btn.danger { color: var(--clay); }

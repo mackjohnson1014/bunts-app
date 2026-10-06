@@ -170,6 +170,12 @@ export const api = {
       ? settle({ suggestion: mockSuggestions.counter(id, input) })
       : req(`/suggestions/${id}/counter`, { method: 'POST', body: JSON.stringify(input) }),
 
+  /** Delete one of your own suggestions. Silent: the other person isn't notified. */
+  deleteSuggestion: (id: string): Promise<{ ok: true }> =>
+    usingMockData
+      ? settle((mockSuggestions.remove(id), { ok: true as const }))
+      : req(`/suggestions/${id}`, { method: 'DELETE' }),
+
   /** Done (made in Yahoo), passed, or back to open. */
   resolveSuggestion: (id: string, status: SuggestionStatus): Promise<{ suggestion: Suggestion }> =>
     usingMockData

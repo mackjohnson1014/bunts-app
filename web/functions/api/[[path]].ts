@@ -2,7 +2,7 @@ import { identify } from '../_shared/access';
 import { addSubscription, listSubscriptions, notify, type PushEnv } from '../_shared/push';
 import { displayName, getProfile, isProfileInput, saveProfile } from '../_shared/profiles';
 import {
-  addSuggestion, counter, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, reply, resolve,
+  addSuggestion, counter, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, remove, reply, resolve,
   stateOf, termsOwner, type Person, type Suggestion,
 } from '../_shared/suggestions';
 import { firstPitch, searchPlayers } from '../_shared/mlb';
@@ -54,6 +54,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
   try {
     const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve|counter)$/);
+    // Deleting is the author's call and deliberately silent: no push goes out.
+    const del = path.match(/^\/suggestions\/([0-9a-f-]{36})$/);
+    if (del && request.method === 'DELETE') {
+      const result = await remove(env.BUNTS, del[1], me.email);
+      if (result === 'not-found') return json({ error: 'not found' }, 404);
+      if (result === 'not-author') return json({ error: 'Only the person who wrote a suggestion can delete it' }, 403);
+      return json({ ok: true });
+    }
+
     if (action && request.method === 'POST') {
       return await suggestionAction(env, me, action[1], action[2] as Action, await request.json());
     }

@@ -193,6 +193,10 @@ export const mockSuggestions = {
       s.resolvedBy = status === 'open' ? null : { ...ME, at: new Date().toISOString() };
     }),
 
+  remove(id: string) {
+    store = store.filter((s) => s.id !== id);
+  },
+
   seen() {
     for (const s of store) if (!s.seenBy.includes(ME.email)) s.seenBy.push(ME.email);
   },

@@ -315,6 +315,19 @@ export function resolve(kv: KVNamespace, id: string, who: Person, status: Status
   });
 }
 
+/**
+ * Remove a suggestion outright. Only its author can, and it's silent -- no
+ * push, since there's nothing for the other person to do about it.
+ */
+export async function remove(kv: KVNamespace, id: string, email: string): Promise<'ok' | 'not-found' | 'not-author'> {
+  const all = await listSuggestions(kv);
+  const s = all.find((x) => x.id === id);
+  if (!s) return 'not-found';
+  if (s.authorEmail !== email) return 'not-author';
+  await kv.put(KEY, JSON.stringify(all.filter((x) => x.id !== id)));
+  return 'ok';
+}
+
 export async function markSeen(kv: KVNamespace, email: string): Promise<void> {
   const all = await listSuggestions(kv);
   let changed = false;

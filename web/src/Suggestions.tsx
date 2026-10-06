@@ -392,14 +392,16 @@ export function ComposeSheet({
 
 /** One suggestion in full: what's proposed, the reactions and replies, and closing it out. */
 export function SuggestionSheet({
-  suggestion: s, partner, onClose, onChange,
+  suggestion: s, partner, onClose, onChange, onDeleted,
 }: {
   suggestion: Suggestion;
   partner: string;
   onClose: () => void;
   onChange: (s: Suggestion) => void;
+  onDeleted: (id: string) => void;
 }) {
   const [reply, setReply] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [countering, setCountering] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -534,6 +536,39 @@ export function SuggestionSheet({
         >
           Reopen
         </button>
+      ) : null}
+
+      {/* Yours to delete; no notification goes out. Two taps, so a stray one can't. */}
+      {s.mine ? (
+        <div className="delete-row">
+          {confirmDelete ? (
+            <>
+              <span className="muted">Delete for both of you? {partner} won’t be notified.</span>
+              <button
+                className="link-btn danger"
+                disabled={busy !== null}
+                onClick={async () => {
+                  setBusy('delete');
+                  setError(null);
+                  try {
+                    await api.deleteSuggestion(s.id);
+                    onDeleted(s.id);
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : String(e));
+                    setBusy(null);
+                  }
+                }}
+              >
+                {busy === 'delete' ? 'Deleting…' : 'Delete'}
+              </button>
+              <button className="link-btn" onClick={() => setConfirmDelete(false)} disabled={busy !== null}>Keep</button>
+            </>
+          ) : (
+            <button className="link-btn danger" onClick={() => setConfirmDelete(true)} disabled={busy !== null}>
+              Delete suggestion
+            </button>
+          )}
+        </div>
       ) : null}
 
       {error ? <p className="muted" style={{ color: 'var(--clay)', marginTop: 8 }}>{error}</p> : null}
