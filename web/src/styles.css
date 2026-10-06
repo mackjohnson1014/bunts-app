@@ -1451,3 +1451,13 @@ select.note-input {
 .release.highlight li { color: var(--chalk); }
 .release.highlight .release-version { color: var(--amber); border-color: var(--amber); }
 .chip.release-new { color: var(--amber); }
+
+/* Each message sits in a wrapper div (for day dividers), so align-self on the
+   row did nothing and "mine" bubbles hung off the left with a gap on the right.
+   Size rows to their content and push yours flush to the right edge. */
+.chat-list { padding-left: 10px; padding-right: 10px; }
+.bubble-row { width: fit-content; max-width: 86%; }
+.bubble-row.mine { margin-left: auto; }
+.bubble-row.theirs { margin-right: auto; }
+.chat-head { padding-left: 12px; padding-right: 12px; }
+.chat-compose { padding-left: 10px; padding-right: 10px; }
