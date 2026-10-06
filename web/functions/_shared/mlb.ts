@@ -415,3 +415,62 @@ export async function getRecentGames(personIds: number[], season: number, limit 
   }
   return out;
 }
+
+/**
+ * Earliest scheduled first pitch on a date (YYYY-MM-DD), ISO, or null when
+ * nobody plays. This is when a lineup call for that day stops mattering:
+ * once games start, the decision has been made one way or the other.
+ */
+export async function firstPitch(date: string): Promise<string | null> {
+  const data = await fetchMlb<ScheduleResponse>(`/schedule?sportId=1&date=${date}`);
+  const times = (data.dates[0]?.games ?? [])
+    .map((g) => g.gameDate)
+    .filter((d): d is string => !!d)
+    .sort();
+  return times[0] ?? null;
+}
+
+export interface PlayerSearchHit {
+  /** Same key scheme as the sample roster, so a hit and a rostered player compare equal. */
+  key: string;
+  name: string;
+  team?: string;
+  pos?: string;
+  headshotUrl: string;
+}
+
+interface PeopleSearchResponse {
+  people?: Array<{
+    id: number;
+    fullName: string;
+    active?: boolean;
+    isPlayer?: boolean;
+    currentTeam?: { id: number };
+    primaryPosition?: { abbreviation?: string };
+  }>;
+}
+
+/**
+ * Name search across active MLB players, for proposing a pickup. MLB can say
+ * who exists and where he plays; only Yahoo can say whether he is actually
+ * available in this league, so the app tells the user to check.
+ */
+export async function searchPlayers(query: string, limit = 8): Promise<PlayerSearchHit[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const data = await fetchMlb<PeopleSearchResponse>(
+    `/people/search?names=${encodeURIComponent(q)}&sportIds=1&active=true&hydrate=currentTeam`,
+  );
+  return (data.people ?? [])
+    .filter((p) => p.isPlayer !== false && p.active !== false)
+    // Big-league clubs only -- the search also matches minor leaguers' org teams.
+    .filter((p) => !p.currentTeam || MLB_TEAM_ABBR[p.currentTeam.id])
+    .slice(0, limit)
+    .map((p) => ({
+      key: `mlb.${p.id}`,
+      name: p.fullName,
+      team: p.currentTeam ? MLB_TEAM_ABBR[p.currentTeam.id] : undefined,
+      pos: p.primaryPosition?.abbreviation === 'TWP' ? 'UTIL' : p.primaryPosition?.abbreviation,
+      headshotUrl: headshotUrl(p.id),
+    }));
+}

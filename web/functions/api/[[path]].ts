@@ -2,8 +2,10 @@ import { identify } from '../_shared/access';
 import { addSubscription, listSubscriptions, notify, type PushEnv } from '../_shared/push';
 import { displayName, getProfile, isProfileInput, saveProfile } from '../_shared/profiles';
 import {
-  addSuggestion, isSuggestionInput, listSuggestions, markSeen, type Suggestion,
+  addSuggestion, headline, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, reply, resolve,
+  stateOf, type Person, type Suggestion,
 } from '../_shared/suggestions';
+import { firstPitch, searchPlayers } from '../_shared/mlb';
 import type { PushSubscription } from '../_shared/webpush';
 import { buildSampleRoster } from '../_shared/sampleRoster';
 import { yahooGet, type YahooEnv } from '../_shared/yahoo';
@@ -51,6 +53,11 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
   }
 
   try {
+    const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve)$/);
+    if (action && request.method === 'POST') {
+      return await suggestionAction(env, me, action[1], action[2] as 'react' | 'reply' | 'resolve', await request.json());
+    }
+
     switch (route) {
       case 'GET /me': {
         const profile = await getProfile(env.BUNTS, me.email);
@@ -93,33 +100,38 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
       case 'GET /suggestions': {
         const all = await listSuggestions(env.BUNTS);
-        return json(all.map((s) => ({ ...s, mine: s.authorEmail === me.email, unread: !s.seenBy.includes(me.email) })));
+        return json(all.map((s) => view(s, me.email)));
       }
 
       case 'POST /suggestions': {
         const body = await request.json();
         if (!isSuggestionInput(body)) return json({ error: 'invalid suggestion' }, 400);
-        const profile = await getProfile(env.BUNTS, me.email);
-        const author = { email: me.email, name: profile ? displayName(profile) : me.name };
-        const created = await addSuggestion(env.BUNTS, body, author);
+        const author = await whoIs(env, me);
+        const expiresAt = isDated(body) && body.date ? await lockFor(body.date) : null;
+        const created = await addSuggestion(env.BUNTS, body, author, expiresAt);
         // Tell the other owner, never the author.
         const pushed = await notify(
           env,
           {
-            title: `${author.name}: ${verb(created)} ${created.playerName}`,
-            body: created.note || 'No note',
+            title: `${author.name}: ${headline(created.body)}`,
+            body: created.note || dayLabel(created) || 'No note',
             tag: `suggestion-${created.id}`,
-            url: '/',
+            url: `/#suggestions/${created.id}`,
             data: { type: 'suggestion', id: created.id },
           },
           { exceptEmail: me.email, kind: 'suggestions' },
         );
-        return json({ suggestion: created, notified: pushed.sent });
+        return json({ suggestion: view(created, me.email), notified: pushed.sent });
       }
 
       case 'POST /suggestions/seen':
         await markSeen(env.BUNTS, me.email);
         return json({ ok: true });
+
+      case 'GET /players/search': {
+        const q = new URL(request.url).searchParams.get('q') ?? '';
+        return json(await searchPlayers(q));
+      }
 
       case 'GET /health':
         return json({ ok: true, you: me.email, devices: (await listSubscriptions(env)).length });
@@ -169,5 +181,97 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
   }
 };
 
-const verb = (s: Suggestion) =>
-  s.recommendation === 'start' ? 'start' : s.recommendation === 'sit' ? 'sit' : 'watch';
+/** The suggestion as one person sees it: whose it is, whether it's news to them, whether it's still live. */
+const view = (s: Suggestion, email: string) => ({
+  ...s,
+  state: stateOf(s),
+  mine: s.authorEmail === email,
+  unread: !s.seenBy.includes(email),
+});
+
+/** Profile name if they've set one, else the email-derived placeholder. */
+async function whoIs(env: Env, me: { email: string; name: string }): Promise<Person> {
+  const profile = await getProfile(env.BUNTS, me.email);
+  return { email: me.email, name: profile ? displayName(profile) : me.name };
+}
+
+/**
+ * When a lineup call for `date` goes stale: first pitch that day. If MLB has
+ * no games or can't be reached, fall back to early the next morning Eastern,
+ * so it still clears overnight rather than lingering.
+ */
+async function lockFor(date: string): Promise<string> {
+  try {
+    const first = await firstPitch(date);
+    if (first) return first;
+  } catch {
+    /* fall through */
+  }
+  // 08:00 UTC the following day is 3-4 a.m. Eastern.
+  return new Date(Date.parse(`${date}T08:00:00Z`) + 24 * 3600_000).toISOString();
+}
+
+function dayLabel(s: Suggestion): string | null {
+  if (!s.date) return null;
+  const d = new Date(`${s.date}T12:00:00Z`);
+  return `For ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' })}`;
+}
+
+const REACTIONS = new Set(['agree', 'disagree']);
+const STATUSES = new Set(['open', 'done', 'passed']);
+
+/**
+ * React, reply or resolve. Each one is news to the other person, so each one
+ * buzzes them -- the author hearing "Matt agrees" is half the point.
+ */
+async function suggestionAction(
+  env: Env,
+  me: { email: string; name: string },
+  id: string,
+  action: 'react' | 'reply' | 'resolve',
+  body: unknown,
+): Promise<Response> {
+  const who = await whoIs(env, me);
+  const b = (body ?? {}) as { value?: unknown; text?: unknown; status?: unknown };
+  let updated: Suggestion | null;
+  let push: { title: string; body: string };
+
+  if (action === 'react') {
+    if (b.value !== null && !REACTIONS.has(b.value as string)) return json({ error: 'invalid reaction' }, 400);
+    const existing = (await listSuggestions(env.BUNTS)).find((s) => s.id === id);
+    if (existing?.authorEmail === me.email) return json({ error: 'You can’t react to your own suggestion' }, 400);
+    updated = await react(env.BUNTS, id, who, b.value as 'agree' | 'disagree' | null);
+    if (!updated) return json({ error: 'not found' }, 404);
+    if (!b.value) return json({ suggestion: view(updated, me.email), notified: 0 });
+    push = {
+      title: `${who.name} ${b.value === 'agree' ? 'agrees' : 'disagrees'}`,
+      body: headline(updated.body),
+    };
+  } else if (action === 'reply') {
+    if (typeof b.text !== 'string' || !b.text.trim() || b.text.length > NOTE_MAX) {
+      return json({ error: 'invalid reply' }, 400);
+    }
+    updated = await reply(env.BUNTS, id, who, b.text);
+    if (!updated) return json({ error: 'not found' }, 404);
+    push = { title: `${who.name} on “${headline(updated.body)}”`, body: b.text.trim() };
+  } else {
+    if (!STATUSES.has(b.status as string)) return json({ error: 'invalid status' }, 400);
+    updated = await resolve(env.BUNTS, id, who, b.status as 'open' | 'done' | 'passed');
+    if (!updated) return json({ error: 'not found' }, 404);
+    push = {
+      title:
+        b.status === 'done' ? `${who.name} made the move`
+        : b.status === 'passed' ? `${who.name} passed`
+        : `${who.name} reopened a suggestion`,
+      body: headline(updated.body),
+    };
+  }
+
+  const pushed = await notify(
+    env,
+    // Tapping it opens this suggestion, not just the list.
+    { ...push, tag: `suggestion-${id}`, url: `/#suggestions/${id}`, data: { type: 'suggestion', id } },
+    { exceptEmail: me.email, kind: 'suggestions' },
+  );
+  return json({ suggestion: view(updated, me.email), notified: pushed.sent });
+}
