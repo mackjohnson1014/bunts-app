@@ -74,3 +74,30 @@ export const refOf = (p: Player): PlayerRef => ({
 });
 
 export const isActive = (p: Player) => STARTING_SLOTS.includes(p.slot);
+
+/** Whether an ISO timestamp falls on today's date in this device's time zone. */
+export const isToday = (iso: string) => {
+  const d = new Date(iso);
+  return localDate(0) === `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** Midnight at the start of this Monday-to-Sunday fantasy week, local time. */
+export function weekStart(now = new Date()): Date {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+/** The move as something that happened: "Added X, dropped Y", "Started A over B". */
+export function doneLine(b: SuggestionBody): string {
+  switch (b.kind) {
+    case 'call':
+      return b.call === 'start' ? `Started ${b.player.name}`
+        : b.call === 'sit' ? `Sat ${b.player.name}`
+        : `Watching ${b.player.name}`;
+    case 'swap':
+      return `Started ${b.start.name} over ${b.bench.name}`;
+    case 'pickup':
+      return b.drop ? `Added ${b.add.name}, dropped ${b.drop.name}` : `Added ${b.add.name}`;
+  }
+}

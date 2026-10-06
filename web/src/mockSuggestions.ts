@@ -78,9 +78,10 @@ let store: Stored[] = [
     date: null,
     expiresAt: null,
     authorEmail: ME.email, authorName: ME.name,
-    createdAt: ago(60 * 50), updatedAt: ago(60 * 47),
-    status: 'done', resolvedBy: { ...PARTNER, at: ago(60 * 47) },
-    reactions: [{ ...PARTNER, value: 'agree', at: ago(60 * 48) }],
+    // Made today, so the preview's Home card shows a "Made today" log.
+    createdAt: ago(60 * 5), updatedAt: ago(25),
+    status: 'done', resolvedBy: { ...PARTNER, at: ago(25) },
+    reactions: [{ ...PARTNER, value: 'agree', at: ago(60 * 4) }],
     replies: [],
     seenBy: [PARTNER.email, ME.email],
   },

@@ -108,7 +108,12 @@ export default function App() {
 
       <InstallBanner />
 
-      {tab === 'home' && <Home onOpen={setTab} />}
+      {tab === 'home' && (
+        <Home
+          onOpen={setTab}
+          onOpenSuggestion={(id) => { setFocusSuggestion(id); setTab('suggestions'); }}
+        />
+      )}
       {tab === 'today' && <Today key={pushNonce} />}
       {tab === 'week' && <MatchupScreen />}
       {tab === 'roster' && <RosterScreen />}

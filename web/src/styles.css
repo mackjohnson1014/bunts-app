@@ -1281,3 +1281,27 @@ select.note-input {
 .hit-name { font-weight: 600; }
 .composer .segmented { margin-bottom: 0; }
 .composer > .segmented { margin-top: 2px; }
+
+/* "Made today" log on the Home suggestions card */
+.made-today { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--rule); }
+.made-today-head {
+  display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--grass);
+}
+.made-today-sum { margin-left: auto; color: var(--chalk-dim); letter-spacing: .06em; }
+.made-list { list-style: none; margin: 0; padding: 0; }
+.made-row {
+  display: flex; align-items: baseline; gap: 9px; width: 100%; padding: 6px 0;
+  background: none; border: 0; color: var(--chalk); font: inherit; text-align: left; cursor: pointer;
+}
+.made-row:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+.made-check { flex: none; color: var(--grass); font-weight: 700; }
+.made-text { min-width: 0; display: flex; flex-direction: column; }
+.made-what { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.made-who {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12.5px; letter-spacing: .03em; color: var(--chalk-dim);
+}
+.made-adds { margin: 6px 0 0; font-size: 12.5px; }

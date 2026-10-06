@@ -14,6 +14,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '2.3',
+    date: '2026-10-05',
+    title: 'Today\u2019s moves on Home',
+    notes: [
+      'Once a suggestion is marked \u201cMade it in Yahoo\u201d, it shows up under Made today on the Home suggestions card \u2014 \u201cAdded X, dropped Y\u201d, whose call it was and when \u2014 with a count of the day\u2019s moves and adds.',
+      'Below that is how many adds you\u2019ve marked done this week against the league\u2019s 6. It only counts moves made through Bunts until Yahoo is connected.',
+      'Tapping any suggestion on the Home card now opens it directly instead of the full list.',
+    ],
+  },
+  {
     version: '2.2',
     date: '2026-10-05',
     title: 'Suggestions you can talk through',
