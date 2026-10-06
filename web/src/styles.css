@@ -1342,3 +1342,20 @@ select.note-input {
   margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--rule);
 }
 .link-btn.danger { color: var(--clay); }
+.home-link {
+  display: flex; align-items: center; padding: 12px 2px; margin-top: 4px;
+  border-top: 1px solid var(--rule); color: var(--chalk);
+}
+.home-link .chevron { margin-left: auto; }
+
+/* the other owner's status on Home */
+.presence {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 12px; font-size: 13.5px; color: var(--chalk-dim);
+}
+.presence strong { color: var(--chalk); font-weight: 600; }
+.presence-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--rule); }
+.presence-dot.on { background: var(--grass); box-shadow: 0 0 0 3px var(--amber-wash); }
+.presence-dot.recent { background: var(--amber); }
+.presence .warn { color: var(--clay); }
+.presence .ok { color: var(--grass); }

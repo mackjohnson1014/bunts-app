@@ -137,6 +137,14 @@ function touch(id: string, change: (s: Stored) => void): Suggestion {
   return view(s);
 }
 
+function mockDeadline(date: string): string {
+  const seven = new Date(`${date}T19:00:00`);
+  if (seven.getTime() > Date.now()) return seven.toISOString();
+  const next = new Date(`${date}T04:00:00`);
+  next.setDate(next.getDate() + 1);
+  return next.toISOString();
+}
+
 const FREE_AGENTS: PlayerSearchHit[] = [
   { key: 'p.301', name: 'Casey Nakamura', team: 'SEA', pos: 'SS' },
   { key: 'p.302', name: 'Julian Vance', team: 'OAK', pos: 'OF' },
@@ -155,8 +163,9 @@ export const mockSuggestions = {
     const now = new Date().toISOString();
     const s: Stored = {
       id: `mock-${Date.now()}`, body, note: note.trim(), date,
-      // Preview approximation: a 7 p.m. local first pitch on the chosen day.
-      expiresAt: date ? new Date(`${date}T19:00:00`).toISOString() : null,
+      // Preview approximation of the server: a 7 p.m. local first pitch on the
+      // chosen day, or 4 a.m. the next morning once that's passed.
+      expiresAt: date ? mockDeadline(date) : null,
       authorEmail: ME.email, authorName: ME.name, createdAt: now, updatedAt: now,
       status: 'open', resolvedBy: null, reactions: [], replies: [], seenBy: [ME.email],
     };

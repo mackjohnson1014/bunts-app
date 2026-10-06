@@ -17,7 +17,7 @@ import Settings from './screens/Settings';
 import SuggestionsScreen from './screens/Suggestions';
 
 // 'transactions' and 'suggestions' are deliberately not in TABS below --
-// they're reached from Home (a tile, and the suggestions card) and from their
+// they're reached from Home (a link, and the suggestions card) and from their
 // pushes, not the bottom nav, so the dock stays at six items rather than
 // growing every time a section is added.
 export type Tab = 'home' | 'today' | 'week' | 'roster' | 'keepers' | 'transactions' | 'suggestions' | 'settings';
@@ -78,6 +78,17 @@ export default function App() {
     };
     navigator.serviceWorker.addEventListener('message', onMessage);
     return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, []);
+
+  // While the app is open and on screen, check in every couple of minutes so
+  // the other owner sees you as active. Any API call counts; this covers
+  // sitting on one screen without loading anything.
+  useEffect(() => {
+    if (usingMockData) return;
+    const beat = () => { if (document.visibilityState === 'visible') void api.heartbeat().catch(() => {}); };
+    const id = setInterval(beat, 120_000);
+    document.addEventListener('visibilitychange', beat);
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', beat); };
   }, []);
 
   // Hold the app back rather than flashing Home and then replacing it.

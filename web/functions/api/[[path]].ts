@@ -6,6 +6,7 @@ import {
   stateOf, termsOwner, type Person, type Suggestion,
 } from '../_shared/suggestions';
 import { firstPitch, searchPlayers } from '../_shared/mlb';
+import { others, touch } from '../_shared/presence';
 import type { PushSubscription } from '../_shared/webpush';
 import { buildSampleRoster } from '../_shared/sampleRoster';
 import { yahooGet, type YahooEnv } from '../_shared/yahoo';
@@ -41,7 +42,7 @@ function isPushSubscription(v: unknown): v is PushSubscription {
   );
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env, params }) => {
+export const onRequest: PagesFunction<Env> = async ({ request, env, params, waitUntil }) => {
   const path = '/' + (Array.isArray(params.path) ? params.path.join('/') : params.path ?? '');
   const route = `${request.method} ${path}`;
 
@@ -51,6 +52,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
     // session expired mid-use, or the app is being served without Access.
     return json({ error: 'Not signed in', code: 'unauthenticated' }, 401);
   }
+
+  // Any request means they're using the app. Recorded off the response path.
+  waitUntil(touch(env.BUNTS, me.email).catch(() => {}));
 
   try {
     const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve|counter)$/);
@@ -144,6 +148,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
         const q = new URL(request.url).searchParams.get('q') ?? '';
         return json(await searchPlayers(q));
       }
+
+      case 'GET /people':
+        // The other owner(s): last active, and whether a notification can reach them.
+        return json(await others(env, me.email));
+
+      case 'POST /presence':
+        // Heartbeat while the app is open; the touch above does the work.
+        return json({ ok: true });
 
       case 'GET /health':
         return json({ ok: true, you: me.email, devices: (await listSubscriptions(env)).length });

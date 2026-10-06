@@ -1,29 +1,17 @@
-import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { api } from '../api';
 import { Screen } from '../components';
-import { partnerName, SuggestionRow } from '../Suggestions';
-import { doneLine, headline, isToday, weekStart } from '../suggestionText';
-import type { Suggestion } from '../types';
+import { ComposeSheet, partnerName, SuggestionRow } from '../Suggestions';
+import { ago, doneLine, headline, isToday, weekStart } from '../suggestionText';
+import type { PersonStatus, Suggestion } from '../types';
 import { useAsync } from '../useAsync';
-import { KeepersIcon, RosterIcon, SettingsIcon, TodayIcon, TransactionsIcon, WeekIcon } from '../icons';
-import type { IconProps } from '../icons';
 import type { Tab } from '../App';
 
-type Section = Exclude<Tab, 'home' | 'suggestions'>;
-
-const SECTIONS: { id: Section; label: string; Icon: (props: IconProps) => ReactNode }[] = [
-  { id: 'today', label: 'Today', Icon: TodayIcon },
-  { id: 'week', label: 'Matchup', Icon: WeekIcon },
-  { id: 'roster', label: 'Roster', Icon: RosterIcon },
-  { id: 'keepers', label: 'Keepers', Icon: KeepersIcon },
-  { id: 'transactions', label: 'Transactions', Icon: TransactionsIcon },
-  { id: 'settings', label: 'Settings', Icon: SettingsIcon },
-];
-
 /**
- * The landing screen: a grid of tiles, one per section, iPhone-home-screen
- * style. Replaces Today as the tab the app opens on -- Today is still a full
- * tab of its own, just no longer the default view.
+ * The daily page: where the two owners propose and settle the day's lineup
+ * changes and pickups. Suggest a move up top, what's open between you, and a
+ * log of what got made or passed today. The other sections live in the
+ * bottom nav (Transactions, which isn't there, gets a link at the foot).
  */
 export default function Home({
   onOpen, onOpenSuggestion,
@@ -32,29 +20,58 @@ export default function Home({
   /** Open the Suggestions screen with this one's sheet already up. */
   onOpenSuggestion: (id: string) => void;
 }) {
+  const list = useAsync(() => api.getSuggestions());
+  const people = useAsync(() => api.getPeople());
+  const [composing, setComposing] = useState(false);
+  const [delivery, setDelivery] = useState<string | null>(null);
+  const partner = partnerName(list.data);
+  const today = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
   return (
-    <Screen title="Home">
-      <SuggestionsCard onOpen={() => onOpen('suggestions')} onOpenOne={onOpenSuggestion} />
-      <div className="home-grid">
-        {SECTIONS.map((s) => (
-          <button key={s.id} className="home-tile" onClick={() => onOpen(s.id)}>
-            <span className="home-tile-icon">
-              <s.Icon className="home-tile-svg" />
-            </span>
-            <span className="home-tile-label">{s.label}</span>
-          </button>
-        ))}
-      </div>
-    </Screen>
+    <>
+      <Screen title="Home" subtitle={today} onReload={() => { list.reload(); people.reload(); }}>
+        <Presence people={people.data} loading={people.loading} />
+
+        <button className="btn compose-btn" onClick={() => { setDelivery(null); setComposing(true); }}>
+          Suggest a move
+        </button>
+        {delivery ? <p className="delivery-note muted" role="status">{delivery}</p> : null}
+
+        <SuggestionsCard
+          list={list}
+          onOpen={() => onOpen('suggestions')}
+          onOpenOne={onOpenSuggestion}
+          onCompose={() => setComposing(true)}
+        />
+
+        <button className="link-row home-link" onClick={() => onOpen('transactions')}>
+          Opponent &amp; league transactions <span className="chevron" aria-hidden="true">›</span>
+        </button>
+      </Screen>
+
+      {composing ? (
+        <ComposeSheet
+          partner={partner}
+          onClose={() => setComposing(false)}
+          onSent={(_s, line) => { setComposing(false); setDelivery(line); list.reload(); }}
+        />
+      ) : null}
+    </>
   );
 }
 
 /**
- * What the two owners have open with each other, up top where it can't be
- * missed. The full list, history and composer are one tap away.
+ * What the two owners have open with each other, and today's log of what
+ * got settled. The full list and history are one tap away.
  */
-function SuggestionsCard({ onOpen, onOpenOne }: { onOpen: () => void; onOpenOne: (id: string) => void }) {
-  const list = useAsync(() => api.getSuggestions());
+function SuggestionsCard({
+  list, onOpen, onOpenOne, onCompose,
+}: {
+  list: { data: Suggestion[] | null; loading: boolean; error: unknown };
+  onOpen: () => void;
+  onOpenOne: (id: string) => void;
+  onCompose: () => void;
+}) {
   const all = list.data ?? [];
   const open = all.filter((s) => s.state === 'open');
   const unread = all.filter((s) => s.unread).length;
@@ -75,12 +92,12 @@ function SuggestionsCard({ onOpen, onOpenOne }: { onOpen: () => void; onOpenOne:
         <span className="chevron" aria-hidden="true">›</span>
       </button>
 
-      {list.loading ? (
+      {list.loading && !list.data ? (
         <p className="muted sugg-card-empty">Loading…</p>
       ) : list.error ? (
         <p className="muted sugg-card-empty">Couldn’t load suggestions.</p>
       ) : open.length === 0 ? (
-        <button className="sugg-card-empty link-row" onClick={onOpen}>
+        <button className="sugg-card-empty link-row" onClick={onCompose}>
           Nothing open with {partner}. <span className="link-btn">Suggest a move</span>
         </button>
       ) : (
@@ -157,5 +174,52 @@ function ClosedToday({
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** Within this, "active now"; the app checks in every two minutes while open. */
+const ACTIVE_MS = 5 * 60_000;
+
+/**
+ * The other owner at a glance: are they around, and will a suggestion
+ * actually reach their phone? Answers "why didn't Matt see it" before it's asked.
+ */
+function Presence({ people, loading }: { people: PersonStatus[] | null; loading: boolean }) {
+  if (loading && !people) return null;
+  if (!people || people.length === 0) {
+    return (
+      <div className="presence" role="status">
+        <span className="presence-dot off" aria-hidden="true" />
+        <span className="presence-text">
+          Your co-owner hasn’t signed in to Bunts yet, so suggestions can’t reach them.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <>
+      {people.map((p) => {
+        const first = p.name.split(' ')[0];
+        const seenMs = p.lastSeen ? Date.now() - Date.parse(p.lastSeen) : null;
+        const active = seenMs !== null && seenMs < ACTIVE_MS;
+        const status =
+          active ? 'Active now'
+          : p.lastSeen ? `Last in Bunts ${ago(p.lastSeen)} ago`
+          : p.joinedAt ? 'Signed in, not seen recently'
+          : 'Not seen yet';
+        const reach =
+          p.devices === 0 ? { text: 'no phone set up for alerts', warn: true }
+          : !p.suggestionAlerts ? { text: 'suggestion alerts off', warn: true }
+          : { text: 'alerts on', warn: false };
+        return (
+          <div key={p.name} className="presence" role="status">
+            <span className={`presence-dot ${active ? 'on' : seenMs !== null && seenMs < 86_400_000 ? 'recent' : 'off'}`} aria-hidden="true" />
+            <span className="presence-text">
+              <strong>{first}</strong> · {status} · <span className={reach.warn ? 'warn' : 'ok'}>{reach.text}</span>
+            </span>
+          </div>
+        );
+      })}
+    </>
   );
 }

@@ -411,3 +411,12 @@ export interface LeagueTransactions {
   /** True when this is the stand-in dataset rather than the real league. */
   sample?: boolean;
 }
+
+/** The other owner as Home shows them: active lately, and reachable by push? */
+export interface PersonStatus {
+  name: string;
+  lastSeen: string | null;
+  joinedAt: string | null;
+  devices: number;
+  suggestionAlerts: boolean;
+}

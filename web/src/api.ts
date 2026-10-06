@@ -1,5 +1,5 @@
 import type {
-  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PlayerRef, PlayerSearchHit, Profile,
+  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PersonStatus, PlayerRef, PlayerSearchHit, Profile,
   ProfileInput,
   Roster, Suggestion, SuggestionInput, SuggestionStatus, User,
 } from './types';
@@ -190,4 +190,17 @@ export const api = {
   /** Active MLB players by name, for proposing a pickup. */
   searchPlayers: (q: string): Promise<PlayerSearchHit[]> =>
     usingMockData ? settle(mockSuggestions.search(q)) : req(`/players/search?q=${encodeURIComponent(q)}`),
+
+  /** The other owner: when they were last in the app, and whether a push can reach them. */
+  getPeople: (): Promise<PersonStatus[]> =>
+    usingMockData
+      ? settle([{
+          name: 'Matt', lastSeen: new Date(Date.now() - 3 * 60_000).toISOString(),
+          joinedAt: '2026-09-14T22:00:00Z', devices: 1, suggestionAlerts: true,
+        }])
+      : req('/people'),
+
+  /** "Still here" while the app is open, so the other owner sees you as active. */
+  heartbeat: (): Promise<{ ok: true }> =>
+    usingMockData ? settle({ ok: true as const }) : req('/presence', { method: 'POST' }),
 };
