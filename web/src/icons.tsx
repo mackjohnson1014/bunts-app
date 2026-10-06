@@ -80,3 +80,15 @@ export function SettingsIcon({ className }: IconProps): ReactNode {
     </svg>
   );
 }
+
+export function ChatIcon({ className }: IconProps): ReactNode {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M4 5.6c0-.9.7-1.6 1.6-1.6h8.8c.9 0 1.6.7 1.6 1.6v6.1c0 .9-.7 1.6-1.6 1.6H9.2L6 16v-2.7h-.4c-.9 0-1.6-.7-1.6-1.6V5.6Z"
+        stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"
+      />
+      <path d="M7.2 8.7h5.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}

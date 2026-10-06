@@ -7,6 +7,7 @@ import {
 } from '../_shared/suggestions';
 import { firstPitch, nextGameFor, searchPlayers } from '../_shared/mlb';
 import { others, touch } from '../_shared/presence';
+import { isChatText, lastRead, listChat, markRead, postChat, unreadCount } from '../_shared/chat';
 import type { PushSubscription } from '../_shared/webpush';
 import { buildSampleRoster } from '../_shared/sampleRoster';
 import { yahooGet, type YahooEnv } from '../_shared/yahoo';
@@ -153,6 +154,41 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params, wait
         const q = new URL(request.url).searchParams.get('q') ?? '';
         return json(await searchPlayers(q));
       }
+
+      case 'GET /chat': {
+        const [messages, readAt] = await Promise.all([listChat(env.BUNTS), lastRead(env.BUNTS, me.email)]);
+        return json({ messages, readAt });
+      }
+
+      case 'GET /chat/unread':
+        return json({ unread: await unreadCount(env.BUNTS, me.email) });
+
+      case 'POST /chat': {
+        const body = (await request.json()) as { text?: unknown };
+        if (!isChatText(body.text)) return json({ error: 'Message is empty or too long' }, 400);
+        const who = await whoIs(env, me);
+        const { message, opensConversation } = await postChat(env.BUNTS, who, body.text);
+        // Only the first message after a quiet spell notifies -- not every line.
+        if (!opensConversation) return json({ message, pushed: false });
+        const first = who.name.split(' ')[0];
+        const pushed = await notify(
+          env,
+          {
+            title: `${first} sent you a message`,
+            body: message.text.length > 140 ? `${message.text.slice(0, 137)}…` : message.text,
+            tag: 'chat',
+            url: '/#chat',
+            // The message rides along so an open app can show it before KV catches up.
+            data: { type: 'chat', message },
+          },
+          { exceptEmail: me.email, kind: 'chat' },
+        );
+        return json({ message, pushed: true, notified: pushed.sent, skipped: pushed.skipped });
+      }
+
+      case 'POST /chat/read':
+        await markRead(env.BUNTS, me.email);
+        return json({ ok: true });
 
       case 'GET /people':
         // The other owner(s): last active, and whether a notification can reach them.

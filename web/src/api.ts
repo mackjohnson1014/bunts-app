@@ -1,10 +1,11 @@
 import type {
-  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PersonStatus, PlayerRef, PlayerSearchHit, Profile,
+  ChatMessage, KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PersonStatus, PlayerRef, PlayerSearchHit, Profile,
   ProfileInput,
   Roster, Suggestion, SuggestionInput, SuggestionStatus, User,
 } from './types';
 import { mockMatchup, mockOpponent, mockRoster, mockTransactions } from './mock';
 import { mockSuggestions } from './mockSuggestions';
+import { mockChat } from './mockChat';
 import { keeperTally } from './scoring/keepers';
 import { startSit } from './scoring/startsit';
 
@@ -138,7 +139,7 @@ export const api = {
     usingMockData
       ? settle({
           email: 'you@example.com', ...input,
-          prefs: { scratched: true, unposted: true, suggestions: true, quietFrom: null, quietTo: null },
+          prefs: { scratched: true, unposted: true, suggestions: true, chat: true, quietFrom: null, quietTo: null },
           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         } as Profile)
       : req('/profile', { method: 'PUT', body: JSON.stringify(input) }),
@@ -209,4 +210,20 @@ export const api = {
   /** "Still here" while the app is open, so the other owner sees you as active. */
   heartbeat: (): Promise<{ ok: true }> =>
     usingMockData ? settle({ ok: true as const }) : req('/presence', { method: 'POST' }),
+
+  /** The chat so far, oldest first, and when you last had it open. */
+  getChat: (): Promise<{ messages: ChatMessage[]; readAt: string | null }> =>
+    usingMockData ? settle(mockChat.list()) : req('/chat'),
+
+  /** pushed: false means it was mid-conversation, so no notification was attempted. */
+  sendChat: (text: string): Promise<{ message: ChatMessage; pushed: boolean; notified?: number; skipped?: number }> =>
+    usingMockData
+      ? settle({ message: mockChat.send(text), pushed: false })
+      : req('/chat', { method: 'POST', body: JSON.stringify({ text }) }),
+
+  markChatRead: (): Promise<{ ok: true }> =>
+    usingMockData ? settle((mockChat.read(), { ok: true as const })) : req('/chat/read', { method: 'POST' }),
+
+  chatUnread: (): Promise<{ unread: number }> =>
+    usingMockData ? settle({ unread: mockChat.unread() }) : req('/chat/unread'),
 };

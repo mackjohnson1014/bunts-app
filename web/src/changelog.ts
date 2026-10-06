@@ -24,6 +24,7 @@ export const RELEASES: Release[] = [
       'Home is now the daily page for lineup changes and suggestions: a Suggest a move button up top, what\u2019s open between you, and a Today log of moves made and passed, plus adds used this week against the league\u2019s 6 (counting moves made through Bunts). The section tiles are gone \u2014 use the bottom bar; Transactions is linked at the foot of Home.',
       'Start/sit calls and swaps are tied to the player\u2019s actual game: from two hours out they show \u201cDecision needed \u00b7 game starts in 1h 12m\u201d (red in the last 20 minutes), you both get a reminder push 20 minutes before if it\u2019s still open, and it drops off when the game starts.',
       'Mark a suggestion urgent when you send it, or flag one later from its page. Urgent ones get a red tag, go to the top of the list, and notify the other person even during quiet hours.',
+      'New Chat tab in the bottom bar for talking things over with your co-owner. A red badge counts unread messages. To keep it quiet, only the first message after a couple of quiet hours sends a notification (\u201cMack sent you a message\u201d), and you can switch even that off under Alerts.',
       'Home shows your co-owner\u2019s status at the top: active now or when they were last in Bunts, and whether a notification can reach them (alerts on, alerts off, or no phone set up).',
     ],
   },

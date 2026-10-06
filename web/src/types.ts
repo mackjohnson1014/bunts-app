@@ -196,13 +196,14 @@ export interface KeeperCandidate {
   note: string;
 }
 
-export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'transactions'] as const;
+export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'chat', 'transactions'] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
 export interface Prefs {
   scratched: boolean;
   unposted: boolean;
   suggestions: boolean;
+  chat: boolean;
   transactions: boolean;
   quietFrom: number | null;
   quietTo: number | null;
@@ -425,4 +426,13 @@ export interface PersonStatus {
   joinedAt: string | null;
   devices: number;
   suggestionAlerts: boolean;
+}
+
+/** One message in the owners' chat. */
+export interface ChatMessage {
+  id: string;
+  email: string;
+  name: string;
+  text: string;
+  at: string;
 }

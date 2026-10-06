@@ -18,6 +18,10 @@ const ALERT_COPY: Record<AlertKind, { title: string; detail: string }> = {
     title: 'Suggestions from your co-owner',
     detail: 'New pickups, swaps and start/sit calls, and their replies to yours.',
   },
+  chat: {
+    title: 'Chat messages',
+    detail: 'Your co-owner starts a conversation in Chat (not every message — only the first after a couple of quiet hours).',
+  },
   transactions: {
     title: "Opponent's transactions",
     detail: 'Your weekly opponent adds or drops a player.',
@@ -40,7 +44,7 @@ export function Onboarding({ user, onDone }: { user: User; onDone: () => void })
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [prefs, setPrefs] = useState<Pick<Prefs, AlertKind>>({
-    scratched: true, unposted: true, suggestions: true, transactions: true,
+    scratched: true, unposted: true, suggestions: true, chat: true, transactions: true,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

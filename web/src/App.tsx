@@ -5,7 +5,7 @@ import { Onboarding } from './Onboarding';
 import { api, usingMockData } from './api';
 import { useAsync } from './useAsync';
 import { useUpdateAvailable } from './useRefresh';
-import { HomeIcon, KeepersIcon, RosterIcon, SettingsIcon, TodayIcon, WeekIcon } from './icons';
+import { ChatIcon, HomeIcon, KeepersIcon, RosterIcon, SettingsIcon, TodayIcon, WeekIcon } from './icons';
 import type { IconProps } from './icons';
 import Home from './screens/Home';
 import Today from './screens/Today';
@@ -15,12 +15,15 @@ import Keepers from './screens/Keepers';
 import TransactionsScreen from './screens/Transactions';
 import Settings from './screens/Settings';
 import SuggestionsScreen from './screens/Suggestions';
+import Chat from './screens/Chat';
+import type { ChatMessage } from './types';
 
-// 'transactions' and 'suggestions' are deliberately not in TABS below --
+// Chat is in the dock (seven items now). 'transactions' and 'suggestions'
+// are deliberately not in TABS below --
 // they're reached from Home (a link, and the suggestions card) and from their
 // pushes, not the bottom nav, so the dock stays at six items rather than
 // growing every time a section is added.
-export type Tab = 'home' | 'today' | 'week' | 'roster' | 'keepers' | 'transactions' | 'suggestions' | 'settings';
+export type Tab = 'home' | 'chat' | 'today' | 'week' | 'roster' | 'keepers' | 'transactions' | 'suggestions' | 'settings';
 
 /** The suggestion a #suggestions/<id> link (a tapped notification) points at. */
 const suggestionIdFrom = (url: string): string | null =>
@@ -30,11 +33,13 @@ const suggestionIdFrom = (url: string): string | null =>
 function tabFromHash(): Tab {
   if (location.hash.startsWith('#settings')) return 'settings';
   if (location.hash.startsWith('#suggestions')) return 'suggestions';
+  if (location.hash.startsWith('#chat')) return 'chat';
   return 'home';
 }
 
 const TABS: { id: Tab; label: string; Icon: (props: IconProps) => ReactNode }[] = [
   { id: 'home', label: 'Home', Icon: HomeIcon },
+  { id: 'chat', label: 'Chat', Icon: ChatIcon },
   { id: 'today', label: 'Today', Icon: TodayIcon },
   { id: 'week', label: 'Matchup', Icon: WeekIcon },
   { id: 'roster', label: 'Roster', Icon: RosterIcon },
@@ -47,6 +52,10 @@ export default function App() {
   // Settings tab directly, not flash Home first. Otherwise Home is the
   // front door -- Today is a section like any other now, not the default.
   const [tab, setTab] = useState<Tab>(tabFromHash);
+  // Chat: unread count for the tab badge, and the latest message that came
+  // in by push while the app was open (shown before the server catches up).
+  const [chatUnread, setChatUnread] = useState(0);
+  const [chatIncoming, setChatIncoming] = useState<ChatMessage | null>(null);
   const [focusSuggestion, setFocusSuggestion] = useState<string | null>(() => suggestionIdFrom(location.hash));
   const [pushNonce, setPushNonce] = useState(0);
   const update = useUpdateAvailable();
@@ -67,9 +76,19 @@ export default function App() {
     if (!('serviceWorker' in navigator)) return;
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type === 'push') {
-        const kind = (event.data.payload as { data?: { type?: string } } | undefined)?.data?.type;
+        const data = (event.data.payload as { data?: { type?: string; message?: ChatMessage } } | undefined)?.data;
+        const kind = data?.type;
+        // A chat message shouldn't yank you off whatever you're doing: badge
+        // it, and if Chat is open, show it there.
+        if (kind === 'chat') {
+          if (data?.message) setChatIncoming(data.message);
+          setChatUnread((n) => n + 1);
+          return;
+        }
         setTab(kind === 'transaction' ? 'transactions' : kind === 'suggestion' ? 'suggestions' : 'today');
         setPushNonce((n) => n + 1);
+      } else if (event.data?.type === 'navigate' && String(event.data.url ?? '').includes('#chat')) {
+        setTab('chat');
       } else if (event.data?.type === 'navigate' && String(event.data.url ?? '').includes('#suggestions')) {
         setTab('suggestions');
         setFocusSuggestion(suggestionIdFrom(String(event.data.url)));
@@ -89,6 +108,19 @@ export default function App() {
     const id = setInterval(beat, 120_000);
     document.addEventListener('visibilitychange', beat);
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', beat); };
+  }, []);
+
+  // The Chat tab's badge: checked on launch and whenever the app comes back
+  // to the foreground; pushes bump it in between.
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === 'visible') {
+        void api.chatUnread().then((r) => setChatUnread(r.unread)).catch(() => {});
+      }
+    };
+    check();
+    document.addEventListener('visibilitychange', check);
+    return () => document.removeEventListener('visibilitychange', check);
   }, []);
 
   // Hold the app back rather than flashing Home and then replacing it.
@@ -124,6 +156,9 @@ export default function App() {
           onOpen={setTab}
           onOpenSuggestion={(id) => { setFocusSuggestion(id); setTab('suggestions'); }}
         />
+      )}
+      {tab === 'chat' && (
+        <Chat me={me.data?.email ?? null} incoming={chatIncoming} onRead={() => setChatUnread(0)} />
       )}
       {tab === 'today' && <Today key={pushNonce} />}
       {tab === 'week' && <MatchupScreen />}
@@ -164,7 +199,12 @@ export default function App() {
               setTab(t.id);
             }}
           >
-            <t.Icon className="tab-icon" />
+            <span className="tab-icon-wrap">
+              <t.Icon className="tab-icon" />
+              {t.id === 'chat' && chatUnread > 0 && tab !== 'chat' ? (
+                <span className="tab-dot" aria-label={`${chatUnread} unread`}>{chatUnread > 9 ? '9+' : chatUnread}</span>
+              ) : null}
+            </span>
             <span className="tab-label">{t.label}</span>
           </button>
         ))}

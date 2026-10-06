@@ -172,6 +172,7 @@ const ALERT_COPY: Record<AlertKind, { title: string; detail: string }> = {
   scratched: { title: 'Player scratched', detail: 'Someone active is left out of the posted lineup.' },
   unposted: { title: 'Lineup still unposted', detail: 'Fifteen minutes to lock with no card published.' },
   suggestions: { title: 'Suggestions from your co-owner', detail: 'New pickups, swaps and start/sit calls, and their replies to yours.' },
+  chat: { title: 'Chat messages', detail: 'Your co-owner starts a conversation in Chat (not every message — only the first after a couple of quiet hours).' },
   transactions: { title: "Opponent's transactions", detail: 'Your weekly opponent adds or drops a player.' },
 };
 
