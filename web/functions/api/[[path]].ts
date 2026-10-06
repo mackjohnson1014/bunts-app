@@ -7,6 +7,7 @@ import {
 } from '../_shared/suggestions';
 import { firstPitch, nextGameFor, searchPlayers } from '../_shared/mlb';
 import { others, touch } from '../_shared/presence';
+import { announceIfNew } from '../_shared/announce';
 import { isChatText, lastRead, listChat, markRead, postChat, unreadCount } from '../_shared/chat';
 import type { PushSubscription } from '../_shared/webpush';
 import { buildSampleRoster } from '../_shared/sampleRoster';
@@ -74,6 +75,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params, wait
 
     switch (route) {
       case 'GET /me': {
+        // Once per launch: if this deploy brought a new changelog version, tell everyone.
+        waitUntil(announceIfNew(env).catch((e) => console.error('announce failed', e)));
         const profile = await getProfile(env.BUNTS, me.email);
         return json({
           email: me.email,

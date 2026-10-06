@@ -7,7 +7,7 @@
  * can honour them when deciding whom to push.
  */
 
-export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'chat', 'transactions'] as const;
+export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'chat', 'transactions', 'updates'] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
 export interface Prefs extends Record<AlertKind, boolean> {
@@ -16,6 +16,7 @@ export interface Prefs extends Record<AlertKind, boolean> {
   suggestions: boolean;
   chat: boolean;
   transactions: boolean;
+  updates: boolean;
   /** Local hours, inclusive start, exclusive end. Null when not set. */
   quietFrom: number | null;
   quietTo: number | null;
@@ -36,6 +37,7 @@ export const DEFAULT_PREFS: Prefs = {
   suggestions: true,
   chat: true,
   transactions: true,
+  updates: true,
   quietFrom: null,
   quietTo: null,
 };

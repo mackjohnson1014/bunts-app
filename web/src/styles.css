@@ -1442,3 +1442,12 @@ select.note-input {
 .chat-send[disabled] { background: var(--board-3); color: var(--chalk-dim); cursor: default; }
 .chat-note, .chat-error { margin: 0 4px 6px; font-size: 12.5px; color: var(--chalk-dim); }
 .chat-error { color: var(--clay); }
+
+/* changelog: the release an update push pointed at */
+.release.highlight {
+  margin: 4px -10px; padding: 14px 10px; border-radius: 10px;
+  background: var(--amber-wash); border: 1px solid var(--amber); scroll-margin-top: 12px;
+}
+.release.highlight li { color: var(--chalk); }
+.release.highlight .release-version { color: var(--amber); border-color: var(--amber); }
+.chip.release-new { color: var(--amber); }

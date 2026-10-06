@@ -196,7 +196,7 @@ export interface KeeperCandidate {
   note: string;
 }
 
-export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'chat', 'transactions'] as const;
+export const ALERT_KINDS = ['scratched', 'unposted', 'suggestions', 'chat', 'transactions', 'updates'] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
 export interface Prefs {
@@ -205,6 +205,7 @@ export interface Prefs {
   suggestions: boolean;
   chat: boolean;
   transactions: boolean;
+  updates: boolean;
   quietFrom: number | null;
   quietTo: number | null;
 }

@@ -92,6 +92,8 @@ export function useUpdateAvailable(): { available: boolean; apply: () => void } 
       } catch {
         /* caches API unavailable; the reload alone is usually enough */
       }
+      // Land on what changed: the changelog, with the newest release highlighted.
+      history.replaceState(null, '', `${location.pathname}${location.search}#settings/changelog/latest`);
       location.reload();
     })();
   }, []);

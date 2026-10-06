@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Screen } from '../components';
 import { api, usingMockData } from '../api';
 import { APP_VERSION, RELEASES, formatDate } from '../changelog';
@@ -72,8 +72,15 @@ function AboutIcon({ className }: { className?: string }) {
 }
 
 function sectionFromHash(): SectionId | null {
-  const m = /^#settings\/(account|appearance|alerts|changelog|about)$/.exec(location.hash);
+  const m = /^#settings\/(account|appearance|alerts|changelog|about)(\/[\w.]+)?$/.exec(location.hash);
   return m ? (m[1] as SectionId) : null;
+}
+
+/** "#settings/changelog/2.4" (from an update push) or ".../latest" (after the update pill) -> which release to highlight. */
+function highlightFromHash(): string | null {
+  const m = /^#settings\/changelog\/([\w.]+)$/.exec(location.hash);
+  if (!m) return null;
+  return m[1] === 'latest' ? APP_VERSION : m[1];
 }
 
 /**
@@ -91,12 +98,13 @@ export default function Settings({
   onReplayOnboarding: () => void;
 }) {
   const [section, setSection] = useState<SectionId | null>(sectionFromHash);
+  const [highlight, setHighlight] = useState<string | null>(highlightFromHash);
   // Kept one step behind `section` so the outgoing pane still has content to
   // show while it slides off, instead of going blank mid-transition.
   const [lastSection, setLastSection] = useState<SectionId>(section ?? 'account');
 
   useEffect(() => {
-    const onHash = () => setSection(sectionFromHash());
+    const onHash = () => { setSection(sectionFromHash()); setHighlight(highlightFromHash()); };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -142,7 +150,7 @@ export default function Settings({
           {lastSection === 'alerts' && (
             <AlertsPane user={user} onChange={onProfileChange} onBack={close} />
           )}
-          {lastSection === 'changelog' && <ChangelogPane onBack={close} />}
+          {lastSection === 'changelog' && <ChangelogPane highlight={highlight} onBack={close} />}
           {lastSection === 'about' && (
             <AboutPane onReplayOnboarding={onReplayOnboarding} onBack={close} />
           )}
@@ -174,6 +182,7 @@ const ALERT_COPY: Record<AlertKind, { title: string; detail: string }> = {
   suggestions: { title: 'Suggestions from your co-owner', detail: 'New pickups, swaps and start/sit calls, and their replies to yours.' },
   chat: { title: 'Chat messages', detail: 'Your co-owner starts a conversation in Chat (not every message — only the first after a couple of quiet hours).' },
   transactions: { title: "Opponent's transactions", detail: 'Your weekly opponent adds or drops a player.' },
+  updates: { title: 'App updates', detail: 'A new version of Bunts is out — tap to see what changed.' },
 };
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
@@ -401,21 +410,56 @@ function AlertsPane({
   );
 }
 
-function ChangelogPane({ onBack }: { onBack: () => void }) {
+/**
+ * The changelog, optionally with one release highlighted -- the one an update
+ * push (or the "new version" pill) pointed at. If that release isn't in this
+ * build, the phone is still running the old version: fetch the new one first
+ * (once -- the session flag stops a loop if the deploy hasn't landed yet).
+ */
+function ChangelogPane({ highlight, onBack }: { highlight: string | null; onBack: () => void }) {
+  const known = !highlight || RELEASES.some((r) => r.version === highlight);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (known) {
+      ref.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      return;
+    }
+    let tried = false;
+    try { tried = sessionStorage.getItem('bunts-update-for') === highlight; } catch { /* private mode */ }
+    if (tried) return;
+    try { sessionStorage.setItem('bunts-update-for', highlight ?? ''); } catch { /* ignore */ }
+    void (async () => {
+      try { await Promise.all((await caches.keys()).map((k) => caches.delete(k))); } catch { /* no caches API */ }
+      location.reload();
+    })();
+  }, [known, highlight]);
+
   return (
     <Screen title="Changelog" onBack={onBack}>
-      {RELEASES.map((r, i) => (
-        <div className={`release${i === 0 ? '' : ' old'}`} key={r.version}>
-          <div className="release-head">
-            <span className="release-version">{r.version}</span>
-            <span className="release-title">{r.title}</span>
-            <span className="release-date">{formatDate(r.date)}</span>
+      {!known ? (
+        <p className="muted" style={{ marginTop: 0 }}>Getting version {highlight}…</p>
+      ) : null}
+      {RELEASES.map((r, i) => {
+        const isNew = r.version === highlight;
+        return (
+          <div
+            className={`release${i === 0 ? '' : ' old'}${isNew ? ' highlight' : ''}`}
+            key={r.version}
+            ref={isNew ? ref : undefined}
+          >
+            <div className="release-head">
+              <span className="release-version">{r.version}</span>
+              <span className="release-title">{r.title}</span>
+              {isNew ? <span className="chip release-new">New</span> : null}
+              <span className="release-date">{formatDate(r.date)}</span>
+            </div>
+            <ul>
+              {r.notes.map((n) => <li key={n}>{n}</li>)}
+            </ul>
           </div>
-          <ul>
-            {r.notes.map((n) => <li key={n}>{n}</li>)}
-          </ul>
-        </div>
-      ))}
+        );
+      })}
     </Screen>
   );
 }

@@ -78,6 +78,9 @@ export default function App() {
       if (event.data?.type === 'push') {
         const data = (event.data.payload as { data?: { type?: string; message?: ChatMessage } } | undefined)?.data;
         const kind = data?.type;
+        // An update push while the app is open: the "new version" pill already
+        // shows; don't move them. Tapping the notification still goes to the changelog.
+        if (kind === 'update') return;
         // A chat message shouldn't yank you off whatever you're doing: badge
         // it, and if Chat is open, show it there.
         if (kind === 'chat') {
@@ -87,6 +90,10 @@ export default function App() {
         }
         setTab(kind === 'transaction' ? 'transactions' : kind === 'suggestion' ? 'suggestions' : 'today');
         setPushNonce((n) => n + 1);
+      } else if (event.data?.type === 'navigate' && String(event.data.url ?? '').includes('#settings/changelog')) {
+        // Tapped an update push: land on the changelog with that release highlighted.
+        location.hash = String(event.data.url).slice(String(event.data.url).indexOf('#'));
+        setTab('settings');
       } else if (event.data?.type === 'navigate' && String(event.data.url ?? '').includes('#chat')) {
         setTab('chat');
       } else if (event.data?.type === 'navigate' && String(event.data.url ?? '').includes('#suggestions')) {

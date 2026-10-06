@@ -139,7 +139,7 @@ export const api = {
     usingMockData
       ? settle({
           email: 'you@example.com', ...input,
-          prefs: { scratched: true, unposted: true, suggestions: true, chat: true, quietFrom: null, quietTo: null },
+          prefs: { scratched: true, unposted: true, suggestions: true, chat: true, transactions: true, updates: true, quietFrom: null, quietTo: null },
           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         } as Profile)
       : req('/profile', { method: 'PUT', body: JSON.stringify(input) }),
