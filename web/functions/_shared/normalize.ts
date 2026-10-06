@@ -22,6 +22,25 @@
  *    used) -> TeamWeekTotals adds / OpponentActivity.
  *  - This week's opponent: `team/{key}/matchups;weeks={n}` (current week is
  *    `current_week` in league metadata), or `league/{key}/scoreboard`.
+ *  - Player.acquired (how/when he joined us): drafted/kept players from
+ *    `league/{key}/draftresults` (keepers likely flagged there -- unconfirmed);
+ *    mid-season adds and trades from `league/{key}/transactions`, taking the
+ *    most recent add/trade INTO our team_key per player. Then fetch stats
+ *    from that date forward for Player.withUsStats.
+ *  - Player.history: the same two sources per player, newest first. There is
+ *    no per-player transactions filter (only type/types/team_key/count), so
+ *    pull the league log once and group by player_key client-side. Each
+ *    player in a transaction has transaction_data with source/destination
+ *    _type and _team_key; timestamp is Unix seconds on the transaction.
+ *  - Roster.draft: draftresults filtered to our team_key.
+ *  - League.rosterSlots / maxActive: league settings' roster_positions
+ *    (position + count). Bench is unlimited; the league caps active players
+ *    at 25 plus 3 IL (per Mack).
+ *  - Yahoo marks some players with a "K" (keeper) badge before keeper lists
+ *    are submitted -- likely Yahoo's own suggestion. Mack wants the Keepers
+ *    tally to stay Bunts' own ranking (scoring/keepers.ts): if the dump has a
+ *    keeper flag, don't feed it into the tally. It only matters as a fact
+ *    once the list is actually submitted.
  *
  * Lives in web/functions/_shared/ (moved from backend/src/ on 2026-10-05) so
  * the /api handlers and the cron Worker share one translation layer.
