@@ -208,6 +208,8 @@ export interface Prefs {
   updates: boolean;
   quietFrom: number | null;
   quietTo: number | null;
+  /** The device's time zone, so the server reads quiet hours on your clock. */
+  tz?: string;
 }
 
 export interface Profile {

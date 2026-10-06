@@ -56,6 +56,8 @@ async function warnUndecided(env: Env): Promise<void> {
         tag: `suggestion-${s.id}`,
         url: `/#suggestions/${s.id}`,
         data: { type: 'suggestion', id: s.id },
+        // Worthless once the game starts: don't let a sleeping phone get it afterwards.
+        ttl: Math.max(60, Math.round((Date.parse(s.gameAt!) - Date.now()) / 1000)),
       },
       { kind: 'suggestions', ignoreQuiet: true },
     );

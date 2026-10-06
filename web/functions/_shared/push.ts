@@ -1,5 +1,5 @@
 import { getProfile, wants, type AlertKind } from './profiles';
-import { sendWebPush, type PushSubscription, type VapidConfig } from './webpush';
+import { sendWebPush, type PushSubscription, type SendOptions, type VapidConfig } from './webpush';
 
 const KEY_SUBS = 'push:subscriptions';
 
@@ -45,6 +45,12 @@ export interface Notification {
   tag?: string;
   url?: string;
   data?: unknown;
+  /**
+   * Seconds the push service should keep trying a sleeping/offline phone.
+   * Defaults to a day; something that's useless after a deadline (a "game
+   * starts in 20 minutes" warning) should pass the time until then.
+   */
+  ttl?: number;
 }
 
 /**
@@ -88,7 +94,11 @@ export async function notify(
 
   const vapid = vapidFrom(env);
   const results = await Promise.all(
-    targets.map(async (sub) => ({ sub, result: await sendWebPush(sub, notification, vapid) })),
+    targets.map(async (sub) => {
+      const { ttl, ...payload } = notification;
+      const opts: SendOptions = { urgency: 'high', ...(ttl !== undefined ? { ttl } : {}) };
+      return { sub, result: await sendWebPush(sub, payload, vapid, opts) };
+    }),
   );
 
   const goneEndpoints = new Set(results.filter((r) => r.result.gone).map((r) => r.sub.endpoint));

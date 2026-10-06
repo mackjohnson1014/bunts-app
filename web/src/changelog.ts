@@ -25,6 +25,7 @@ export const RELEASES: Release[] = [
       'Start/sit calls and swaps are tied to the player\u2019s actual game: from two hours out they show \u201cDecision needed \u00b7 game starts in 1h 12m\u201d (red in the last 20 minutes), you both get a reminder push 20 minutes before if it\u2019s still open, and it drops off when the game starts.',
       'Mark a suggestion urgent when you send it, or flag one later from its page. Urgent ones get a red tag, go to the top of the list, and notify the other person even during quiet hours.',
       'New Chat tab in the bottom bar for talking things over with your co-owner. A red badge counts unread messages. To keep it quiet, only the first message after a couple of quiet hours sends a notification (\u201cMack sent you a message\u201d), and you can switch even that off under Alerts.',
+      'Notifications on Android are far more reliable: they\u2019re sent as high priority so a sleeping phone wakes for them, and they wait up to a day for a phone that\u2019s offline instead of expiring after 10 minutes. Quiet hours now use your own clock (they were 4 hours off).',
       'When a new version of Bunts comes out you\u2019ll get a notification. Tapping it (or the \u201cNew version available\u201d pill) opens this changelog with the new release highlighted. You can turn these off under Alerts \u2192 App updates.',
       'Home shows your co-owner\u2019s status at the top: active now or when they were last in Bunts, and whether a notification can reach them (alerts on, alerts off, or no phone set up).',
     ],

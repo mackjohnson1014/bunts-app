@@ -19,6 +19,11 @@ export interface Prefs extends Record<AlertKind, boolean> {
   updates: boolean;
   /** Local hours, inclusive start, exclusive end. Null when not set. */
   quietFrom: number | null;
+  /**
+   * IANA zone the quiet hours are in (e.g. "America/Toronto"), sent by the
+   * device. The server runs in UTC, so without this "10 p.m." meant 6 p.m.
+   */
+  tz?: string;
   quietTo: number | null;
 }
 
@@ -68,6 +73,8 @@ export function isProfileInput(v: unknown): v is ProfileInput {
   if (p.firstName.trim().length === 0 || p.firstName.length > 40) return false;
   if (p.lastName.length > 40) return false;
   if (p.prefs !== undefined && (typeof p.prefs !== 'object' || p.prefs === null)) return false;
+  const tz = (p.prefs as { tz?: unknown } | undefined)?.tz;
+  if (tz !== undefined && (typeof tz !== 'string' || tz.length > 64)) return false;
   return true;
 }
 
@@ -97,9 +104,19 @@ export function wants(profile: Profile | null, kind: AlertKind, at = new Date(),
   const { quietFrom, quietTo } = profile.prefs;
   if (quietFrom === null || quietTo === null || quietFrom === quietTo) return true;
 
-  const hour = at.getHours();
+  // The hour on their clock, not the server's (UTC).
+  const hour = hourIn(at, profile.prefs.tz ?? 'America/Toronto');
   const quiet = quietFrom < quietTo
     ? hour >= quietFrom && hour < quietTo
     : hour >= quietFrom || hour < quietTo;   // window crosses midnight
   return !quiet;
+}
+
+function hourIn(at: Date, tz: string): number {
+  try {
+    const h = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hourCycle: 'h23' }).format(at);
+    return Number(h) % 24;
+  } catch {
+    return at.getUTCHours();   // unknown zone string; fail open-ish rather than throw
+  }
 }

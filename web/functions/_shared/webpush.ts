@@ -152,11 +152,27 @@ export interface SendResult {
   error?: string;
 }
 
+/**
+ * Delivery options the push service acts on.
+ *
+ * ttl: how long the push service holds a message for a phone that's asleep or
+ * offline before discarding it. This was 10 minutes, which iOS mostly got away
+ * with but Android didn't: FCM (Google's push service) keeps a dozing phone's
+ * messages queued, and a 10-minute TTL meant many expired before it woke.
+ *
+ * urgency: 'high' tells FCM to wake a dozing Android phone now rather than
+ * batch the message into the next maintenance window. APNs ignores it.
+ */
+export interface SendOptions {
+  ttl?: number;
+  urgency?: 'very-low' | 'low' | 'normal' | 'high';
+}
+
 export async function sendWebPush(
   subscription: PushSubscription,
   payload: unknown,
   vapid: VapidConfig,
-  ttl = 600,
+  { ttl = 24 * 3600, urgency = 'high' }: SendOptions = {},
 ): Promise<SendResult> {
   const body = await encryptPayload(enc.encode(JSON.stringify(payload)), subscription);
 
@@ -166,7 +182,8 @@ export async function sendWebPush(
       Authorization: await vapidHeader(subscription.endpoint, vapid),
       'Content-Encoding': 'aes128gcm',
       'Content-Type': 'application/octet-stream',
-      TTL: String(ttl),
+      TTL: String(Math.max(0, Math.round(ttl))),
+      Urgency: urgency,
     },
     body,
   });

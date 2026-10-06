@@ -142,7 +142,11 @@ export const api = {
           prefs: { scratched: true, unposted: true, suggestions: true, chat: true, transactions: true, updates: true, quietFrom: null, quietTo: null },
           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         } as Profile)
-      : req('/profile', { method: 'PUT', body: JSON.stringify(input) }),
+      : req('/profile', {
+          method: 'PUT',
+          // Quiet hours are hours on this phone's clock; tell the server which clock.
+          body: JSON.stringify({ ...input, prefs: { ...input.prefs, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } }),
+        }),
 
   getSuggestions: (): Promise<Suggestion[]> =>
     usingMockData ? settle(mockSuggestions.list()) : req('/suggestions'),
