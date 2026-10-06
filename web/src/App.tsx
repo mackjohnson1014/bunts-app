@@ -117,8 +117,9 @@ export default function App() {
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', beat); };
   }, []);
 
-  // The Chat tab's badge: checked on launch and whenever the app comes back
-  // to the foreground; pushes bump it in between.
+  // The Chat tab's badge: checked on launch, when the app comes back to the
+  // foreground, and every minute while it's open -- mid-conversation messages
+  // don't push (by design), so a push alone would leave the badge stale.
   useEffect(() => {
     const check = () => {
       if (document.visibilityState === 'visible') {
@@ -126,8 +127,9 @@ export default function App() {
       }
     };
     check();
+    const id = setInterval(check, 60_000);
     document.addEventListener('visibilitychange', check);
-    return () => document.removeEventListener('visibilitychange', check);
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', check); };
   }, []);
 
   // Hold the app back rather than flashing Home and then replacing it.
