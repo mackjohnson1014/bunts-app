@@ -6,7 +6,7 @@ import type {
   SuggestionStatus,
 } from './types';
 import {
-  ago, dayWord, deliveryLine, headline, isActive, KIND_LABEL, localDate, reactionLine, refOf, STATE_LABEL, tone,
+  ago, dayWord, deliveryLine, gameCallout, headline, isActive, KIND_LABEL, localDate, reactionLine, refOf, STATE_LABEL, tone,
 } from './suggestionText';
 import { useAsync } from './useAsync';
 
@@ -27,6 +27,21 @@ function rosterOnce(): Promise<Roster> {
     p.catch(() => { rosterCache = null; });
   }
   return rosterCache.p;
+}
+
+/** Re-render on a timer so countdowns stay current while a screen sits open. */
+export function useNow(everyMs = 30_000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), everyMs);
+    return () => clearInterval(id);
+  }, [everyMs]);
+  return now;
+}
+
+function Callout({ s, now }: { s: Suggestion; now: number }) {
+  const c = gameCallout(s, now);
+  return c ? <p className={`callout ${c.level}`} role="status">{c.text}</p> : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +87,7 @@ export function Composer({
   const [add, setAdd] = useState<PlayerSearchHit | null>(null);
   const [dropKey, setDropKey] = useState(p0?.playerKey ?? '');
   const [note, setNote] = useState('');
+  const [urgent, setUrgent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ line: string; ok: boolean } | null>(null);
@@ -103,7 +119,7 @@ export function Composer({
     setSending(true);
     setError(null);
     try {
-      const res = await api.addSuggestion({ ...input, note: note.trim() });
+      const res = await api.addSuggestion({ ...input, note: note.trim(), urgent });
       const line = deliveryLine(partner, res.notified, res.skipped);
       // Say whether it actually reached them before the sheet goes away --
       // a silent close hid "they have no phone registered" entirely.
@@ -159,7 +175,7 @@ export function Composer({
             options={[{ id: 0 as const, label: 'Today' }, { id: 1 as const, label: 'Tomorrow' }]}
             value={dayOffset} onChange={setDayOffset} label="Day"
           />
-          <p className="muted field-hint">Drops off at that day’s first pitch.</p>
+          <p className="muted field-hint">Drops off when his game starts. If it’s still open 20 minutes before, you both get a reminder.</p>
         </Field>
       ) : null}
 
@@ -199,8 +215,19 @@ export function Composer({
         rows={2}
         onChange={(e) => setNote(e.target.value)}
       />
+      <button
+        className={`urgent-toggle${urgent ? ' on' : ''}`}
+        aria-pressed={urgent}
+        onClick={() => setUrgent((u) => !u)}
+      >
+        <span className="urgent-box" aria-hidden="true">{urgent ? '✓' : ''}</span>
+        <span className="urgent-text">
+          Mark urgent
+          <span className="muted">Sorted first, and it notifies {partner} even in quiet hours</span>
+        </span>
+      </button>
       <button className="btn" onClick={send} disabled={!input || sending}>
-        {sending ? 'Sending…' : `Send to ${partner}`}
+        {sending ? 'Sending…' : `Send${urgent ? ' urgent' : ''} to ${partner}`}
       </button>
       {error ? <p className="muted" style={{ color: 'var(--clay)', marginTop: 8 }}>{error}</p> : null}
     </div>
@@ -443,13 +470,22 @@ export function SuggestionSheet({
   const meta = [s.mine ? 'You' : s.authorName, ago(s.createdAt), s.date ? dayWord(s.date) : null]
     .filter(Boolean).join(' · ');
   const termsName = s.termsBy ? (s.myTerms ? 'you' : s.termsBy.name.split(' ')[0]) : null;
+  const now = useNow();
 
   return (
     <Sheet title={headline(s.body)} eyebrow={KIND_LABEL[s.body.kind]} onClose={onClose}>
       <p className="sugg-meta">
         <span className={`chip ${chipClass(s)}`}>{STATE_LABEL[s.state]}</span>
+        {s.urgent && open ? <span className="chip urgent">Urgent</span> : null}
         <span>{meta}</span>
       </p>
+      {s.gameAt && open ? (
+        <p className="muted game-at">
+          Game at {new Date(s.gameAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+          {' · '}you’ll both get a reminder 20 minutes before if it’s still open
+        </p>
+      ) : null}
+      <Callout s={s} now={now} />
 
       {countered && termsName ? <p className="countered-tag">Countered by {termsName} · now:</p> : null}
       <Moves body={s.body} />
@@ -537,6 +573,21 @@ export function SuggestionSheet({
       >
         {busy === 'reply' ? 'Sending…' : 'Reply'}
       </button>
+
+      {open ? (
+        <button
+          className={`urgent-toggle${s.urgent ? ' on' : ''}`}
+          aria-pressed={!!s.urgent}
+          disabled={busy !== null}
+          onClick={() => run('urgent', () => api.setSuggestionUrgent(s.id, !s.urgent))}
+        >
+          <span className="urgent-box" aria-hidden="true">{s.urgent ? '✓' : ''}</span>
+          <span className="urgent-text">
+            {s.urgent ? 'Marked urgent' : 'Mark urgent'}
+            <span className="muted">{s.urgent ? 'Tap to clear' : `Notifies ${partner} even in quiet hours`}</span>
+          </span>
+        </button>
+      ) : null}
 
       {open ? (
         <div className="resolve-row">
@@ -722,6 +773,7 @@ const chipClass = (s: Suggestion) =>
 
 export function SuggestionRow({ s, onOpen, compact = false }: { s: Suggestion; onOpen?: () => void; compact?: boolean }) {
   const reaction = reactionLine(s);
+  const now = useNow();
   const bits = [
     s.mine ? 'You' : s.authorName,
     ago(s.updatedAt),
@@ -734,7 +786,9 @@ export function SuggestionRow({ s, onOpen, compact = false }: { s: Suggestion; o
         {s.unread ? <span className="unread-dot" aria-label="New" /> : null}
         <span className="pname sugg-head">{headline(s.body)}</span>
         {s.state !== 'open' ? <span className={`chip ${chipClass(s)}`}>{STATE_LABEL[s.state]}</span> : null}
+        {s.state === 'open' && s.urgent ? <span className="chip urgent">Urgent</span> : null}
       </div>
+      <Callout s={s} now={now} />
       {!compact && s.note ? <p className="verdict sugg-note-line">{s.note}</p> : null}
       <p className="sugg-foot">
         <span>{KIND_LABEL[s.body.kind]} · {bits}</span>

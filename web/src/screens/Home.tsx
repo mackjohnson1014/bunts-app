@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import { Screen } from '../components';
 import { ComposeSheet, partnerName, SuggestionRow } from '../Suggestions';
-import { ago, doneLine, headline, isToday, weekStart } from '../suggestionText';
+import { ago, byAttention, doneLine, headline, isToday, weekStart } from '../suggestionText';
 import type { PersonStatus, Suggestion } from '../types';
 import { useAsync } from '../useAsync';
 import type { Tab } from '../App';
@@ -73,7 +73,7 @@ function SuggestionsCard({
   onCompose: () => void;
 }) {
   const all = list.data ?? [];
-  const open = all.filter((s) => s.state === 'open');
+  const open = all.filter((s) => s.state === 'open').sort(byAttention);
   const unread = all.filter((s) => s.unread).length;
   const partner = partnerName(all);
   // Closed out today -- made or passed -- oldest first so it reads as the day's log.

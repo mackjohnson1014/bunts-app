@@ -83,11 +83,12 @@ export async function saveProfile(kv: KVNamespace, email: string, input: Profile
 }
 
 /** True when this person wants this kind of alert, right now. */
-export function wants(profile: Profile | null, kind: AlertKind, at = new Date()): boolean {
+export function wants(profile: Profile | null, kind: AlertKind, at = new Date(), ignoreQuiet = false): boolean {
   // No profile yet means they have not onboarded; default to sending rather
   // than silently swallowing the alerts they signed up for.
   if (!profile) return true;
   if (!profile.prefs[kind]) return false;
+  if (ignoreQuiet) return true;
 
   const { quietFrom, quietTo } = profile.prefs;
   if (quietFrom === null || quietTo === null || quietFrom === quietTo) return true;

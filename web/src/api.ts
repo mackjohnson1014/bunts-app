@@ -176,6 +176,12 @@ export const api = {
       ? settle((mockSuggestions.remove(id), { ok: true as const }))
       : req(`/suggestions/${id}`, { method: 'DELETE' }),
 
+  /** Flag (or unflag) a suggestion as urgent. Flagging pushes the other person. */
+  setSuggestionUrgent: (id: string, value: boolean): Promise<{ suggestion: Suggestion; notified?: number; skipped?: number }> =>
+    usingMockData
+      ? settle({ suggestion: mockSuggestions.urgent(id, value), notified: 0, skipped: 0 })
+      : req(`/suggestions/${id}/urgent`, { method: 'POST', body: JSON.stringify({ value }) }),
+
   /** Done (made in Yahoo), passed, or back to open. */
   resolveSuggestion: (
     id: string, status: SuggestionStatus,

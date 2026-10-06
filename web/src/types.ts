@@ -253,6 +253,8 @@ export type SuggestionKind = SuggestionBody['kind'];
 
 export type SuggestionInput = SuggestionBody & {
   note: string;
+  /** Needs a decision now: sorted first, pushed as URGENT through quiet hours. */
+  urgent?: boolean;
   /** YYYY-MM-DD the lineup call is for; null for watch and pickups. */
   date: string | null;
 };
@@ -276,6 +278,10 @@ export interface Suggestion {
   note: string;
   date: string | null;
   expiresAt: string | null;
+  /** Start of the game a lineup call affects, when known. Drives the countdown and 20-minute warning. */
+  gameAt?: string | null;
+  warnedAt?: string | null;
+  urgent?: boolean;
   authorEmail: string;
   authorName: string;
   createdAt: string;

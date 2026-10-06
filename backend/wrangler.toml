@@ -2,12 +2,13 @@ name = "bunts-backend"
 main = "src/index.ts"
 compatibility_date = "2026-09-01"
 
-# Poll for lineup changes. Yahoo publishes no rate limits but reserves the right
-# to throttle bursty usage, so this runs on a minutes scale, not seconds.
-# Every 10 minutes between 15:00 and 02:00 UTC covers 11am-10pm Eastern,
-# which is when MLB lineups actually get posted.
+# Every 5 minutes between 15:00 and 02:59 UTC (11am-10:59pm Eastern), which
+# covers lineup postings and every first pitch. The 5-minute beat is for the
+# "20 minutes to first pitch, still undecided" suggestion warning; the Yahoo
+# pollers skip every other run so they stay at 10 minutes -- Yahoo publishes
+# no rate limits but reserves the right to throttle bursty usage.
 [triggers]
-crons = ["*/10 15-23,0-2 * * *"]
+crons = ["*/5 15-23,0-2 * * *"]
 
 [[kv_namespaces]]
 binding = "BUNTS"

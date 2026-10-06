@@ -476,3 +476,20 @@ export async function searchPlayers(query: string, limit = 8): Promise<PlayerSea
       headshotUrl: headshotUrl(p.id),
     }));
 }
+
+/**
+ * Start time of the next not-yet-started game on `date` for any of these
+ * teams (MLB abbreviations, as stored on a suggestion's players), or null if
+ * none of them play again that day. A doubleheader counts each game.
+ */
+export async function nextGameFor(teamAbbrs: string[], date: string, after = Date.now()): Promise<string | null> {
+  const byAbbr = new Map(Object.entries(MLB_TEAM_ABBR).map(([id, abbr]) => [abbr, Number(id)]));
+  const ids = [...new Set(teamAbbrs.map((a) => byAbbr.get(a)).filter((x): x is number => x !== undefined))];
+  if (ids.length === 0) return null;
+  const data = await fetchMlb<ScheduleResponse>(`/schedule?sportId=1&date=${date}&teamId=${ids.join(',')}`);
+  const times = (data.dates[0]?.games ?? [])
+    .map((g) => g.gameDate)
+    .filter((d): d is string => !!d && Date.parse(d) > after)
+    .sort();
+  return times[0] ?? null;
+}

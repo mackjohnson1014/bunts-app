@@ -3,6 +3,7 @@ import { api } from '../api';
 import { Screen } from '../components';
 import { ComposeSheet, partnerName, SuggestionRow, SuggestionSheet } from '../Suggestions';
 import type { Suggestion } from '../types';
+import { byAttention } from '../suggestionText';
 import { useAsync } from '../useAsync';
 
 type Filter = 'open' | 'closed';
@@ -53,7 +54,7 @@ export default function SuggestionsScreen({
 
   const list = items ?? [];
   const partner = partnerName(list);
-  const open = list.filter((s) => s.state === 'open');
+  const open = list.filter((s) => s.state === 'open').sort(byAttention);
   const closed = list.filter((s) => s.state !== 'open');
   const shown = filter === 'open' ? open : closed;
   const selected = list.find((s) => s.id === selectedId) ?? null;

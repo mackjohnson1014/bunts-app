@@ -1,6 +1,7 @@
 import { notify, type PushEnv } from '../../web/functions/_shared/push';
 import { collect } from '../../web/functions/_shared/normalize';
 import { yahooGet, type YahooEnv } from '../../web/functions/_shared/yahoo';
+import { headline, takeDueWarnings } from '../../web/functions/_shared/suggestions';
 
 interface Env extends YahooEnv, PushEnv {
   LEAGUE_KEY: string;
@@ -23,11 +24,43 @@ export default {
     );
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(checkLineups(env));
-    ctx.waitUntil(checkTransactions(env));
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    // The cron fires every 5 minutes so the 20-minute warning lands 15-20
+    // minutes out. The Yahoo pollers keep their original 10-minute pace.
+    ctx.waitUntil(warnUndecided(env));
+    if (new Date(event.scheduledTime).getUTCMinutes() % 10 < 5) {
+      ctx.waitUntil(checkLineups(env));
+      ctx.waitUntil(checkTransactions(env));
+    }
   },
 };
+
+/**
+ * "20 minutes to first pitch and this is still open": a lineup call or swap
+ * that neither owner has made or passed on, whose game is about to lock it.
+ * Goes to both owners (either can make it in Yahoo), through quiet hours,
+ * once per suggestion.
+ */
+async function warnUndecided(env: Env): Promise<void> {
+  const due = await takeDueWarnings(env.BUNTS);
+  for (const s of due) {
+    const mins = Math.max(1, Math.round((Date.parse(s.gameAt!) - Date.now()) / 60_000));
+    const at = new Date(s.gameAt!).toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto',
+    });
+    await notify(
+      env,
+      {
+        title: `${s.urgent ? 'URGENT · ' : ''}${mins} min to first pitch — still undecided`,
+        body: `${headline(s.body)} (game at ${at} ET). Make it in Yahoo or pass.`,
+        tag: `suggestion-${s.id}`,
+        url: `/#suggestions/${s.id}`,
+        data: { type: 'suggestion', id: s.id },
+      },
+      { kind: 'suggestions', ignoreQuiet: true },
+    );
+  }
+}
 
 /**
  * Poll posted lineups and notify on players who have been scratched.

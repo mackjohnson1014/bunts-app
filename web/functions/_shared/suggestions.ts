@@ -38,6 +38,8 @@ export type SuggestionBody =
 
 export type SuggestionInput = SuggestionBody & {
   note: string;
+  /** Flag it as needing a decision now: sorted first, pushed as URGENT, through quiet hours. */
+  urgent?: boolean;
   /**
    * The day a lineup call is for (YYYY-MM-DD, the author's local date). Set for
    * start/sit calls and swaps, null for watch and pickups -- those don't go
@@ -66,8 +68,16 @@ export interface Suggestion {
   body: SuggestionBody;
   note: string;
   date: string | null;
-  /** First pitch on `date`; after this a lineup call is moot. */
+  /** When a lineup call stops mattering: the affected game's start when known, else a fallback. */
   expiresAt: string | null;
+  /**
+   * Start of the game this lineup call affects (earliest, if a swap spans two),
+   * looked up when it was made. Null when unknown -- then there's no warning.
+   */
+  gameAt?: string | null;
+  /** Set once the "20 minutes to first pitch, still undecided" push has gone out. */
+  warnedAt?: string | null;
+  urgent?: boolean;
   authorEmail: string;
   authorName: string;
   createdAt: string;
@@ -108,6 +118,7 @@ export function isSuggestionInput(v: unknown): v is SuggestionInput {
   const s = v as SuggestionInput & Record<string, unknown>;
   if (!s || typeof s !== 'object') return false;
   if (typeof s.note !== 'string' || s.note.length > NOTE_MAX) return false;
+  if (s.urgent !== undefined && typeof s.urgent !== 'boolean') return false;
   if (s.date !== null && !isDate(s.date)) return false;
 
   switch (s.kind) {
@@ -213,6 +224,7 @@ export async function addSuggestion(
   input: SuggestionInput,
   author: Person,
   expiresAt: string | null,
+  gameAt: string | null = null,
 ): Promise<Suggestion> {
   const all = await listSuggestions(kv);
   const body = bodyOf(input);
@@ -224,6 +236,9 @@ export async function addSuggestion(
     note: input.note.trim(),
     date: dated ? input.date : null,
     expiresAt: dated ? expiresAt : null,
+    gameAt: dated ? gameAt : null,
+    warnedAt: null,
+    urgent: input.urgent === true,
     authorEmail: author.email,
     authorName: author.name,
     createdAt: now,
@@ -306,6 +321,33 @@ export async function counter(
     x.termsBy = who;
     x.reactions = [];
   });
+}
+
+export function setUrgent(kv: KVNamespace, id: string, who: Person, value: boolean) {
+  return mutate(kv, id, who, (s) => { s.urgent = value; });
+}
+
+/** How far ahead of the affected game the "still undecided" push goes out. */
+export const WARN_LEAD_MS = 20 * 60_000;
+
+/**
+ * Open lineup calls whose game starts within the next 20 minutes and haven't
+ * been warned about yet. Marks them warned in the same write, so a cron run
+ * that overlaps another can't double-push. Pickups have no game, so never.
+ */
+export async function takeDueWarnings(kv: KVNamespace, now = Date.now()): Promise<Suggestion[]> {
+  const all = await listSuggestions(kv);
+  const due = all.filter((s) => {
+    if (stateOf(s, now) !== 'open' || !isDated(s.body) || !s.gameAt || s.warnedAt) return false;
+    const until = Date.parse(s.gameAt) - now;
+    return until > 0 && until <= WARN_LEAD_MS;
+  });
+  if (due.length === 0) return [];
+  const at = new Date(now).toISOString();
+  for (const s of due) s.warnedAt = at;
+  // Deliberately not touching updatedAt/seenBy: a reminder isn't new activity.
+  await kv.put(KEY, JSON.stringify(all));
+  return due;
 }
 
 export function resolve(kv: KVNamespace, id: string, who: Person, status: Status) {

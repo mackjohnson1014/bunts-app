@@ -46,7 +46,9 @@ let store: Stored[] = [
     },
     note: 'Marsh is day-to-day and Brandt’s 9 for 22 off lefties.',
     date: localDate(0),
-    expiresAt: inMins(180),
+    expiresAt: inMins(75),
+    gameAt: inMins(75),
+    urgent: true,
     authorEmail: ME.email, authorName: ME.name,
     createdAt: ago(130), updatedAt: ago(70),
     status: 'open', resolvedBy: null,
@@ -159,13 +161,15 @@ export const mockSuggestions = {
     [...store].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(view),
 
   add(input: SuggestionInput): Suggestion {
-    const { note, date, ...body } = input;
+    const { note, date, urgent: _urgent, ...body } = input;
     const now = new Date().toISOString();
     const s: Stored = {
       id: `mock-${Date.now()}`, body, note: note.trim(), date,
       // Preview approximation of the server: a 7 p.m. local first pitch on the
       // chosen day, or 4 a.m. the next morning once that's passed.
       expiresAt: date ? mockDeadline(date) : null,
+      gameAt: date ? mockDeadline(date) : null,
+      urgent: input.urgent === true,
       authorEmail: ME.email, authorName: ME.name, createdAt: now, updatedAt: now,
       status: 'open', resolvedBy: null, reactions: [], replies: [], seenBy: [ME.email],
     };
@@ -201,6 +205,8 @@ export const mockSuggestions = {
       s.status = status;
       s.resolvedBy = status === 'open' ? null : { ...ME, at: new Date().toISOString() };
     }),
+
+  urgent: (id: string, value: boolean) => touch(id, (s) => { s.urgent = value; }),
 
   remove(id: string) {
     store = store.filter((s) => s.id !== id);

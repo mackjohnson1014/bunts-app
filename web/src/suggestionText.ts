@@ -54,6 +54,7 @@ export const STATE_LABEL: Record<SuggestionState, string> = {
 export function tone(s: Suggestion): 'pending' | 'ok' | 'plain' | 'critical' {
   if (s.state === 'done') return 'ok';
   if (s.state !== 'open') return 'plain';
+  if (s.urgent) return 'critical';
   if (s.reactions.some((r) => r.value === 'disagree')) return 'critical';
   return 'pending';
 }
@@ -107,4 +108,30 @@ export function doneLine(b: SuggestionBody): string {
     case 'pickup':
       return b.drop ? `Added ${b.add.name}, dropped ${b.drop.name}` : `Added ${b.add.name}`;
   }
+}
+
+/** Countdown callouts start this long before the affected game. */
+export const CALLOUT_MS = 2 * 3600_000;
+
+/**
+ * "Decision needed · game starts in 1h 12m" for an open lineup call whose game
+ * is within two hours. 'soon' inside the last 20 minutes (when the warning push
+ * goes out), 'due' before that. Null for pickups, closed ones, or unknown games.
+ */
+export function gameCallout(s: Suggestion, now = Date.now()): { text: string; level: 'due' | 'soon' } | null {
+  if (s.state !== 'open' || !s.gameAt) return null;
+  const ms = Date.parse(s.gameAt) - now;
+  if (ms <= 0 || ms > CALLOUT_MS) return null;
+  const mins = Math.max(1, Math.ceil(ms / 60_000));
+  const left = mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m`;
+  return { text: `Decision needed · game starts in ${left}`, level: mins <= 20 ? 'soon' : 'due' };
+}
+
+/** Open ones in the order they need attention: urgent, then soonest game, then latest activity. */
+export function byAttention(a: Suggestion, b: Suggestion): number {
+  if (!!a.urgent !== !!b.urgent) return a.urgent ? -1 : 1;
+  const ga = a.gameAt ? Date.parse(a.gameAt) : Infinity;
+  const gb = b.gameAt ? Date.parse(b.gameAt) : Infinity;
+  if (ga !== gb) return ga - gb;
+  return b.updatedAt.localeCompare(a.updatedAt);
 }

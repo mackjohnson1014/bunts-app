@@ -55,7 +55,13 @@ export interface Notification {
 export async function notify(
   env: PushEnv,
   notification: Notification,
-  opts: { exceptEmail?: string; onlyEmail?: string; kind?: AlertKind } = {},
+  opts: {
+    exceptEmail?: string;
+    onlyEmail?: string;
+    kind?: AlertKind;
+    /** Urgent or time-critical: still honours the alert switch, but goes through quiet hours. */
+    ignoreQuiet?: boolean;
+  } = {},
 ): Promise<{ sent: number; dropped: number; skipped: number }> {
   const all = await listSubscriptions(env);
   let candidates = all.filter((s) => {
@@ -71,7 +77,7 @@ export async function notify(
     const cache = new Map<string, Awaited<ReturnType<typeof getProfile>>>();
     for (const sub of candidates) {
       if (!cache.has(sub.email)) cache.set(sub.email, await getProfile(env.BUNTS, sub.email));
-      if (wants(cache.get(sub.email) ?? null, opts.kind)) allowed.push(sub);
+      if (wants(cache.get(sub.email) ?? null, opts.kind, new Date(), opts.ignoreQuiet)) allowed.push(sub);
       else skipped++;
     }
     candidates = allowed;

@@ -1359,3 +1359,32 @@ select.note-input {
 .presence-dot.recent { background: var(--amber); }
 .presence .warn { color: var(--clay); }
 .presence .ok { color: var(--grass); }
+
+/* urgent + game countdown */
+.chip.urgent { color: #fff; background: var(--clay); border-color: var(--clay); }
+.sugg-row .chip.urgent { margin-left: 6px; }
+.sugg-row .chip + .chip.urgent { margin-left: 4px; }
+.callout {
+  margin: 6px 0 0; padding: 4px 8px; border-radius: 5px; display: inline-block;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 13px; font-weight: 600; letter-spacing: .04em;
+}
+.callout.due { color: var(--amber); background: var(--amber-wash); }
+.callout.soon { color: #fff; background: var(--clay); }
+.sheet-body .callout { margin-top: 10px; }
+.game-at { margin: 8px 0 0; font-size: 12.5px; }
+.urgent-toggle {
+  display: flex; align-items: baseline; gap: 8px; width: 100%; margin-top: 12px; padding: 10px 2px;
+  background: none; border: 0; color: var(--chalk); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.urgent-toggle .muted { font-size: 12.5px; }
+.urgent-box {
+  flex: none; width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--rule);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 12px; align-self: center;
+}
+.urgent-toggle.on { color: var(--clay); font-weight: 600; }
+.urgent-toggle.on .urgent-box { background: var(--clay); border-color: var(--clay); color: #fff; }
+.urgent-toggle:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+.urgent-toggle { align-items: center; }
+.urgent-text { display: flex; flex-direction: column; min-width: 0; }
+.urgent-text .muted { font-weight: 400; color: var(--chalk-dim); }

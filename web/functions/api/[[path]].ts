@@ -2,10 +2,10 @@ import { identify } from '../_shared/access';
 import { addSubscription, listSubscriptions, notify, type PushEnv } from '../_shared/push';
 import { displayName, getProfile, isProfileInput, saveProfile } from '../_shared/profiles';
 import {
-  addSuggestion, counter, doneLine, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, remove, reply, resolve,
-  stateOf, termsOwner, type Person, type Suggestion,
+  addSuggestion, counter, doneLine, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, remove, reply, resolve, setUrgent,
+  stateOf, termsOwner, type Person, type Suggestion, type SuggestionBody,
 } from '../_shared/suggestions';
-import { firstPitch, searchPlayers } from '../_shared/mlb';
+import { firstPitch, nextGameFor, searchPlayers } from '../_shared/mlb';
 import { others, touch } from '../_shared/presence';
 import type { PushSubscription } from '../_shared/webpush';
 import { buildSampleRoster } from '../_shared/sampleRoster';
@@ -57,7 +57,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params, wait
   waitUntil(touch(env.BUNTS, me.email).catch(() => {}));
 
   try {
-    const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve|counter)$/);
+    const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve|counter|urgent)$/);
     // Deleting is the author's call and deliberately silent: no push goes out.
     const del = path.match(/^\/suggestions\/([0-9a-f-]{36})$/);
     if (del && request.method === 'DELETE') {
@@ -120,19 +120,24 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params, wait
         const body = await request.json();
         if (!isSuggestionInput(body)) return json({ error: 'invalid suggestion' }, 400);
         const author = await whoIs(env, me);
-        const expiresAt = isDated(body) && body.date ? await lockFor(body.date) : null;
-        const created = await addSuggestion(env.BUNTS, body, author, expiresAt);
+        // A lineup call is about a specific game: look up when it starts, so it
+        // expires then (not at the day's first pitch) and the 20-minute
+        // warning knows when to fire. Fall back to the old rule if unknown.
+        const dated = isDated(body) && body.date ? body.date : null;
+        const gameAt = dated ? await affectedGame(body, dated) : null;
+        const expiresAt = dated ? gameAt ?? await lockFor(dated) : null;
+        const created = await addSuggestion(env.BUNTS, body, author, expiresAt, gameAt);
         // Tell the other owner, never the author.
         const pushed = await notify(
           env,
           {
-            title: `${author.name}: ${headline(created.body)}`,
+            title: `${created.urgent ? 'URGENT · ' : ''}${author.name}: ${headline(created.body)}`,
             body: created.note || dayLabel(created) || 'No note',
             tag: `suggestion-${created.id}`,
             url: `/#suggestions/${created.id}`,
             data: { type: 'suggestion', id: created.id },
           },
-          { exceptEmail: me.email, kind: 'suggestions' },
+          { exceptEmail: me.email, kind: 'suggestions', ignoreQuiet: created.urgent },
         );
         // sent/skipped let the composer say whether it actually reached them:
         // skipped means they've switched suggestion alerts off; neither means
@@ -237,13 +242,26 @@ async function lockFor(date: string): Promise<string> {
   return new Date(Date.parse(`${date}T08:00:00Z`) + 24 * 3600_000).toISOString();
 }
 
+/** The players a lineup call is about, by MLB team, for looking up their game. */
+async function affectedGame(body: SuggestionBody, date: string): Promise<string | null> {
+  const teams =
+    body.kind === 'call' ? [body.player.team]
+    : body.kind === 'swap' ? [body.start.team, body.bench.team]
+    : [];
+  try {
+    return await nextGameFor(teams.filter((t): t is string => !!t), date);
+  } catch {
+    return null;
+  }
+}
+
 function dayLabel(s: Suggestion): string | null {
   if (!s.date) return null;
   const d = new Date(`${s.date}T12:00:00Z`);
   return `For ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' })}`;
 }
 
-type Action = 'react' | 'reply' | 'resolve' | 'counter';
+type Action = 'react' | 'reply' | 'resolve' | 'counter' | 'urgent';
 
 const REACTIONS = new Set(['agree', 'disagree']);
 const STATUSES = new Set(['open', 'done', 'passed']);
@@ -284,6 +302,23 @@ async function suggestionAction(
     updated = await reply(env.BUNTS, id, who, b.text);
     if (!updated) return json({ error: 'not found' }, 404);
     push = { title: `${who.name} on “${headline(updated.body)}”`, body: b.text.trim() };
+  } else if (action === 'urgent') {
+    if (typeof (b as { value?: unknown }).value !== 'boolean') return json({ error: 'invalid value' }, 400);
+    const value = (b as { value: boolean }).value;
+    updated = await setUrgent(env.BUNTS, id, who, value);
+    if (!updated) return json({ error: 'not found' }, 404);
+    // Raising the flag is worth a buzz -- through quiet hours. Lowering it isn't.
+    if (!value) return json({ suggestion: view(updated, me.email), notified: 0 });
+    const pushed = await notify(
+      env,
+      {
+        title: `URGENT · ${who.name}: ${headline(updated.body)}`,
+        body: updated.note || 'Needs a decision',
+        tag: `suggestion-${id}`, url: `/#suggestions/${id}`, data: { type: 'suggestion', id },
+      },
+      { exceptEmail: me.email, kind: 'suggestions', ignoreQuiet: true },
+    );
+    return json({ suggestion: view(updated, me.email), notified: pushed.sent, skipped: pushed.skipped });
   } else if (action === 'counter') {
     if (!isCounterInput(body)) return json({ error: 'invalid counter' }, 400);
     const result = await counter(env.BUNTS, id, who, body);
@@ -312,7 +347,7 @@ async function suggestionAction(
     env,
     // Tapping it opens this suggestion, not just the list.
     { ...push, tag: `suggestion-${id}`, url: `/#suggestions/${id}`, data: { type: 'suggestion', id } },
-    { exceptEmail: me.email, kind: 'suggestions' },
+    { exceptEmail: me.email, kind: 'suggestions', ignoreQuiet: updated.urgent === true },
   );
   return json({ suggestion: view(updated, me.email), notified: pushed.sent, skipped: pushed.skipped });
 }
