@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api } from './api';
 import type {
-  CallKind, Player, PlayerRef, PlayerSearchHit, Roster, Suggestion, SuggestionInput, SuggestionKind,
+  CallKind, Player, PlayerRef, PlayerSearchHit, Roster, Suggestion, SuggestionBody, SuggestionInput, SuggestionKind,
   SuggestionStatus,
 } from './types';
 import {
@@ -392,6 +392,7 @@ export function SuggestionSheet({
   onChange: (s: Suggestion) => void;
 }) {
   const [reply, setReply] = useState('');
+  const [countering, setCountering] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -401,16 +402,19 @@ export function SuggestionSheet({
     try {
       onChange((await fn()).suggestion);
       if (what === 'reply') setReply('');
+      if (what === 'counter') setCountering(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
     setBusy(null);
   }
 
-  const myReaction = s.mine ? null : s.reactions[0]?.value ?? null;
+  const myReaction = s.myTerms ? null : s.reactions[0]?.value ?? null;
   const open = s.state === 'open';
+  const countered = s.replies.some((r) => r.counter);
   const meta = [s.mine ? 'You' : s.authorName, ago(s.createdAt), s.date ? dayWord(s.date) : null]
     .filter(Boolean).join(' · ');
+  const termsName = s.termsBy ? (s.myTerms ? 'you' : s.termsBy.name.split(' ')[0]) : null;
 
   return (
     <Sheet title={headline(s.body)} eyebrow={KIND_LABEL[s.body.kind]} onClose={onClose}>
@@ -419,9 +423,15 @@ export function SuggestionSheet({
         <span>{meta}</span>
       </p>
 
-      <Moves s={s} />
+      {countered && termsName ? <p className="countered-tag">Countered by {termsName} · now:</p> : null}
+      <Moves body={s.body} />
 
-      {s.note ? <p className="sugg-note">{s.note}</p> : null}
+      {s.note ? (
+        <p className="sugg-note">
+          {countered ? <span className="note-label">{s.mine ? 'Your' : `${s.authorName.split(' ')[0]}’s`} original note</span> : null}
+          {s.note}
+        </p>
+      ) : null}
 
       {s.state === 'done' || s.state === 'passed' ? (
         <p className="muted">
@@ -433,8 +443,8 @@ export function SuggestionSheet({
         <p className="muted">That day’s games have started, so this one has expired.</p>
       ) : null}
 
-      {/* Only the person it was sent to reacts; the author obviously agrees with themselves. */}
-      {s.mine ? (
+      {/* Only the person who didn't put forward the current terms reacts. */}
+      {s.myTerms ? (
         <p className="muted">{reactionLine(s) ?? `${partner} hasn’t weighed in yet.`}</p>
       ) : open ? (
         <div className="react-row">
@@ -458,13 +468,31 @@ export function SuggestionSheet({
       {s.replies.length === 0 ? <p className="muted">No replies yet.</p> : (
         <ul className="thread">
           {s.replies.map((r) => (
-            <li key={r.id} className={r.email === s.authorEmail ? 'by-author' : ''}>
-              <span className="thread-who">{r.name} · {ago(r.at)}</span>
-              <span className="thread-text">{r.text}</span>
+            <li key={r.id} className={r.counter ? 'counter' : ''}>
+              <span className="thread-who">
+                {r.name} · {ago(r.at)}{r.counter ? ' · countered' : ''}
+              </span>
+              {r.counter ? <CounterDiff from={r.counter.from} to={r.counter.to} /> : null}
+              {r.text ? <span className="thread-text">{r.text}</span> : null}
             </li>
           ))}
         </ul>
       )}
+      {open && s.body.kind === 'pickup' ? (
+        countering ? (
+          <CounterForm
+            current={s.body}
+            busy={busy === 'counter'}
+            onCancel={() => setCountering(false)}
+            onSend={(input) => run('counter', () => api.counterSuggestion(s.id, input))}
+          />
+        ) : (
+          <button className="btn ghost counter-btn" disabled={busy !== null} onClick={() => setCountering(true)}>
+            Counter with a different add/drop
+          </button>
+        )
+      ) : null}
+
       <textarea
         className="note-input"
         placeholder="Reply"
@@ -505,9 +533,94 @@ export function SuggestionSheet({
   );
 }
 
+/** What a counter changed: the new add/drop, with the replaced player struck through beside it. */
+function CounterDiff({ from, to }: { from: SuggestionBody; to: SuggestionBody }) {
+  if (from.kind !== 'pickup' || to.kind !== 'pickup') return null;
+  const line = (verb: string, now: PlayerRef | null, was: PlayerRef | null) => {
+    if (!now && !was) return null;
+    const changed = (now?.key ?? null) !== (was?.key ?? null);
+    return (
+      <span className="diff-line">
+        <span className="move-verb">{verb}</span>
+        <span className="diff-now">{now ? now.name : 'nobody'}</span>
+        {changed ? <s className="diff-was">{was ? was.name : 'nobody'}</s> : null}
+      </span>
+    );
+  };
+  return (
+    <span className="diff">
+      {line('Add', to.add, from.add)}
+      {line('Drop', to.drop, from.drop)}
+    </span>
+  );
+}
+
+/** Propose a different add and/or drop on an open pickup, starting from the current terms. */
+function CounterForm({
+  current, busy, onCancel, onSend,
+}: {
+  current: Extract<SuggestionBody, { kind: 'pickup' }>;
+  busy: boolean;
+  onCancel: () => void;
+  onSend: (input: { add: PlayerRef; drop: PlayerRef | null; text: string }) => void;
+}) {
+  const roster = useAsync(() => rosterOnce());
+  const players = roster.data?.players ?? [];
+  const byKey = useMemo(() => new Map(players.map((p) => [p.playerKey, p])), [players]);
+  const [add, setAdd] = useState<PlayerRef | null>(current.add);
+  const [dropKey, setDropKey] = useState(current.drop?.key ?? '');
+  const [text, setText] = useState('');
+
+  const drop: PlayerRef | null = byKey.has(dropKey) ? refOf(byKey.get(dropKey)!) : null;
+  const unchanged = add?.key === current.add.key && (drop?.key ?? null) === (current.drop?.key ?? null);
+
+  return (
+    <div className="counter-form">
+      <p className="sect" style={{ marginTop: 18 }}>Your counter</p>
+      <Field label="Add">
+        {add ? (
+          <div className="picked">
+            <span className="picked-name">{add.name}</span>
+            <span className="pmeta">{[add.team, add.pos].filter(Boolean).join(' · ')}</span>
+            <button className="link-btn" onClick={() => setAdd(null)}>Change</button>
+          </div>
+        ) : (
+          <PlayerSearch onPick={(h) => setAdd({ key: h.key, name: h.name, team: h.team, pos: h.pos })} rostered={byKey} />
+        )}
+      </Field>
+      <Field label="Drop">
+        {roster.loading ? <p className="muted">Loading your roster…</p> : (
+          <PlayerSelect
+            players={players} value={byKey.has(dropKey) ? dropKey : ''}
+            onChange={setDropKey} placeholder="Nobody — there’s an open spot"
+          />
+        )}
+      </Field>
+      <textarea
+        className="note-input"
+        placeholder="Why this instead? (optional)"
+        value={text}
+        maxLength={280}
+        rows={2}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className="resolve-row">
+        <button
+          className="btn"
+          disabled={!add || unchanged || busy}
+          onClick={() => add && onSend({ add, drop, text })}
+        >
+          {busy ? 'Sending…' : 'Send counter'}
+        </button>
+        <button className="btn ghost" onClick={onCancel} disabled={busy}>Cancel</button>
+      </div>
+      {unchanged && add ? <p className="muted field-hint">Change the add or the drop to counter.</p> : null}
+    </div>
+  );
+}
+
 /** The players involved, one line each, marked with which way they move. */
-function Moves({ s }: { s: Suggestion }) {
-  const b = s.body;
+function Moves({ body: b }: { body: SuggestionBody }) {
   const rows: { sign: string; cls: string; verb: string; p: PlayerRef }[] =
     b.kind === 'pickup' ? [
       { sign: '+', cls: 'in', verb: 'Add', p: b.add },
@@ -564,6 +677,7 @@ export function SuggestionRow({ s, onOpen, compact = false }: { s: Suggestion; o
       <p className="sugg-foot">
         <span>{KIND_LABEL[s.body.kind]} · {bits}</span>
         {reaction ? <span className={s.reactions[0]?.value === 'disagree' ? 'neg' : 'pos'}>{reaction}</span> : null}
+        {s.replies.some((r) => r.counter) ? <span className="countered">Countered</span> : null}
         {s.replies.length ? <span>{s.replies.length} {s.replies.length === 1 ? 'reply' : 'replies'}</span> : null}
       </p>
     </>

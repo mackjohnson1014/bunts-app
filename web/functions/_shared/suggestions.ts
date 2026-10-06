@@ -49,7 +49,13 @@ export type SuggestionInput = SuggestionBody & {
 export interface Person { email: string; name: string }
 
 export interface Reaction extends Person { value: 'agree' | 'disagree'; at: string }
-export interface Reply extends Person { id: string; text: string; at: string }
+export interface Reply extends Person {
+  id: string;
+  text: string;
+  at: string;
+  /** Set when this reply was a counter-proposal: the terms it replaced and what it proposed instead. */
+  counter?: { from: SuggestionBody; to: SuggestionBody };
+}
 
 export type Status = 'open' | 'done' | 'passed';
 /** Status as shown: an open suggestion whose day has started is expired. */
@@ -68,6 +74,12 @@ export interface Suggestion {
   /** Last activity of any kind -- drives ordering and "new to you". */
   updatedAt: string;
   status: Status;
+  /**
+   * Who put forward the terms as they stand now: the author, until someone
+   * counters. Reactions come from the other person. Optional because records
+   * written before counters existed don't have it.
+   */
+  termsBy?: Person;
   resolvedBy: (Person & { at: string }) | null;
   reactions: Reaction[];
   replies: Reply[];
@@ -162,6 +174,9 @@ export async function listSuggestions(kv: KVNamespace): Promise<Suggestion[]> {
   return all.map(upgrade);
 }
 
+export const termsOwner = (s: Suggestion): Person =>
+  s.termsBy ?? { email: s.authorEmail, name: s.authorName };
+
 export function stateOf(s: Suggestion, now = Date.now()): State {
   if (s.status !== 'open') return s.status;
   if (s.expiresAt && new Date(s.expiresAt).getTime() <= now) return 'expired';
@@ -236,6 +251,44 @@ export function reply(kv: KVNamespace, id: string, who: Person, text: string) {
   return mutate(kv, id, who, (s) => {
     s.replies = [...s.replies, { ...who, id: crypto.randomUUID(), text: text.trim(), at: new Date().toISOString() }]
       .slice(-MAX_REPLIES);
+  });
+}
+
+export interface CounterInput { add: PlayerRef; drop: PlayerRef | null; text: string }
+
+export function isCounterInput(v: unknown): v is CounterInput {
+  const c = v as CounterInput;
+  return (
+    !!c && typeof c === 'object' && isPlayerRef(c.add) && (c.drop === null || isPlayerRef(c.drop)) &&
+    c.add.key !== c.drop?.key && typeof c.text === 'string' && c.text.length <= NOTE_MAX
+  );
+}
+
+/**
+ * A different add/drop, proposed in the same thread. The suggestion takes
+ * on the new terms -- so its headline, and whatever gets marked done, is the
+ * latest version -- the replaced terms stay visible in the thread, and any
+ * agree/disagree is cleared because it was about the old terms.
+ */
+export async function counter(
+  kv: KVNamespace, id: string, who: Person, input: CounterInput,
+): Promise<Suggestion | 'not-pickup' | 'closed' | 'unchanged' | null> {
+  const s = (await listSuggestions(kv)).find((x) => x.id === id);
+  if (!s) return null;
+  if (s.body.kind !== 'pickup') return 'not-pickup';
+  if (stateOf(s) !== 'open') return 'closed';
+  const pick = ({ key, name, team, pos }: PlayerRef): PlayerRef => ({ key, name, team, pos });
+  const to: SuggestionBody = { kind: 'pickup', add: pick(input.add), drop: input.drop ? pick(input.drop) : null };
+  if (s.body.add.key === to.add.key && (s.body.drop?.key ?? null) === (to.drop?.key ?? null)) return 'unchanged';
+
+  return mutate(kv, id, who, (x) => {
+    x.replies = [...x.replies, {
+      ...who, id: crypto.randomUUID(), text: input.text.trim(), at: new Date().toISOString(),
+      counter: { from: x.body, to },
+    }].slice(-MAX_REPLIES);
+    x.body = to;
+    x.termsBy = who;
+    x.reactions = [];
   });
 }
 

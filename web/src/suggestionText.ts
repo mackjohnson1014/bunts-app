@@ -59,14 +59,14 @@ export function tone(s: Suggestion): 'pending' | 'ok' | 'plain' | 'critical' {
 }
 
 /**
- * "Matt agrees" / "You disagree", or null. Only the person who didn't write it
- * can react, so on your own suggestion it's them; on theirs, it's you.
+ * "Matt agrees" / "You disagree", or null. Only the person who didn't put
+ * forward the current terms can react, so on yours it's them; on theirs, you.
  */
 export function reactionLine(s: Suggestion): string | null {
   const r = s.reactions[0];
   if (!r) return null;
   const agree = r.value === 'agree';
-  return s.mine ? `${r.name} ${agree ? 'agrees' : 'disagrees'}` : `You ${agree ? 'agree' : 'disagree'}`;
+  return s.myTerms ? `${r.name.split(' ')[0]} ${agree ? 'agrees' : 'disagrees'}` : `You ${agree ? 'agree' : 'disagree'}`;
 }
 
 export const refOf = (p: Player): PlayerRef => ({

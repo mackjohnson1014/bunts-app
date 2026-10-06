@@ -1,5 +1,6 @@
 import type {
-  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PlayerSearchHit, Profile, ProfileInput,
+  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PlayerRef, PlayerSearchHit, Profile,
+  ProfileInput,
   Roster, Suggestion, SuggestionInput, SuggestionStatus, User,
 } from './types';
 import { mockMatchup, mockOpponent, mockRoster, mockTransactions } from './mock';
@@ -160,6 +161,14 @@ export const api = {
     usingMockData
       ? settle({ suggestion: mockSuggestions.reply(id, text) })
       : req(`/suggestions/${id}/reply`, { method: 'POST', body: JSON.stringify({ text }) }),
+
+  /** Propose a different add/drop on a pickup, in the same thread. */
+  counterSuggestion: (
+    id: string, input: { add: PlayerRef; drop: PlayerRef | null; text: string },
+  ): Promise<{ suggestion: Suggestion }> =>
+    usingMockData
+      ? settle({ suggestion: mockSuggestions.counter(id, input) })
+      : req(`/suggestions/${id}/counter`, { method: 'POST', body: JSON.stringify(input) }),
 
   /** Done (made in Yahoo), passed, or back to open. */
   resolveSuggestion: (id: string, status: SuggestionStatus): Promise<{ suggestion: Suggestion }> =>

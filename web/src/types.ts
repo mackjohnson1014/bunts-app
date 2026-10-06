@@ -259,7 +259,13 @@ export type SuggestionInput = SuggestionBody & {
 
 export interface SuggestionPerson { email: string; name: string }
 export interface SuggestionReaction extends SuggestionPerson { value: 'agree' | 'disagree'; at: string }
-export interface SuggestionReply extends SuggestionPerson { id: string; text: string; at: string }
+export interface SuggestionReply extends SuggestionPerson {
+  id: string;
+  text: string;
+  at: string;
+  /** A counter-proposal: the terms it replaced and the ones it put forward. */
+  counter?: { from: SuggestionBody; to: SuggestionBody };
+}
 
 export type SuggestionStatus = 'open' | 'done' | 'passed';
 export type SuggestionState = SuggestionStatus | 'expired';
@@ -275,6 +281,8 @@ export interface Suggestion {
   createdAt: string;
   updatedAt: string;
   status: SuggestionStatus;
+  /** Who put forward the current terms -- the author until someone counters. */
+  termsBy?: SuggestionPerson;
   resolvedBy: (SuggestionPerson & { at: string }) | null;
   reactions: SuggestionReaction[];
   replies: SuggestionReply[];
@@ -282,6 +290,8 @@ export interface Suggestion {
   /** Added per-request by the API, relative to whoever is asking. */
   state: SuggestionState;
   mine: boolean;
+  /** You proposed the current terms, so reacting is the other person's move. */
+  myTerms: boolean;
   unread: boolean;
 }
 

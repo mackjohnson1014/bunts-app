@@ -1305,3 +1305,25 @@ select.note-input {
   font-size: 12.5px; letter-spacing: .03em; color: var(--chalk-dim);
 }
 .made-adds { margin: 6px 0 0; font-size: 12.5px; }
+.made-row.passed .made-check { color: var(--clay); }
+.made-row.passed .made-what { color: var(--chalk-dim); font-weight: 500; }
+
+/* counters */
+.counter-btn { margin-top: 10px; }
+.countered-tag {
+  margin: 12px 0 -4px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px; letter-spacing: .06em; color: var(--amber);
+}
+.thread li.counter { border-color: var(--amber); }
+.diff { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.diff-line { display: flex; align-items: baseline; gap: 8px; font-size: 14px; }
+.diff-now { font-weight: 600; }
+.diff-was { color: var(--chalk-dim); font-size: 13px; }
+.sugg-foot .countered { color: var(--amber); }
+.made-today-head > span:first-child { color: var(--chalk); }
+.note-label {
+  display: block; margin-bottom: 2px;
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--chalk-dim);
+}

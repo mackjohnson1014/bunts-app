@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { api } from '../api';
 import { Screen } from '../components';
 import { partnerName, SuggestionRow } from '../Suggestions';
-import { doneLine, isToday, weekStart } from '../suggestionText';
+import { doneLine, headline, isToday, weekStart } from '../suggestionText';
 import type { Suggestion } from '../types';
 import { useAsync } from '../useAsync';
 import { KeepersIcon, RosterIcon, SettingsIcon, TodayIcon, TransactionsIcon, WeekIcon } from '../icons';
@@ -59,9 +59,9 @@ function SuggestionsCard({ onOpen, onOpenOne }: { onOpen: () => void; onOpenOne:
   const open = all.filter((s) => s.state === 'open');
   const unread = all.filter((s) => s.unread).length;
   const partner = partnerName(all);
-  // Closed out as done today, oldest first so it reads as the day's log.
-  const madeToday = all
-    .filter((s) => s.state === 'done' && s.resolvedBy && isToday(s.resolvedBy.at))
+  // Closed out today -- made or passed -- oldest first so it reads as the day's log.
+  const closedToday = all
+    .filter((s) => (s.state === 'done' || s.state === 'passed') && s.resolvedBy && isToday(s.resolvedBy.at))
     .sort((a, b) => a.resolvedBy!.at.localeCompare(b.resolvedBy!.at));
 
   return (
@@ -92,48 +92,56 @@ function SuggestionsCard({ onOpen, onOpenOne }: { onOpen: () => void; onOpenOne:
         </div>
       )}
 
-      {madeToday.length > 0 ? <MadeToday items={madeToday} all={all} onOpenOne={onOpenOne} /> : null}
+      {closedToday.length > 0 ? <ClosedToday items={closedToday} all={all} onOpenOne={onOpenOne} /> : null}
     </section>
   );
 }
 
 /**
- * The day's moves, once they've been made in Yahoo and marked done: a short
- * log of what changed on the team today, and how many adds that used.
+ * The day's decisions: moves made in Yahoo and marked done, and ones you
+ * passed on, as a short log -- plus how many adds the made ones used.
  */
-function MadeToday({
+function ClosedToday({
   items, all, onOpenOne,
 }: {
   items: Suggestion[];
   all: Suggestion[];
   onOpenOne: (id: string) => void;
 }) {
-  const addsToday = items.filter((s) => s.body.kind === 'pickup').length;
+  const made = items.filter((s) => s.state === 'done');
+  const passed = items.length - made.length;
+  const addsToday = made.filter((s) => s.body.kind === 'pickup').length;
   const since = weekStart().getTime();
   const addsThisWeek = all.filter(
     (s) => s.state === 'done' && s.body.kind === 'pickup' && s.resolvedBy && Date.parse(s.resolvedBy.at) >= since,
   ).length;
 
   const summary = [
-    `${items.length} ${items.length === 1 ? 'move' : 'moves'}`,
+    made.length ? `${made.length} made` : null,
+    passed ? `${passed} passed` : null,
     addsToday ? `${addsToday} ${addsToday === 1 ? 'add' : 'adds'}` : null,
   ].filter(Boolean).join(' · ');
 
   return (
     <div className="made-today">
       <p className="made-today-head">
-        <span>Made today</span>
+        <span>Today</span>
         <span className="made-today-sum">{summary}</span>
       </p>
       <ul className="made-list">
         {items.map((s) => (
           <li key={s.id}>
-            <button className="made-row" onClick={() => onOpenOne(s.id)}>
-              <span className="made-check" aria-hidden="true">✓</span>
+            <button className={`made-row${s.state === 'passed' ? ' passed' : ''}`} onClick={() => onOpenOne(s.id)}>
+              <span className="made-check" aria-hidden="true">{s.state === 'done' ? '✓' : '✕'}</span>
               <span className="made-text">
-                <span className="made-what">{doneLine(s.body)}</span>
+                <span className="made-what">
+                  {s.state === 'done' ? doneLine(s.body) : `Passed: ${headline(s.body)}`}
+                </span>
                 <span className="made-who">
                   {s.mine ? 'Your call' : `${s.authorName.split(' ')[0]}’s call`}
+                  {s.state === 'passed' && s.resolvedBy
+                    ? ` · ${s.resolvedBy.email === s.authorEmail ? 'withdrawn' : `passed by ${s.mine ? s.resolvedBy.name.split(' ')[0] : 'you'}`}`
+                    : ''}
                   {' · '}
                   {new Date(s.resolvedBy!.at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                 </span>

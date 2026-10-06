@@ -2,8 +2,8 @@ import { identify } from '../_shared/access';
 import { addSubscription, listSubscriptions, notify, type PushEnv } from '../_shared/push';
 import { displayName, getProfile, isProfileInput, saveProfile } from '../_shared/profiles';
 import {
-  addSuggestion, headline, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, reply, resolve,
-  stateOf, type Person, type Suggestion,
+  addSuggestion, counter, headline, isCounterInput, isDated, isSuggestionInput, listSuggestions, markSeen, NOTE_MAX, react, reply, resolve,
+  stateOf, termsOwner, type Person, type Suggestion,
 } from '../_shared/suggestions';
 import { firstPitch, searchPlayers } from '../_shared/mlb';
 import type { PushSubscription } from '../_shared/webpush';
@@ -53,9 +53,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
   }
 
   try {
-    const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve)$/);
+    const action = path.match(/^\/suggestions\/([0-9a-f-]{36})\/(react|reply|resolve|counter)$/);
     if (action && request.method === 'POST') {
-      return await suggestionAction(env, me, action[1], action[2] as 'react' | 'reply' | 'resolve', await request.json());
+      return await suggestionAction(env, me, action[1], action[2] as Action, await request.json());
     }
 
     switch (route) {
@@ -186,6 +186,8 @@ const view = (s: Suggestion, email: string) => ({
   ...s,
   state: stateOf(s),
   mine: s.authorEmail === email,
+  /** You put forward the terms as they stand, so it's the other person's to react to. */
+  myTerms: termsOwner(s).email === email,
   unread: !s.seenBy.includes(email),
 });
 
@@ -217,6 +219,8 @@ function dayLabel(s: Suggestion): string | null {
   return `For ${d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' })}`;
 }
 
+type Action = 'react' | 'reply' | 'resolve' | 'counter';
+
 const REACTIONS = new Set(['agree', 'disagree']);
 const STATUSES = new Set(['open', 'done', 'passed']);
 
@@ -228,7 +232,7 @@ async function suggestionAction(
   env: Env,
   me: { email: string; name: string },
   id: string,
-  action: 'react' | 'reply' | 'resolve',
+  action: Action,
   body: unknown,
 ): Promise<Response> {
   const who = await whoIs(env, me);
@@ -239,7 +243,9 @@ async function suggestionAction(
   if (action === 'react') {
     if (b.value !== null && !REACTIONS.has(b.value as string)) return json({ error: 'invalid reaction' }, 400);
     const existing = (await listSuggestions(env.BUNTS)).find((s) => s.id === id);
-    if (existing?.authorEmail === me.email) return json({ error: 'You can’t react to your own suggestion' }, 400);
+    if (existing && termsOwner(existing).email === me.email) {
+      return json({ error: 'You can’t react to your own proposal' }, 400);
+    }
     updated = await react(env.BUNTS, id, who, b.value as 'agree' | 'disagree' | null);
     if (!updated) return json({ error: 'not found' }, 404);
     if (!b.value) return json({ suggestion: view(updated, me.email), notified: 0 });
@@ -254,6 +260,18 @@ async function suggestionAction(
     updated = await reply(env.BUNTS, id, who, b.text);
     if (!updated) return json({ error: 'not found' }, 404);
     push = { title: `${who.name} on “${headline(updated.body)}”`, body: b.text.trim() };
+  } else if (action === 'counter') {
+    if (!isCounterInput(body)) return json({ error: 'invalid counter' }, 400);
+    const result = await counter(env.BUNTS, id, who, body);
+    if (result === null) return json({ error: 'not found' }, 404);
+    if (result === 'not-pickup') return json({ error: 'Only pickups can be countered' }, 400);
+    if (result === 'closed') return json({ error: 'This suggestion is already closed' }, 400);
+    if (result === 'unchanged') return json({ error: 'That’s the same add and drop' }, 400);
+    updated = result;
+    push = {
+      title: `${who.name} countered: ${headline(updated.body)}`,
+      body: body.text.trim() || 'Tap to agree or disagree',
+    };
   } else {
     if (!STATUSES.has(b.status as string)) return json({ error: 'invalid status' }, 400);
     updated = await resolve(env.BUNTS, id, who, b.status as 'open' | 'done' | 'passed');

@@ -1,5 +1,5 @@
 import type {
-  PlayerSearchHit, Suggestion, SuggestionInput, SuggestionStatus,
+  PlayerRef, PlayerSearchHit, Suggestion, SuggestionInput, SuggestionStatus,
 } from './types';
 import { localDate } from './suggestionText';
 
@@ -15,7 +15,7 @@ const PARTNER = { email: 'matt@example.com', name: 'Matt' };
 const ago = (mins: number) => new Date(Date.now() - mins * 60_000).toISOString();
 const inMins = (mins: number) => new Date(Date.now() + mins * 60_000).toISOString();
 
-type Stored = Omit<Suggestion, 'state' | 'mine' | 'unread'>;
+type Stored = Omit<Suggestion, 'state' | 'mine' | 'myTerms' | 'unread'>;
 
 let store: Stored[] = [
   {
@@ -86,6 +86,23 @@ let store: Stored[] = [
     seenBy: [PARTNER.email, ME.email],
   },
   {
+    id: 'mock-6',
+    body: {
+      kind: 'pickup',
+      add: { key: 'p.303', name: 'Trey Loman', team: 'COL', pos: 'RP' },
+      drop: { key: 'p.22', name: 'Ray Lindquist', team: 'PIT', pos: 'RP' },
+    },
+    note: 'Loman’s closing while their guy is hurt.',
+    date: null,
+    expiresAt: null,
+    authorEmail: PARTNER.email, authorName: PARTNER.name,
+    createdAt: ago(60 * 3), updatedAt: ago(15),
+    status: 'passed', resolvedBy: { ...ME, at: ago(15) },
+    reactions: [{ ...ME, value: 'disagree', at: ago(60 * 2) }],
+    replies: [{ ...ME, id: 'r3', text: 'Their closer is back Friday. Not worth an add.', at: ago(60 * 2) }],
+    seenBy: [PARTNER.email, ME.email],
+  },
+  {
     id: 'mock-5',
     body: { kind: 'call', player: { key: 'p.9', name: 'Kenji Mori', team: 'CLE', pos: 'SP' }, call: 'sit' },
     note: 'At Coors.',
@@ -107,6 +124,7 @@ const view = (s: Stored): Suggestion => ({
     : s.expiresAt && Date.parse(s.expiresAt) <= Date.now() ? 'expired'
     : 'open',
   mine: s.authorEmail === ME.email,
+  myTerms: (s.termsBy?.email ?? s.authorEmail) === ME.email,
   unread: !s.seenBy.includes(ME.email),
 });
 
@@ -155,6 +173,18 @@ export const mockSuggestions = {
   reply: (id: string, text: string) =>
     touch(id, (s) => {
       s.replies = [...s.replies, { ...ME, id: `r-${Date.now()}`, text: text.trim(), at: new Date().toISOString() }];
+    }),
+
+  counter: (id: string, input: { add: PlayerRef; drop: PlayerRef | null; text: string }) =>
+    touch(id, (s) => {
+      const to = { kind: 'pickup' as const, add: input.add, drop: input.drop };
+      s.replies = [...s.replies, {
+        ...ME, id: `r-${Date.now()}`, text: input.text.trim(), at: new Date().toISOString(),
+        counter: { from: s.body, to },
+      }];
+      s.body = to;
+      s.termsBy = ME;
+      s.reactions = [];
     }),
 
   resolve: (id: string, status: SuggestionStatus) =>
