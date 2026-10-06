@@ -285,32 +285,37 @@ export function reply(kv: KVNamespace, id: string, who: Person, text: string) {
   });
 }
 
-export interface CounterInput { add: PlayerRef; drop: PlayerRef | null; text: string }
+/**
+ * A counter is a full alternative proposal, same shape as a new suggestion
+ * (any kind -- a swap can be countered with a different swap, or with a sit
+ * call), plus an optional "why this instead". Validated like a suggestion.
+ */
+export type CounterInput = SuggestionBody & { date: string | null; text: string };
 
 export function isCounterInput(v: unknown): v is CounterInput {
   const c = v as CounterInput;
-  return (
-    !!c && typeof c === 'object' && isPlayerRef(c.add) && (c.drop === null || isPlayerRef(c.drop)) &&
-    c.add.key !== c.drop?.key && typeof c.text === 'string' && c.text.length <= NOTE_MAX
-  );
+  return !!c && typeof c === 'object' && typeof c.text === 'string' &&
+    isSuggestionInput({ ...c, note: c.text } as unknown);
 }
 
 /**
- * A different add/drop, proposed in the same thread. The suggestion takes
- * on the new terms -- so its headline, and whatever gets marked done, is the
+ * Different terms, proposed in the same thread. The suggestion takes them on
+ * -- so its headline, its game time, and whatever gets marked done are the
  * latest version -- the replaced terms stay visible in the thread, and any
- * agree/disagree is cleared because it was about the old terms.
+ * agree/disagree is cleared because it was about the old terms. The game
+ * lookup is the caller's (it needs the network); pass what it found.
  */
 export async function counter(
   kv: KVNamespace, id: string, who: Person, input: CounterInput,
-): Promise<Suggestion | 'not-pickup' | 'closed' | 'unchanged' | null> {
+  timing: { expiresAt: string | null; gameAt: string | null },
+): Promise<Suggestion | 'closed' | 'unchanged' | null> {
   const s = (await listSuggestions(kv)).find((x) => x.id === id);
   if (!s) return null;
-  if (s.body.kind !== 'pickup') return 'not-pickup';
   if (stateOf(s) !== 'open') return 'closed';
-  const pick = ({ key, name, team, pos }: PlayerRef): PlayerRef => ({ key, name, team, pos });
-  const to: SuggestionBody = { kind: 'pickup', add: pick(input.add), drop: input.drop ? pick(input.drop) : null };
-  if (s.body.add.key === to.add.key && (s.body.drop?.key ?? null) === (to.drop?.key ?? null)) return 'unchanged';
+  const to = bodyOf({ ...input, note: input.text });
+  const dated = isDated(to);
+  const date = dated ? input.date : null;
+  if (JSON.stringify(to) === JSON.stringify(s.body) && date === s.date) return 'unchanged';
 
   return mutate(kv, id, who, (x) => {
     x.replies = [...x.replies, {
@@ -318,6 +323,10 @@ export async function counter(
       counter: { from: x.body, to },
     }].slice(-MAX_REPLIES);
     x.body = to;
+    x.date = date;
+    x.expiresAt = dated ? timing.expiresAt : null;
+    x.gameAt = dated ? timing.gameAt : null;
+    x.warnedAt = null;   // new game, new reminder
     x.termsBy = who;
     x.reactions = [];
   });

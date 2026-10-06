@@ -19,7 +19,7 @@ export const RELEASES: Release[] = [
     title: 'Suggestions, rebuilt',
     notes: [
       'Suggest three kinds of move: a start/sit/watch call, a swap (bench player in for a starter, today or tomorrow), or a pickup (add anyone by name, with or without a drop). Start from the Suggestions screen or any player card.',
-      'Each suggestion is a thread: agree or disagree, reply, counter a pickup with a different add/drop, then mark it \u201cMade it in Yahoo\u201d or Pass. Your own can be reopened or deleted; deleting sends no notification.',
+      'Each suggestion is a thread: agree or disagree, reply, counter with a different move (\u201cCounter with a different move\u201d, right under agree/disagree \u2014 works on pickups, swaps and start/sit calls), then mark it \u201cMade it in Yahoo\u201d or Pass. Your own can be reopened or deleted; deleting sends no notification.',
       'The other person gets a notification for every new suggestion, reply, counter and decision, and tapping it opens that suggestion. After you send or mark one done, Bunts tells you whether it reached their phone.',
       'Home is now the daily page for lineup changes and suggestions: a Suggest a move button up top, what\u2019s open between you, and a Today log of moves made and passed, plus adds used this week against the league\u2019s 6 (counting moves made through Bunts). The section tiles are gone \u2014 use the bottom bar; Transactions is linked at the foot of Home.',
       'Start/sit calls and swaps are tied to the player\u2019s actual game: from two hours out they show \u201cDecision needed \u00b7 game starts in 1h 12m\u201d (red in the last 20 minutes), you both get a reminder push 20 minutes before if it\u2019s still open, and it drops off when the game starts.',

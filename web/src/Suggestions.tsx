@@ -67,25 +67,36 @@ const CALLS: { id: CallKind; label: string }[] = [
 ];
 
 export function Composer({
-  preset, partner, onSent,
+  preset, partner, onSent, counterOf, onCountered, onCancel,
 }: {
   preset?: ComposePreset;
   partner: string;
-  onSent: (s: Suggestion, delivery: string) => void;
+  onSent?: (s: Suggestion, delivery: string) => void;
+  /**
+   * Counter mode: start from this suggestion's current terms, and send the
+   * result as a counter in its thread rather than as a new suggestion.
+   */
+  counterOf?: Suggestion;
+  onCountered?: (s: Suggestion) => void;
+  onCancel?: () => void;
 }) {
   const roster = useAsync(() => rosterOnce());
   const players = roster.data?.players ?? [];
   const byKey = useMemo(() => new Map(players.map((p) => [p.playerKey, p])), [players]);
 
   const p0 = preset?.player;
-  const [kind, setKind] = useState<SuggestionKind>(preset?.kind ?? 'call');
-  const [callKey, setCallKey] = useState(p0?.playerKey ?? '');
-  const [call, setCall] = useState<CallKind>('start');
-  const [dayOffset, setDayOffset] = useState<0 | 1>(0);
-  const [startKey, setStartKey] = useState(p0 && !isActive(p0) ? p0.playerKey : '');
-  const [benchKey, setBenchKey] = useState(p0 && isActive(p0) ? p0.playerKey : '');
-  const [add, setAdd] = useState<PlayerSearchHit | null>(null);
-  const [dropKey, setDropKey] = useState(p0?.playerKey ?? '');
+  const b0 = counterOf?.body;
+  const [kind, setKind] = useState<SuggestionKind>(b0?.kind ?? preset?.kind ?? 'call');
+  const [callKey, setCallKey] = useState(b0?.kind === 'call' ? b0.player.key : p0?.playerKey ?? '');
+  const [call, setCall] = useState<CallKind>(b0?.kind === 'call' ? b0.call : 'start');
+  const [dayOffset, setDayOffset] = useState<0 | 1>(counterOf?.date === localDate(1) ? 1 : 0);
+  const [startKey, setStartKey] = useState(
+    b0?.kind === 'swap' ? b0.start.key : p0 && !isActive(p0) ? p0.playerKey : '');
+  const [benchKey, setBenchKey] = useState(
+    b0?.kind === 'swap' ? b0.bench.key : p0 && isActive(p0) ? p0.playerKey : '');
+  const [add, setAdd] = useState<PlayerSearchHit | null>(b0?.kind === 'pickup' ? { ...b0.add } : null);
+  const [dropKey, setDropKey] = useState(
+    b0?.kind === 'pickup' ? b0.drop?.key ?? '' : b0 ? '' : p0?.playerKey ?? '');
   const [note, setNote] = useState('');
   const [urgent, setUrgent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -93,9 +104,17 @@ export function Composer({
   const [sent, setSent] = useState<{ line: string; ok: boolean } | null>(null);
 
   const dated = kind === 'swap' || (kind === 'call' && call !== 'watch');
+  // Players in the suggestion being countered, in case one has since left the roster read.
+  const fromCounter = useMemo(() => {
+    const m = new Map<string, PlayerRef>();
+    if (b0?.kind === 'call') m.set(b0.player.key, b0.player);
+    if (b0?.kind === 'swap') { m.set(b0.start.key, b0.start); m.set(b0.bench.key, b0.bench); }
+    if (b0?.kind === 'pickup' && b0.drop) m.set(b0.drop.key, b0.drop);
+    return m;
+  }, [b0]);
   const ref = (key: string): PlayerRef | null => {
     const p = byKey.get(key);
-    return p ? refOf(p) : null;
+    return p ? refOf(p) : fromCounter.get(key) ?? null;
   };
 
   let input: SuggestionInput | null = null;
@@ -118,13 +137,24 @@ export function Composer({
     if (!input) return;
     setSending(true);
     setError(null);
+    if (counterOf) {
+      try {
+        const { note: text, urgent: _u, ...terms } = { ...input, urgent: false };
+        const res = await api.counterSuggestion(counterOf.id, { ...terms, text: text.trim() });
+        onCountered?.(res.suggestion);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+      setSending(false);
+      return;
+    }
     try {
       const res = await api.addSuggestion({ ...input, note: note.trim(), urgent });
       const line = deliveryLine(partner, res.notified, res.skipped);
       // Say whether it actually reached them before the sheet goes away --
       // a silent close hid "they have no phone registered" entirely.
       setSent({ line, ok: res.notified > 0 });
-      setTimeout(() => onSent(res.suggestion, line), 1600);
+      setTimeout(() => onSent?.(res.suggestion, line), 1600);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -209,12 +239,21 @@ export function Composer({
 
       <textarea
         className="note-input"
-        placeholder={`Why? (optional — ${partner} sees this)`}
+        placeholder={counterOf ? 'Why this instead? (optional)' : `Why? (optional — ${partner} sees this)`}
         value={note}
         maxLength={280}
         rows={2}
         onChange={(e) => setNote(e.target.value)}
       />
+      {counterOf ? (
+        <div className="resolve-row">
+          <button className="btn" onClick={send} disabled={!input || sending}>
+            {sending ? 'Sending…' : 'Send counter'}
+          </button>
+          <button className="btn ghost" onClick={onCancel} disabled={sending}>Cancel</button>
+        </div>
+      ) : null}
+      {counterOf ? null : <>
       <button
         className={`urgent-toggle${urgent ? ' on' : ''}`}
         aria-pressed={urgent}
@@ -229,6 +268,7 @@ export function Composer({
       <button className="btn" onClick={send} disabled={!input || sending}>
         {sending ? 'Sending…' : `Send${urgent ? ' urgent' : ''} to ${partner}`}
       </button>
+      </>}
       {error ? <p className="muted" style={{ color: 'var(--clay)', marginTop: 8 }}>{error}</p> : null}
     </div>
   );
@@ -457,7 +497,6 @@ export function SuggestionSheet({
         });
       }
       if (what === 'reply') setReply('');
-      if (what === 'counter') setCountering(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -529,6 +568,25 @@ export function SuggestionSheet({
         <p className="muted">{reactionLine(s)}</p>
       ) : null}
 
+      {/* Counter: either of you, on any open suggestion. Opens the composer on the current terms. */}
+      {open ? (
+        countering ? (
+          <div className="counter-form">
+            <p className="sect" style={{ marginTop: 18 }}>Your counter</p>
+            <Composer
+              partner={partner}
+              counterOf={s}
+              onCancel={() => setCountering(false)}
+              onCountered={(updated) => { onChange(updated); setCountering(false); }}
+            />
+          </div>
+        ) : (
+          <button className="btn ghost counter-btn" disabled={busy !== null} onClick={() => setCountering(true)}>
+            Counter with a different move
+          </button>
+        )
+      ) : null}
+
       <p className="sect">Thread{s.replies.length ? ` · ${s.replies.length}` : ''}</p>
       {s.replies.length === 0 ? <p className="muted">No replies yet.</p> : (
         <ul className="thread">
@@ -543,21 +601,6 @@ export function SuggestionSheet({
           ))}
         </ul>
       )}
-      {open && s.body.kind === 'pickup' ? (
-        countering ? (
-          <CounterForm
-            current={s.body}
-            busy={busy === 'counter'}
-            onCancel={() => setCountering(false)}
-            onSend={(input) => run('counter', () => api.counterSuggestion(s.id, input))}
-          />
-        ) : (
-          <button className="btn ghost counter-btn" disabled={busy !== null} onClick={() => setCountering(true)}>
-            Counter with a different add/drop
-          </button>
-        )
-      ) : null}
-
       <textarea
         className="note-input"
         placeholder="Reply"
@@ -646,89 +689,32 @@ export function SuggestionSheet({
   );
 }
 
-/** What a counter changed: the new add/drop, with the replaced player struck through beside it. */
+/** What a counter changed: the new terms, with what they replaced struck through. */
 function CounterDiff({ from, to }: { from: SuggestionBody; to: SuggestionBody }) {
-  if (from.kind !== 'pickup' || to.kind !== 'pickup') return null;
-  const line = (verb: string, now: PlayerRef | null, was: PlayerRef | null) => {
-    if (!now && !was) return null;
-    const changed = (now?.key ?? null) !== (was?.key ?? null);
+  if (from.kind === 'pickup' && to.kind === 'pickup') {
+    const line = (verb: string, now: PlayerRef | null, was: PlayerRef | null) => {
+      if (!now && !was) return null;
+      const changed = (now?.key ?? null) !== (was?.key ?? null);
+      return (
+        <span className="diff-line">
+          <span className="move-verb">{verb}</span>
+          <span className="diff-now">{now ? now.name : 'nobody'}</span>
+          {changed ? <s className="diff-was">{was ? was.name : 'nobody'}</s> : null}
+        </span>
+      );
+    };
     return (
-      <span className="diff-line">
-        <span className="move-verb">{verb}</span>
-        <span className="diff-now">{now ? now.name : 'nobody'}</span>
-        {changed ? <s className="diff-was">{was ? was.name : 'nobody'}</s> : null}
+      <span className="diff">
+        {line('Add', to.add, from.add)}
+        {line('Drop', to.drop, from.drop)}
       </span>
     );
-  };
+  }
   return (
     <span className="diff">
-      {line('Add', to.add, from.add)}
-      {line('Drop', to.drop, from.drop)}
+      <span className="diff-line"><span className="move-verb">Now</span><span className="diff-now">{headline(to)}</span></span>
+      <span className="diff-line"><span className="move-verb">Was</span><s className="diff-was">{headline(from)}</s></span>
     </span>
-  );
-}
-
-/** Propose a different add and/or drop on an open pickup, starting from the current terms. */
-function CounterForm({
-  current, busy, onCancel, onSend,
-}: {
-  current: Extract<SuggestionBody, { kind: 'pickup' }>;
-  busy: boolean;
-  onCancel: () => void;
-  onSend: (input: { add: PlayerRef; drop: PlayerRef | null; text: string }) => void;
-}) {
-  const roster = useAsync(() => rosterOnce());
-  const players = roster.data?.players ?? [];
-  const byKey = useMemo(() => new Map(players.map((p) => [p.playerKey, p])), [players]);
-  const [add, setAdd] = useState<PlayerRef | null>(current.add);
-  const [dropKey, setDropKey] = useState(current.drop?.key ?? '');
-  const [text, setText] = useState('');
-
-  const drop: PlayerRef | null = byKey.has(dropKey) ? refOf(byKey.get(dropKey)!) : null;
-  const unchanged = add?.key === current.add.key && (drop?.key ?? null) === (current.drop?.key ?? null);
-
-  return (
-    <div className="counter-form">
-      <p className="sect" style={{ marginTop: 18 }}>Your counter</p>
-      <Field label="Add">
-        {add ? (
-          <div className="picked">
-            <span className="picked-name">{add.name}</span>
-            <span className="pmeta">{[add.team, add.pos].filter(Boolean).join(' · ')}</span>
-            <button className="link-btn" onClick={() => setAdd(null)}>Change</button>
-          </div>
-        ) : (
-          <PlayerSearch onPick={(h) => setAdd({ key: h.key, name: h.name, team: h.team, pos: h.pos })} rostered={byKey} />
-        )}
-      </Field>
-      <Field label="Drop">
-        {roster.loading ? <p className="muted">Loading your roster…</p> : (
-          <PlayerSelect
-            players={players} value={byKey.has(dropKey) ? dropKey : ''}
-            onChange={setDropKey} placeholder="Nobody — there’s an open spot"
-          />
-        )}
-      </Field>
-      <textarea
-        className="note-input"
-        placeholder="Why this instead? (optional)"
-        value={text}
-        maxLength={280}
-        rows={2}
-        onChange={(e) => setText(e.target.value)}
-      />
-      <div className="resolve-row">
-        <button
-          className="btn"
-          disabled={!add || unchanged || busy}
-          onClick={() => add && onSend({ add, drop, text })}
-        >
-          {busy ? 'Sending…' : 'Send counter'}
-        </button>
-        <button className="btn ghost" onClick={onCancel} disabled={busy}>Cancel</button>
-      </div>
-      {unchanged && add ? <p className="muted field-hint">Change the add or the drop to counter.</p> : null}
-    </div>
   );
 }
 

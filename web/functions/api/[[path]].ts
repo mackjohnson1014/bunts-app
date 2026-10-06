@@ -360,11 +360,13 @@ async function suggestionAction(
     return json({ suggestion: view(updated, me.email), notified: pushed.sent, skipped: pushed.skipped });
   } else if (action === 'counter') {
     if (!isCounterInput(body)) return json({ error: 'invalid counter' }, 400);
-    const result = await counter(env.BUNTS, id, who, body);
+    const dated = isDated(body) && body.date ? body.date : null;
+    const gameAt = dated ? await affectedGame(body, dated) : null;
+    const expiresAt = dated ? gameAt ?? await lockFor(dated) : null;
+    const result = await counter(env.BUNTS, id, who, body, { expiresAt, gameAt });
     if (result === null) return json({ error: 'not found' }, 404);
-    if (result === 'not-pickup') return json({ error: 'Only pickups can be countered' }, 400);
     if (result === 'closed') return json({ error: 'This suggestion is already closed' }, 400);
-    if (result === 'unchanged') return json({ error: 'That’s the same add and drop' }, 400);
+    if (result === 'unchanged') return json({ error: 'That’s the same as what’s proposed now' }, 400);
     updated = result;
     push = {
       title: `${who.name} countered: ${headline(updated.body)}`,

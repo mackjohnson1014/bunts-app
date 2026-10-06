@@ -1,5 +1,5 @@
 import type {
-  PlayerRef, PlayerSearchHit, Suggestion, SuggestionInput, SuggestionStatus,
+  PlayerSearchHit, Suggestion, SuggestionBody, SuggestionInput, SuggestionStatus,
 } from './types';
 import { localDate } from './suggestionText';
 
@@ -188,14 +188,16 @@ export const mockSuggestions = {
       s.replies = [...s.replies, { ...ME, id: `r-${Date.now()}`, text: text.trim(), at: new Date().toISOString() }];
     }),
 
-  counter: (id: string, input: { add: PlayerRef; drop: PlayerRef | null; text: string }) =>
+  counter: (id: string, input: SuggestionBody & { date: string | null; text: string }) =>
     touch(id, (s) => {
-      const to = { kind: 'pickup' as const, add: input.add, drop: input.drop };
+      const { text, date, ...to } = input;
       s.replies = [...s.replies, {
-        ...ME, id: `r-${Date.now()}`, text: input.text.trim(), at: new Date().toISOString(),
+        ...ME, id: `r-${Date.now()}`, text: text.trim(), at: new Date().toISOString(),
         counter: { from: s.body, to },
       }];
       s.body = to;
+      s.date = date;
+      s.gameAt = s.expiresAt = date ? mockDeadline(date) : null;
       s.termsBy = ME;
       s.reactions = [];
     }),
