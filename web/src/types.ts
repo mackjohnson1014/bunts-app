@@ -230,22 +230,64 @@ export interface ProfileInput {
   prefs?: Partial<Prefs>;
 }
 
-export interface SuggestionInput {
-  playerKey: string;
-  playerName: string;
-  recommendation: 'start' | 'sit' | 'watch';
-  note: string;
+/**
+ * Co-owner suggestions. Mirrors functions/_shared/suggestions.ts -- see there
+ * for the reasoning. Yahoo is read-only, so a suggestion is a proposal the
+ * other owner reacts to, and someone marks done after making it in Yahoo.
+ */
+export interface PlayerRef {
+  key: string;
+  name: string;
+  team?: string;
+  pos?: string;
 }
 
-export interface Suggestion extends SuggestionInput {
+export type CallKind = 'start' | 'sit' | 'watch';
+
+export type SuggestionBody =
+  | { kind: 'call'; player: PlayerRef; call: CallKind }
+  | { kind: 'swap'; start: PlayerRef; bench: PlayerRef }
+  | { kind: 'pickup'; add: PlayerRef; drop: PlayerRef | null };
+
+export type SuggestionKind = SuggestionBody['kind'];
+
+export type SuggestionInput = SuggestionBody & {
+  note: string;
+  /** YYYY-MM-DD the lineup call is for; null for watch and pickups. */
+  date: string | null;
+};
+
+export interface SuggestionPerson { email: string; name: string }
+export interface SuggestionReaction extends SuggestionPerson { value: 'agree' | 'disagree'; at: string }
+export interface SuggestionReply extends SuggestionPerson { id: string; text: string; at: string }
+
+export type SuggestionStatus = 'open' | 'done' | 'passed';
+export type SuggestionState = SuggestionStatus | 'expired';
+
+export interface Suggestion {
   id: string;
+  body: SuggestionBody;
+  note: string;
+  date: string | null;
+  expiresAt: string | null;
   authorEmail: string;
   authorName: string;
   createdAt: string;
+  updatedAt: string;
+  status: SuggestionStatus;
+  resolvedBy: (SuggestionPerson & { at: string }) | null;
+  reactions: SuggestionReaction[];
+  replies: SuggestionReply[];
   seenBy: string[];
   /** Added per-request by the API, relative to whoever is asking. */
-  mine?: boolean;
-  unread?: boolean;
+  state: SuggestionState;
+  mine: boolean;
+  unread: boolean;
+}
+
+/** A name-search result for proposing a pickup (MLB data; Yahoo availability unknown). */
+export interface PlayerSearchHit extends PlayerRef {
+  headshotUrl?: string;
 }
 
 /** One category in this week's head-to-head matchup. */

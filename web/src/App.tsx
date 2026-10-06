@@ -14,11 +14,24 @@ import RosterScreen from './screens/Roster';
 import Keepers from './screens/Keepers';
 import TransactionsScreen from './screens/Transactions';
 import Settings from './screens/Settings';
+import SuggestionsScreen from './screens/Suggestions';
 
-// 'transactions' is deliberately not in TABS below -- it lives on the Home
-// tile grid and behind a transaction push, not in the bottom nav, so the
-// dock stays at six items rather than growing every time a section is added.
-export type Tab = 'home' | 'today' | 'week' | 'roster' | 'keepers' | 'transactions' | 'settings';
+// 'transactions' and 'suggestions' are deliberately not in TABS below --
+// they're reached from Home (a tile, and the suggestions card) and from their
+// pushes, not the bottom nav, so the dock stays at six items rather than
+// growing every time a section is added.
+export type Tab = 'home' | 'today' | 'week' | 'roster' | 'keepers' | 'transactions' | 'suggestions' | 'settings';
+
+/** The suggestion a #suggestions/<id> link (a tapped notification) points at. */
+const suggestionIdFrom = (url: string): string | null =>
+  url.match(/#suggestions\/([\w-]+)/)?.[1] ?? null;
+
+/** A reload or deep link (#settings/..., #suggestions/<id>) lands where it points. */
+function tabFromHash(): Tab {
+  if (location.hash.startsWith('#settings')) return 'settings';
+  if (location.hash.startsWith('#suggestions')) return 'suggestions';
+  return 'home';
+}
 
 const TABS: { id: Tab; label: string; Icon: (props: IconProps) => ReactNode }[] = [
   { id: 'home', label: 'Home', Icon: HomeIcon },
@@ -33,7 +46,8 @@ export default function App() {
   // A reload or deep link to #settings/<section> should land on the
   // Settings tab directly, not flash Home first. Otherwise Home is the
   // front door -- Today is a section like any other now, not the default.
-  const [tab, setTab] = useState<Tab>(() => (location.hash.startsWith('#settings') ? 'settings' : 'home'));
+  const [tab, setTab] = useState<Tab>(tabFromHash);
+  const [focusSuggestion, setFocusSuggestion] = useState<string | null>(() => suggestionIdFrom(location.hash));
   const [pushNonce, setPushNonce] = useState(0);
   const update = useUpdateAvailable();
   const me = useAsync(() => api.me());
@@ -46,14 +60,19 @@ export default function App() {
   );
 
   // A push arriving while the app is open should surface whatever it's
-  // about: a transaction alert opens Transactions, everything else (a
-  // scratch, a co-owner suggestion) opens Today, where those live.
+  // about: a transaction alert opens Transactions, anything from the co-owner
+  // opens Suggestions, and the rest (a scratch, an unposted lineup) opens Today.
+  // Tapping a notification while the app is open sends 'navigate' instead.
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type === 'push') {
         const kind = (event.data.payload as { data?: { type?: string } } | undefined)?.data?.type;
-        setTab(kind === 'transaction' ? 'transactions' : 'today');
+        setTab(kind === 'transaction' ? 'transactions' : kind === 'suggestion' ? 'suggestions' : 'today');
+        setPushNonce((n) => n + 1);
+      } else if (event.data?.type === 'navigate' && String(event.data.url ?? '').includes('#suggestions')) {
+        setTab('suggestions');
+        setFocusSuggestion(suggestionIdFrom(String(event.data.url)));
         setPushNonce((n) => n + 1);
       }
     };
@@ -95,6 +114,14 @@ export default function App() {
       {tab === 'roster' && <RosterScreen />}
       {tab === 'keepers' && <Keepers />}
       {tab === 'transactions' && <TransactionsScreen key={pushNonce} />}
+      {tab === 'suggestions' && (
+        <SuggestionsScreen
+          key={pushNonce}
+          focusId={focusSuggestion}
+          onFocused={() => setFocusSuggestion(null)}
+          onBack={() => setTab('home')}
+        />
+      )}
       {tab === 'settings' && (
         <Settings
           user={me.data ?? null}

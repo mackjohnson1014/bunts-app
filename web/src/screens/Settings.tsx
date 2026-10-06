@@ -171,7 +171,7 @@ function SettingsList({ onOpen }: { onOpen: (id: SectionId) => void }) {
 const ALERT_COPY: Record<AlertKind, { title: string; detail: string }> = {
   scratched: { title: 'Player scratched', detail: 'Someone active is left out of the posted lineup.' },
   unposted: { title: 'Lineup still unposted', detail: 'Fifteen minutes to lock with no card published.' },
-  suggestions: { title: 'Suggestions from your co-owner', detail: 'They flag a player and tell you why.' },
+  suggestions: { title: 'Suggestions from your co-owner', detail: 'New pickups, swaps and start/sit calls, and their replies to yours.' },
   transactions: { title: "Opponent's transactions", detail: 'Your weekly opponent adds or drops a player.' },
 };
 

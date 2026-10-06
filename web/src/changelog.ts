@@ -14,6 +14,19 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '2.2',
+    date: '2026-10-05',
+    title: 'Suggestions you can talk through',
+    notes: [
+      'Suggestions now have their own card at the top of Home, showing what\u2019s open between you and your co-owner and how many are new. Tap it for the full list, with Open and Closed tabs.',
+      'Three kinds of suggestion: a lineup call (start, sit or keep an eye on someone), a swap (start this bench player in place of that starter) and a pickup (add a player, dropping one of yours or not). For pickups you can search every active MLB player by name.',
+      'Start/sit calls and swaps are for today or tomorrow, and drop off on their own once that day\u2019s first game starts.',
+      'Open a suggestion to agree or disagree, reply underneath it, and mark it \u201cMade it in Yahoo\u201d or Pass once it\u2019s settled. You can reopen it if plans change.',
+      'Your co-owner gets a notification for each new suggestion, reaction, reply and decision, and tapping it opens that suggestion directly.',
+      'You can still suggest a move from any player card. It now starts with that player filled in.',
+    ],
+  },
+  {
     version: '2.1',
     date: '2026-10-05',
     title: 'Draft, depth and how the roster was built',

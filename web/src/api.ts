@@ -1,8 +1,9 @@
 import type {
-  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, Profile, ProfileInput, Roster, Suggestion,
-  SuggestionInput, User,
+  KeeperCandidate, LeagueTransactions, LineupCall, Matchup, OpponentDetail, PlayerSearchHit, Profile, ProfileInput,
+  Roster, Suggestion, SuggestionInput, SuggestionStatus, User,
 } from './types';
 import { mockMatchup, mockOpponent, mockRoster, mockTransactions } from './mock';
+import { mockSuggestions } from './mockSuggestions';
 import { keeperTally } from './scoring/keepers';
 import { startSit } from './scoring/startsit';
 
@@ -142,19 +143,34 @@ export const api = {
       : req('/profile', { method: 'PUT', body: JSON.stringify(input) }),
 
   getSuggestions: (): Promise<Suggestion[]> =>
-    usingMockData ? settle([]) : req('/suggestions'),
+    usingMockData ? settle(mockSuggestions.list()) : req('/suggestions'),
 
   addSuggestion: (input: SuggestionInput): Promise<{ suggestion: Suggestion; notified: number }> =>
     usingMockData
-      ? settle({
-          suggestion: {
-            ...input, id: 'local', authorEmail: 'you@example.com', authorName: 'You',
-            createdAt: new Date().toISOString(), seenBy: [], mine: true, unread: false,
-          },
-          notified: 0,
-        })
+      ? settle({ suggestion: mockSuggestions.add(input), notified: 0 })
       : req('/suggestions', { method: 'POST', body: JSON.stringify(input) }),
 
+  /** Agree, disagree, or null to take your reaction back. */
+  reactToSuggestion: (id: string, value: 'agree' | 'disagree' | null): Promise<{ suggestion: Suggestion }> =>
+    usingMockData
+      ? settle({ suggestion: mockSuggestions.react(id, value) })
+      : req(`/suggestions/${id}/react`, { method: 'POST', body: JSON.stringify({ value }) }),
+
+  replyToSuggestion: (id: string, text: string): Promise<{ suggestion: Suggestion }> =>
+    usingMockData
+      ? settle({ suggestion: mockSuggestions.reply(id, text) })
+      : req(`/suggestions/${id}/reply`, { method: 'POST', body: JSON.stringify({ text }) }),
+
+  /** Done (made in Yahoo), passed, or back to open. */
+  resolveSuggestion: (id: string, status: SuggestionStatus): Promise<{ suggestion: Suggestion }> =>
+    usingMockData
+      ? settle({ suggestion: mockSuggestions.resolve(id, status) })
+      : req(`/suggestions/${id}/resolve`, { method: 'POST', body: JSON.stringify({ status }) }),
+
   markSuggestionsSeen: (): Promise<{ ok: true }> =>
-    usingMockData ? settle({ ok: true as const }) : req('/suggestions/seen', { method: 'POST' }),
+    usingMockData ? settle((mockSuggestions.seen(), { ok: true as const })) : req('/suggestions/seen', { method: 'POST' }),
+
+  /** Active MLB players by name, for proposing a pickup. */
+  searchPlayers: (q: string): Promise<PlayerSearchHit[]> =>
+    usingMockData ? settle(mockSuggestions.search(q)) : req(`/players/search?q=${encodeURIComponent(q)}`),
 };

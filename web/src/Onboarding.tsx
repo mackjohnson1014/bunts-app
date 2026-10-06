@@ -16,7 +16,7 @@ const ALERT_COPY: Record<AlertKind, { title: string; detail: string }> = {
   },
   suggestions: {
     title: 'Suggestions from your co-owner',
-    detail: 'They flag a player and tell you why.',
+    detail: 'New pickups, swaps and start/sit calls, and their replies to yours.',
   },
   transactions: {
     title: "Opponent's transactions",
